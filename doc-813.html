@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entitlement and billing reconciliation: source profile · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Source profile</div><h1>Entitlement and billing reconciliation: source profile</h1><p class="lead">What the sources hold, column by column, and the data the app needs.</p></div></section>
+<main class="doc">
+<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 813, version 51, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 813, version 51: Entitlement and billing reconciliation: source profile --><h3>Branch Data Profiling</h3>
+<p><em>Profiling</em> — <strong>Profile</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-650, DataBP demo: the north-star Hex product; build DIG-654, branch rayserrano2735/dig-654-entitlement-and-billing in Integrationals/databp-dbt</td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Profiling</em> (K#10 I#15)</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td><code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code></td>
+</tr>
+<tr>
+<td><strong>Template source</strong></td>
+<td>K#10 I#186 — updated 2026-11-16 04:41 UTC — SHA-256 8ccdd1550b1a74bb327f52900bf63c160a79440383ef77bd167f1053471a0e6f</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — DRAFT</strong> — written 2026-11-19 16:27Z <em>(compliance record not built; not presented for agreement)</em></td>
+</tr>
+<tr>
+<td><strong>Source system</strong></td>
+<td>Three SQL Server databases on RDS databp-lab-sqlserver: the DataBP platform, the Salesforce extract, and usage reporting</td>
+</tr>
+<tr>
+<td><strong>Source location</strong></td>
+<td>DATABP_SRC.dbo: client, customer, invoice (exist); product, entitlement, invoice_item (designed). DATABP_SFDC.dbo: Account, Product2, Opportunity, OpportunityLineItem, Contract (designed). DATABP_USAGE.dbo: usage_declaration (designed)</td>
+</tr>
+<tr>
+<td><strong>Profile date</strong></td>
+<td>2026-11-19</td>
+</tr>
+<tr>
+<td><strong>Profiler</strong></td>
+<td>Claude, for Ray Serrano</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td>Every column the design document (knowledge 111 item 806) uses: the three existing tables measured from the data; the nine designed tables specified, with their rows and planted disagreements, their measured analyses NA until generated (created on Ray's answer 1y, 2026-11-19; the scope is the Profiling standard's, section 1 and section 3: a verdict for every column the design uses)</td>
+</tr>
+<tr>
+<td><strong>Population</strong></td>
+<td>client 20, customer 5,000, invoice 20,008 rows (20,000 read 2026-11-18, design document R-1, and 8 added by phase one); designed tables, phase one, 2026-11-19: product 2, entitlement 12, invoice_item 8, Account 14, Product2 2, Contract 13, Opportunity 13, OpportunityLineItem 13, usage_declaration 12</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Quality standard</h2>
+<p>This profile follows <em>Standard: Profiling</em> (K#10 I#15): field intent, value discipline, and population for every column, and a verdict of Integrate, Defer, or Reject for each, naming its check. It does not redefine the criteria.</p>
+<h2>2. Data profile</h2>
+<h3>Source ERD</h3>
+<p>Drawn first, before any column is profiled (section 6 of the standard): every source table in scope as it lands, in crow's-foot notation, with its real columns; a relationship solid only where a source declares it, otherwise dashed with its match rate counted in the data; an entity the sources imply but none sends drawn dashed. Stored as an svg block.</p>
+<p>The source tables in scope, in three SQL Server databases, one per source system. The three that exist today, client, customer and invoice in DATABP_SRC.dbo, are drawn solid, with their real columns read from the information schema on 2026-11-19 at 16:29 UTC; each declares a primary key (PK) and none declares a foreign key. The nine designed tables are drawn dashed, with the columns the design sketch (knowledge 111 item 805, sections 8.2 to 8.4) gives them; they are not generated yet, and the sketch gives them no keys or types. Every relationship is dashed, since no foreign key is declared; the two among existing tables carry match rates counted at 16:30 UTC, and the designed ones are counted once the rows are generated. Joins between source systems are numbered and listed, not drawn. Two joins, 14 and 15, were missing from the design and were added on Ray's answers of 2026-11-19 (results P-1 and P-2, section 3). The database also holds sample100 (100 rows), a test table no design decision uses, and SQL Server's own MSchange_tracking_history; neither is in scope.</p>
+<div class="highlight"><pre><span></span><code>&lt;svg width="100%" viewBox="0 0 680 1370" role="img" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif"&gt;&lt;title&gt;Source ERD: the three existing tables and the nine designed, by source system&lt;/title&gt;&lt;desc&gt;Three source systems as bands. DataBP platform (DATABP_SRC.dbo): client, customer and invoice exist; product, entitlement and invoice_item are designed. Salesforce extract (DATABP_SFDC.dbo): Account, Opportunity, OpportunityLineItem, Contract and Product2, designed. Usage reporting (DATABP_USAGE.dbo): usage_declaration, designed. Every relationship is dashed: no foreign key is declared. Joins between systems are numbered and listed; joins 14 and 15 were added after this profile found them missing.&lt;/desc&gt;&lt;g fill="none" stroke="#c9c6bd" stroke-dasharray="6 4"&gt;&lt;rect x="8" y="20" width="664" height="425" rx="12"/&gt;&lt;rect x="8" y="455" width="664" height="380" rx="12"/&gt;&lt;rect x="8" y="845" width="664" height="205" rx="12"/&gt;&lt;/g&gt;&lt;g fill="#6b6963" font-size="13" font-weight="600"&gt;&lt;text x="20" y="40"&gt;DataBP platform, DATABP_SRC.dbo&lt;/text&gt;&lt;text x="20" y="475"&gt;Salesforce extract, DATABP_SFDC.dbo (designed)&lt;/text&gt;&lt;text x="20" y="865"&gt;Usage reporting, DATABP_USAGE.dbo (designed)&lt;/text&gt;&lt;/g&gt;&lt;g fill="#E1F5EE" stroke="#0F6E56"&gt;&lt;rect x="20" y="50" width="140" height="66" rx="7"/&gt;&lt;rect x="200" y="50" width="180" height="117" rx="7"/&gt;&lt;rect x="420" y="50" width="240" height="151" rx="7"/&gt;&lt;/g&gt;&lt;g fill="#F6FBF9" stroke="#0F6E56" stroke-dasharray="4 3"&gt;&lt;rect x="20" y="250" width="140" height="134" rx="7"/&gt;&lt;rect x="200" y="250" width="180" height="168" rx="7"/&gt;&lt;rect x="420" y="250" width="240" height="168" rx="7"/&gt;&lt;rect x="20" y="495" width="140" height="117" rx="7"/&gt;&lt;rect x="200" y="495" width="180" height="134" rx="7"/&gt;&lt;rect x="420" y="495" width="240" height="117" rx="7"/&gt;&lt;rect x="20" y="665" width="140" height="151" rx="7"/&gt;&lt;rect x="420" y="665" width="240" height="100" rx="7"/&gt;&lt;rect x="200" y="885" width="260" height="151" rx="7"/&gt;&lt;/g&gt;&lt;g fill="#085041" font-size="14" font-weight="600"&gt;&lt;text x="30" y="70"&gt;client&lt;/text&gt;&lt;text x="210" y="70"&gt;customer&lt;/text&gt;&lt;text x="430" y="70"&gt;invoice&lt;/text&gt;&lt;text x="30" y="270"&gt;product&lt;/text&gt;&lt;text x="210" y="270"&gt;entitlement&lt;/text&gt;&lt;text x="430" y="270"&gt;invoice_item&lt;/text&gt;&lt;text x="30" y="515"&gt;Account&lt;/text&gt;&lt;text x="210" y="515"&gt;Opportunity&lt;/text&gt;&lt;text x="430" y="515"&gt;OpportunityLineItem&lt;/text&gt;&lt;text x="30" y="685"&gt;Contract&lt;/text&gt;&lt;text x="430" y="685"&gt;Product2&lt;/text&gt;&lt;text x="210" y="905"&gt;usage_declaration&lt;/text&gt;&lt;/g&gt;&lt;g fill="#0F6E56" font-size="11"&gt;&lt;text x="105" y="70"&gt;20 rows&lt;/text&gt;&lt;text x="315" y="70"&gt;5,000 rows&lt;/text&gt;&lt;text x="590" y="70"&gt;20,000 rows&lt;/text&gt;&lt;text x="105" y="270"&gt;designed&lt;/text&gt;&lt;text x="325" y="270"&gt;designed&lt;/text&gt;&lt;text x="605" y="270"&gt;designed&lt;/text&gt;&lt;text x="105" y="515"&gt;designed&lt;/text&gt;&lt;text x="325" y="515"&gt;designed&lt;/text&gt;&lt;text x="605" y="515"&gt;designed&lt;/text&gt;&lt;text x="105" y="685"&gt;designed&lt;/text&gt;&lt;text x="605" y="685"&gt;designed&lt;/text&gt;&lt;text x="405" y="905"&gt;designed&lt;/text&gt;&lt;/g&gt;&lt;g stroke="#0F6E56" stroke-width="0.6"&gt;&lt;line x1="20" y1="78" x2="160" y2="78"/&gt;&lt;line x1="200" y1="78" x2="380" y2="78"/&gt;&lt;line x1="420" y1="78" x2="660" y2="78"/&gt;&lt;line x1="20" y1="278" x2="160" y2="278"/&gt;&lt;line x1="200" y1="278" x2="380" y2="278"/&gt;&lt;line x1="420" y1="278" x2="660" y2="278"/&gt;&lt;line x1="20" y1="523" x2="160" y2="523"/&gt;&lt;line x1="200" y1="523" x2="380" y2="523"/&gt;&lt;line x1="420" y1="523" x2="660" y2="523"/&gt;&lt;line x1="20" y1="693" x2="160" y2="693"/&gt;&lt;line x1="420" y1="693" x2="660" y2="693"/&gt;&lt;line x1="200" y1="913" x2="460" y2="913"/&gt;&lt;/g&gt;&lt;g fill="#22211e" font-size="12"&gt;&lt;text x="30" y="95"&gt;PK client_id&lt;/text&gt;&lt;text x="30" y="112"&gt;client_name&lt;/text&gt;&lt;text x="210" y="95"&gt;PK tenant_id&lt;/text&gt;&lt;text x="210" y="112"&gt;PK customer_id&lt;/text&gt;&lt;text x="210" y="129"&gt;customer_name&lt;/text&gt;&lt;text x="210" y="146"&gt;email, nullable&lt;/text&gt;&lt;text x="210" y="163"&gt;updated_at&lt;/text&gt;&lt;text x="430" y="95"&gt;PK tenant_id&lt;/text&gt;&lt;text x="430" y="112"&gt;PK invoice_id&lt;/text&gt;&lt;text x="430" y="129"&gt;customer_id&lt;/text&gt;&lt;text x="430" y="146"&gt;amount&lt;/text&gt;&lt;text x="430" y="163"&gt;invoice_date&lt;/text&gt;&lt;text x="430" y="180"&gt;status&lt;/text&gt;&lt;text x="430" y="197"&gt;updated_at&lt;/text&gt;&lt;text x="30" y="295"&gt;tenant_id&lt;/text&gt;&lt;text x="30" y="312"&gt;product_id&lt;/text&gt;&lt;text x="30" y="329"&gt;product_code&lt;/text&gt;&lt;text x="30" y="346"&gt;product_name&lt;/text&gt;&lt;text x="30" y="363"&gt;unit_price&lt;/text&gt;&lt;text x="30" y="380"&gt;updated_at&lt;/text&gt;&lt;text x="210" y="295"&gt;tenant_id&lt;/text&gt;&lt;text x="210" y="312"&gt;entitlement_id&lt;/text&gt;&lt;text x="210" y="329"&gt;customer_id&lt;/text&gt;&lt;text x="210" y="346"&gt;product_id&lt;/text&gt;&lt;text x="210" y="363"&gt;units&lt;/text&gt;&lt;text x="210" y="380"&gt;start_date&lt;/text&gt;&lt;text x="210" y="397"&gt;end_date&lt;/text&gt;&lt;text x="210" y="414"&gt;updated_at&lt;/text&gt;&lt;text x="430" y="295"&gt;tenant_id&lt;/text&gt;&lt;text x="430" y="312"&gt;invoice_id&lt;/text&gt;&lt;text x="430" y="329"&gt;item_id&lt;/text&gt;&lt;text x="430" y="346"&gt;product_id&lt;/text&gt;&lt;text x="430" y="363"&gt;units&lt;/text&gt;&lt;text x="430" y="380"&gt;unit_price&lt;/text&gt;&lt;text x="430" y="397"&gt;amount&lt;/text&gt;&lt;text x="430" y="414"&gt;updated_at&lt;/text&gt;&lt;text x="30" y="540"&gt;Id&lt;/text&gt;&lt;text x="30" y="557"&gt;Name&lt;/text&gt;&lt;text x="30" y="574"&gt;OwnerId&lt;/text&gt;&lt;text x="30" y="591"&gt;Tenant__c&lt;/text&gt;&lt;text x="30" y="608"&gt;Subscriber_Id__c&lt;/text&gt;&lt;text x="210" y="540"&gt;Id&lt;/text&gt;&lt;text x="210" y="557"&gt;AccountId&lt;/text&gt;&lt;text x="210" y="574"&gt;ContractId&lt;/text&gt;&lt;text x="210" y="591"&gt;StageName&lt;/text&gt;&lt;text x="210" y="608"&gt;CloseDate&lt;/text&gt;&lt;text x="210" y="625"&gt;Tenant__c&lt;/text&gt;&lt;text x="430" y="540"&gt;Id&lt;/text&gt;&lt;text x="430" y="557"&gt;OpportunityId&lt;/text&gt;&lt;text x="430" y="574"&gt;Product2Id&lt;/text&gt;&lt;text x="430" y="591"&gt;Quantity&lt;/text&gt;&lt;text x="430" y="608"&gt;UnitPrice&lt;/text&gt;&lt;text x="30" y="710"&gt;Id&lt;/text&gt;&lt;text x="30" y="727"&gt;AccountId&lt;/text&gt;&lt;text x="30" y="744"&gt;StartDate&lt;/text&gt;&lt;text x="30" y="761"&gt;EndDate&lt;/text&gt;&lt;text x="30" y="778"&gt;ContractTerm&lt;/text&gt;&lt;text x="30" y="795"&gt;Status&lt;/text&gt;&lt;text x="30" y="812"&gt;Tenant__c&lt;/text&gt;&lt;text x="430" y="710"&gt;Id&lt;/text&gt;&lt;text x="430" y="727"&gt;Name&lt;/text&gt;&lt;text x="430" y="744"&gt;ProductCode&lt;/text&gt;&lt;text x="430" y="761"&gt;Tenant__c&lt;/text&gt;&lt;text x="210" y="930"&gt;tenant_id&lt;/text&gt;&lt;text x="210" y="947"&gt;declaration_id&lt;/text&gt;&lt;text x="210" y="964"&gt;customer_id&lt;/text&gt;&lt;text x="210" y="981"&gt;product_code&lt;/text&gt;&lt;text x="210" y="998"&gt;usage_month&lt;/text&gt;&lt;text x="210" y="1015"&gt;declared_units&lt;/text&gt;&lt;text x="210" y="1032"&gt;declared_at&lt;/text&gt;&lt;/g&gt;&lt;g stroke="#6b6963" stroke-width="1.3" fill="none"&gt;&lt;line x1="160" y1="88" x2="200" y2="88" stroke-dasharray="5 4"/&gt;&lt;line x1="167" y1="81" x2="167" y2="95"/&gt;&lt;line x1="188" y1="88" x2="200" y2="81"/&gt;&lt;line x1="188" y1="88" x2="200" y2="95"/&gt;&lt;line x1="380" y1="108" x2="420" y2="108" stroke-dasharray="5 4"/&gt;&lt;line x1="387" y1="101" x2="387" y2="115"/&gt;&lt;line x1="408" y1="108" x2="420" y2="101"/&gt;&lt;line x1="408" y1="108" x2="420" y2="115"/&gt;&lt;line x1="290" y1="167" x2="290" y2="250" stroke-dasharray="5 4"/&gt;&lt;line x1="283" y1="174" x2="297" y2="174"/&gt;&lt;line x1="290" y1="238" x2="283" y2="250"/&gt;&lt;line x1="290" y1="238" x2="297" y2="250"/&gt;&lt;line x1="160" y1="308" x2="200" y2="308" stroke-dasharray="5 4"/&gt;&lt;line x1="167" y1="301" x2="167" y2="315"/&gt;&lt;line x1="188" y1="308" x2="200" y2="301"/&gt;&lt;line x1="188" y1="308" x2="200" y2="315"/&gt;&lt;line x1="540" y1="201" x2="540" y2="250" stroke-dasharray="5 4"/&gt;&lt;line x1="533" y1="208" x2="547" y2="208"/&gt;&lt;line x1="540" y1="238" x2="533" y2="250"/&gt;&lt;line x1="540" y1="238" x2="547" y2="250"/&gt;&lt;path d="M 90 384 L 90 432 L 540 432 L 540 418" stroke-dasharray="5 4"/&gt;&lt;line x1="83" y1="391" x2="97" y2="391"/&gt;&lt;line x1="540" y1="430" x2="533" y2="418"/&gt;&lt;line x1="540" y1="430" x2="547" y2="418"/&gt;&lt;line x1="160" y1="550" x2="200" y2="550" stroke-dasharray="5 4"/&gt;&lt;line x1="167" y1="543" x2="167" y2="557"/&gt;&lt;line x1="188" y1="550" x2="200" y2="543"/&gt;&lt;line x1="188" y1="550" x2="200" y2="557"/&gt;&lt;line x1="380" y1="550" x2="420" y2="550" stroke-dasharray="5 4"/&gt;&lt;line x1="387" y1="543" x2="387" y2="557"/&gt;&lt;line x1="408" y1="550" x2="420" y2="543"/&gt;&lt;line x1="408" y1="550" x2="420" y2="557"/&gt;&lt;line x1="540" y1="665" x2="540" y2="612" stroke-dasharray="5 4"/&gt;&lt;line x1="533" y1="658" x2="547" y2="658"/&gt;&lt;line x1="540" y1="624" x2="533" y2="612"/&gt;&lt;line x1="540" y1="624" x2="547" y2="612"/&gt;&lt;line x1="90" y1="612" x2="90" y2="665" stroke-dasharray="5 4"/&gt;&lt;line x1="83" y1="619" x2="97" y2="619"/&gt;&lt;line x1="90" y1="653" x2="83" y2="665"/&gt;&lt;line x1="90" y1="653" x2="97" y2="665"/&gt;&lt;path d="M 290 629 L 290 740 L 160 740" stroke-dasharray="5 4"/&gt;&lt;line x1="167" y1="733" x2="167" y2="747"/&gt;&lt;line x1="290" y1="641" x2="283" y2="629"/&gt;&lt;line x1="290" y1="641" x2="297" y2="629"/&gt;&lt;/g&gt;&lt;g fill="#6b6963" font-size="12" font-weight="600"&gt;&lt;text x="174" y="80"&gt;1&lt;/text&gt;&lt;text x="394" y="100"&gt;2&lt;/text&gt;&lt;text x="298" y="212"&gt;3&lt;/text&gt;&lt;text x="174" y="300"&gt;4&lt;/text&gt;&lt;text x="548" y="230"&gt;5&lt;/text&gt;&lt;text x="300" y="446"&gt;6&lt;/text&gt;&lt;text x="174" y="542"&gt;7&lt;/text&gt;&lt;text x="394" y="542"&gt;8&lt;/text&gt;&lt;text x="548" y="645"&gt;9&lt;/text&gt;&lt;text x="98" y="645"&gt;10&lt;/text&gt;&lt;text x="298" y="700"&gt;14&lt;/text&gt;&lt;/g&gt;&lt;g fill="#22211e" font-size="12"&gt;&lt;text x="20" y="1080" font-weight="600"&gt;Relationships. Dashed: no foreign key is declared. Bar: one; three prongs: many.&lt;/text&gt;&lt;text x="20" y="1102"&gt;1  customer.tenant_id = client.client_id: 5,000 of 5,000 match (2026-11-19 16:30 UTC).&lt;/text&gt;&lt;text x="20" y="1120"&gt;2  invoice (tenant_id, customer_id) = customer: 20,000 of 20,000 match (same read).&lt;/text&gt;&lt;text x="20" y="1138"&gt;3  entitlement (tenant_id, customer_id) = customer. 4  entitlement (tenant_id, product_id) = product.&lt;/text&gt;&lt;text x="20" y="1156"&gt;5  invoice_item (tenant_id, invoice_id) = invoice. 6  invoice_item (tenant_id, product_id) = product.&lt;/text&gt;&lt;text x="20" y="1174"&gt;7  Opportunity.AccountId = Account.Id. 8  OpportunityLineItem.OpportunityId = Opportunity.Id.&lt;/text&gt;&lt;text x="20" y="1192"&gt;9  OpportunityLineItem.Product2Id = Product2.Id. 10  Contract.AccountId = Account.Id.&lt;/text&gt;&lt;text x="20" y="1210"&gt;Across systems, not drawn:&lt;/text&gt;&lt;text x="20" y="1228"&gt;11  Account (Tenant__c, Subscriber_Id__c) = customer (tenant_id, customer_id).&lt;/text&gt;&lt;text x="20" y="1246"&gt;12  usage_declaration (tenant_id, customer_id) = customer (tenant_id, customer_id).&lt;/text&gt;&lt;text x="20" y="1264"&gt;13  usage_declaration (tenant_id, product_code) = Product2 (Tenant__c, ProductCode).&lt;/text&gt;&lt;text x="20" y="1290" font-weight="600"&gt;Added on Ray's answers of 2026-11-19 (results P-1, P-2):&lt;/text&gt;&lt;text x="20" y="1308"&gt;14  Opportunity.ContractId = Contract.Id, Salesforce's standard field.&lt;/text&gt;&lt;text x="20" y="1326"&gt;15  Product2 (Tenant__c, ProductCode) = product (tenant_id, product_code).&lt;/text&gt;&lt;text x="20" y="1352"&gt;Designed joins (3 to 15): every one matches all its rows in phase one (P-9).&lt;/text&gt;&lt;/g&gt;&lt;/svg&gt;
+</code></pre></div>
+<h3>2.0 Population context</h3>
+<p>Phase one of the product path (Profiling standard, section 1, two paths): the nine designed tables hold rows generated by the phase-one generator (tutorial, knowledge 111 item 463, step 26), one set per round-one path of P-6, all for one data provider, client 3, and one month, October 2026. There are no real subscribers, no test records mixed with real ones, and no history: every row was written in one transaction on 2026-11-19 between 18:44:43 and 18:45:15 UTC, and none has changed since. Base population for each table's percentages is its own row count. Measured where the pipeline reads them, the Snowflake copies the Openflow connector made in <code>DATABP_LAB</code> (schemas <code>DATABP_SRC_DBO</code>, <code>DATABP_SFDC_DBO</code>, <code>DATABP_USAGE_DBO</code>), on 2026-11-19 from 19:27 to 19:30 UTC; every table's count there equals SQL Server's (tutorial step 26, 19:24:28 UTC), and no row is marked deleted. Because the data was designed, a column that holds one value does so by the phase's scope (one data provider, one month, one contract term), not by a defect of the source; P-11 records it. The connector's own columns <code>_SNOWFLAKE_INSERTED_AT</code>, <code>_SNOWFLAKE_UPDATED_AT</code> and <code>_SNOWFLAKE_DELETED</code> are the pipeline's metadata, not source columns, and are not profiled here.</p>
+<p>Sub-populations: none. Each designed table describes one entity for one data provider; no routing column splits any of them.</p>
+<h3>2.1 Tables</h3>
+<p>The nine designed tables come first (2.1.1 to 2.1.9), then the three existing tables, client, customer and invoice (2.1.10 to 2.1.12), whose keys and joins were read earlier (P-3 to P-5). For each: grain, then one row per column with populated count, distinct count, field intent, and the values or distribution. Histories (freshness, volume trend, change rate, disappearance): NA for phase one, one load and no change yet.</p>
+<h4>2.1.1 product (<code>DATABP_SRC_DBO.PRODUCT</code>), 2 rows</h4>
+<p>Grain: (tenant_id, product_id), 0 duplicates in 2 rows; (tenant_id, product_code) is also unique, 0 duplicates.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tenant_id</td>
+<td>2, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 for both (P-11)</td>
+</tr>
+<tr>
+<td>product_id</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Key</td>
+<td>1, 2</td>
+</tr>
+<tr>
+<td>product_code</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Controlled discrete, clean</td>
+<td>EQUITIES, OPTIONS</td>
+</tr>
+<tr>
+<td>product_name</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Label</td>
+<td>Equities feed, Options feed</td>
+</tr>
+<tr>
+<td>unit_price</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Numeric, dollars</td>
+<td>40.00 and 50.00; mean 45.00, standard deviation 7.07; no zeros</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Timestamp</td>
+<td>18:44:48.450 to 18:44:48.562 UTC, the load</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.2 entitlement (<code>DATABP_SRC_DBO.ENTITLEMENT</code>), 12 rows</h4>
+<p>Grain: (tenant_id, entitlement_id), 0 duplicates in 12 rows; (tenant_id, customer_id, product_id, start_date) is also unique, 0 duplicates.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tenant_id</td>
+<td>12, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 (P-11)</td>
+</tr>
+<tr>
+<td>entitlement_id</td>
+<td>12, 100%</td>
+<td>12</td>
+<td>Key</td>
+<td>1 to 14, two numbers unused (paths PA7 and PA11, no entitlement)</td>
+</tr>
+<tr>
+<td>customer_id</td>
+<td>12, 100%</td>
+<td>12</td>
+<td>Key</td>
+<td>3 to 263; one subscriber per row</td>
+</tr>
+<tr>
+<td>product_id</td>
+<td>12, 100%</td>
+<td>2</td>
+<td>Key</td>
+<td>2 seven times, 1 five times</td>
+</tr>
+<tr>
+<td>units</td>
+<td>12, 100%</td>
+<td>3</td>
+<td>Numeric count</td>
+<td>10 six times, 12 four, 14 two; min 10, median 10, P75 12, P90 14, max 14; mean 11.33, standard deviation 1.56; no zeros</td>
+</tr>
+<tr>
+<td>start_date</td>
+<td>12, 100%</td>
+<td>1</td>
+<td>Date</td>
+<td>2026-10-01 (P-11)</td>
+</tr>
+<tr>
+<td>end_date</td>
+<td>12, 100%</td>
+<td>1</td>
+<td>Date</td>
+<td>2027-09-30 (P-11)</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>12, 100%</td>
+<td>12</td>
+<td>Timestamp, near-unique</td>
+<td>18:44:48.605 to 18:44:49.118 UTC, the load</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.3 invoice_item (<code>DATABP_SRC_DBO.INVOICE_ITEM</code>), 8 rows</h4>
+<p>Grain: (tenant_id, invoice_id, item_id), 0 duplicates in 8 rows.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tenant_id</td>
+<td>8, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 (P-11)</td>
+</tr>
+<tr>
+<td>invoice_id</td>
+<td>8, 100%</td>
+<td>8</td>
+<td>Key</td>
+<td>100001 to 100008, one item per invoice</td>
+</tr>
+<tr>
+<td>item_id</td>
+<td>8, 100%</td>
+<td>1</td>
+<td>Key</td>
+<td>1 on every row: one item per invoice in phase one</td>
+</tr>
+<tr>
+<td>product_id</td>
+<td>8, 100%</td>
+<td>2</td>
+<td>Key</td>
+<td>1 four times, 2 four times</td>
+</tr>
+<tr>
+<td>units</td>
+<td>8, 100%</td>
+<td>2</td>
+<td>Numeric count</td>
+<td>10 seven times, 12 once (PA3, billed at reported units with no license); mean 10.25, standard deviation 0.71; no zeros</td>
+</tr>
+<tr>
+<td>unit_price</td>
+<td>8, 100%</td>
+<td>2</td>
+<td>Numeric, dollars</td>
+<td>40.00 and 50.00, four each; equals the product's price on all 8 (join 6)</td>
+</tr>
+<tr>
+<td>amount</td>
+<td>8, 100%</td>
+<td>3</td>
+<td>Numeric, dollars</td>
+<td>400.00 four times, 500.00 three, 600.00 once; equals units times unit_price on all 8</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>8, 100%</td>
+<td>8</td>
+<td>Timestamp, near-unique</td>
+<td>18:44:48.791 to 18:44:49.129 UTC, the load</td>
+</tr>
+</tbody>
+</table>
+<p>The 8 invoices the items belong to were added to the existing invoice table: tenant 3, invoice_id 100001 to 100008, invoice_date 2026-10-31; 8 of 8 have an item.</p>
+<h4>2.1.4 Account (<code>DATABP_SFDC_DBO.ACCOUNT</code>), 14 rows</h4>
+<p>Grain: Id, 0 duplicates in 14 rows; (Tenant__c, Subscriber_Id__c) is also unique, 0 duplicates.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>14, 100%</td>
+<td>14</td>
+<td>Key, 18 characters</td>
+<td>ACC0284581153E1152 to ACCFAC325B5EC7C816</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>14, 100%</td>
+<td>14</td>
+<td>Label</td>
+<td>"Customer 3" to "Customer 263", the platform's customer name</td>
+</tr>
+<tr>
+<td>OwnerId</td>
+<td>14, 100%</td>
+<td>1</td>
+<td>Key</td>
+<td>USR57481771F2666E6 on all 14 (P-11)</td>
+</tr>
+<tr>
+<td>Tenant__c</td>
+<td>14, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 (P-11)</td>
+</tr>
+<tr>
+<td>Subscriber_Id__c</td>
+<td>14, 100%</td>
+<td>14</td>
+<td>Key</td>
+<td>3 to 263, step 20; one per path</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.5 Product2 (<code>DATABP_SFDC_DBO.PRODUCT2</code>), 2 rows</h4>
+<p>Grain: Id, 0 duplicates in 2 rows; (Tenant__c, ProductCode) is also unique, 0 duplicates.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Key</td>
+<td>PRD11F3581CE7E4DE8, PRDBBDD12FE8ABB57D</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Label</td>
+<td>Equities feed, Options feed; equal to product.product_name by code</td>
+</tr>
+<tr>
+<td>ProductCode</td>
+<td>2, 100%</td>
+<td>2</td>
+<td>Controlled discrete, clean</td>
+<td>EQUITIES, OPTIONS; equal to product.product_code (join 15)</td>
+</tr>
+<tr>
+<td>Tenant__c</td>
+<td>2, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 (P-11)</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.6 Contract (<code>DATABP_SFDC_DBO.CONTRACT</code>), 13 rows</h4>
+<p>Grain: Id, 0 duplicates in 13 rows.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>13, 100%</td>
+<td>13</td>
+<td>Key</td>
+<td>18-character ids, prefix CTR</td>
+</tr>
+<tr>
+<td>AccountId</td>
+<td>13, 100%</td>
+<td>13</td>
+<td>Key</td>
+<td>one Contract per Account with a license</td>
+</tr>
+<tr>
+<td>StartDate</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Date</td>
+<td>2026-10-01 (P-11)</td>
+</tr>
+<tr>
+<td>EndDate</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Date</td>
+<td>2027-09-30 (P-11)</td>
+</tr>
+<tr>
+<td>ContractTerm</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Numeric, months</td>
+<td>12 (P-11)</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Controlled discrete, clean</td>
+<td>Activated (P-11)</td>
+</tr>
+<tr>
+<td>Tenant__c</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 (P-11)</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.7 Opportunity (<code>DATABP_SFDC_DBO.OPPORTUNITY</code>), 13 rows</h4>
+<p>Grain: Id, 0 duplicates in 13 rows.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>13, 100%</td>
+<td>13</td>
+<td>Key</td>
+<td>18-character ids, prefix OPP</td>
+</tr>
+<tr>
+<td>AccountId</td>
+<td>13, 100%</td>
+<td>13</td>
+<td>Key</td>
+<td>one Opportunity per Account with a license</td>
+</tr>
+<tr>
+<td>ContractId</td>
+<td>13, 100%</td>
+<td>13</td>
+<td>Key</td>
+<td>one Opportunity per Contract (join 14)</td>
+</tr>
+<tr>
+<td>StageName</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Controlled discrete, clean</td>
+<td>Closed Won (P-11)</td>
+</tr>
+<tr>
+<td>CloseDate</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Date</td>
+<td>2026-09-30 (P-11)</td>
+</tr>
+<tr>
+<td>Tenant__c</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 (P-11)</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.8 OpportunityLineItem (<code>DATABP_SFDC_DBO.OPPORTUNITYLINEITEM</code>), 13 rows</h4>
+<p>Grain: Id, 0 duplicates in 13 rows.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Id</td>
+<td>13, 100%</td>
+<td>13</td>
+<td>Key</td>
+<td>18-character ids, prefix OLI</td>
+</tr>
+<tr>
+<td>OpportunityId</td>
+<td>13, 100%</td>
+<td>13</td>
+<td>Key</td>
+<td>one line item per Opportunity</td>
+</tr>
+<tr>
+<td>Product2Id</td>
+<td>13, 100%</td>
+<td>2</td>
+<td>Key</td>
+<td>7 options, 6 equities</td>
+</tr>
+<tr>
+<td>Quantity</td>
+<td>13, 100%</td>
+<td>1</td>
+<td>Numeric count</td>
+<td>10 on all 13: every license is 10 units in phase one (P-11)</td>
+</tr>
+<tr>
+<td>UnitPrice</td>
+<td>13, 100%</td>
+<td>2</td>
+<td>Numeric, dollars</td>
+<td>40.00 seven times, 50.00 six; equals the product's price by code</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.9 usage_declaration (<code>DATABP_USAGE_DBO.USAGE_DECLARATION</code>), 12 rows</h4>
+<p>Grain: (tenant_id, declaration_id), 0 duplicates in 12 rows; (tenant_id, customer_id, product_code, usage_month) is also unique, 0 duplicates, so no report is restated in phase one.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tenant_id</td>
+<td>12, 100%</td>
+<td>1</td>
+<td>Key, controlled</td>
+<td>3 (P-11)</td>
+</tr>
+<tr>
+<td>declaration_id</td>
+<td>12, 100%</td>
+<td>12</td>
+<td>Key</td>
+<td>1 to 14, two numbers unused (PA9 and PA13, no report)</td>
+</tr>
+<tr>
+<td>customer_id</td>
+<td>12, 100%</td>
+<td>12</td>
+<td>Key</td>
+<td>3 to 263</td>
+</tr>
+<tr>
+<td>product_code</td>
+<td>12, 100%</td>
+<td>2</td>
+<td>Controlled discrete, clean</td>
+<td>OPTIONS 7, EQUITIES 5; every value is a Product2 code (join 13)</td>
+</tr>
+<tr>
+<td>usage_month</td>
+<td>12, 100%</td>
+<td>1</td>
+<td>Date, first of the month</td>
+<td>2026-10-01 (P-11)</td>
+</tr>
+<tr>
+<td>declared_units</td>
+<td>12, 100%</td>
+<td>3</td>
+<td>Numeric count</td>
+<td>12 seven times, 10 four, 8 once; mean 11.00, standard deviation 1.35; no zeros</td>
+</tr>
+<tr>
+<td>declared_at</td>
+<td>12, 100%</td>
+<td>1</td>
+<td>Timestamp</td>
+<td>2026-11-05 00:00 on all 12 (P-11)</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.10 client (<code>DATABP_SRC_DBO.CLIENT</code>), 20 rows</h4>
+<p>The data providers, DataBP's clients. Grain: client_id, 0 duplicates in 20 rows; no row marked deleted. Measured in Snowflake, 2026-11-19 19:39 UTC.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>client_id</td>
+<td>20, 100%</td>
+<td>20</td>
+<td>Key</td>
+<td>1 to 20</td>
+</tr>
+<tr>
+<td>client_name</td>
+<td>20, 100%</td>
+<td>20</td>
+<td>Label</td>
+<td>"Client 1" to "Client 20", except client 1, "Client 1 (changed 2026-11-18)", and client 2, "Client 2 (demo)" (P-13)</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.11 customer (<code>DATABP_SRC_DBO.CUSTOMER</code>), 5,000 rows</h4>
+<p>The subscribers, 250 under each data provider. Grain: (tenant_id, customer_id), 0 duplicates; customer_id alone is also unique, 0 duplicates. Measured in Snowflake, 19:39 UTC.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tenant_id</td>
+<td>5,000, 100%</td>
+<td>20</td>
+<td>Key</td>
+<td>1 to 20, 250 rows each</td>
+</tr>
+<tr>
+<td>customer_id</td>
+<td>5,000, 100%</td>
+<td>5,000</td>
+<td>Key</td>
+<td>1 to 5,000; tenant 3 holds 3 to 4,983</td>
+</tr>
+<tr>
+<td>customer_name</td>
+<td>5,000, 100%</td>
+<td>5,000</td>
+<td>Label, generated</td>
+<td>"Customer" and the customer_id on all 5,000 (P-14)</td>
+</tr>
+<tr>
+<td>email</td>
+<td>5,000, 100%</td>
+<td>5,000</td>
+<td>Contact, generated</td>
+<td>"c", the customer_id, "@example.com" on all 5,000 (P-14)</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>5,000, 100%</td>
+<td>5,000</td>
+<td>Timestamp, near-unique</td>
+<td>2026-11-12 00:40:04.691 to 00:42:13.279, the earlier build's load</td>
+</tr>
+</tbody>
+</table>
+<h4>2.1.12 invoice (<code>DATABP_SRC_DBO.INVOICE</code>), 20,008 rows</h4>
+<p>Invoice headers: 20,000 from the earlier build and phase one's 8. Grain: (tenant_id, invoice_id), 0 duplicates; invoice_id alone is also unique. 20,008 of 20,008 belong to a subscriber of their own data provider (join 2). Measured in Snowflake, 19:39 UTC.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated</th>
+<th>Distinct</th>
+<th>Intent</th>
+<th>Values or distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tenant_id</td>
+<td>20,008, 100%</td>
+<td>20</td>
+<td>Key</td>
+<td>1,000 per data provider; tenant 3 holds 1,008</td>
+</tr>
+<tr>
+<td>invoice_id</td>
+<td>20,008, 100%</td>
+<td>20,008</td>
+<td>Key</td>
+<td>1 to 20,000, and 100001 to 100008</td>
+</tr>
+<tr>
+<td>customer_id</td>
+<td>20,008, 100%</td>
+<td>5,000</td>
+<td>Key</td>
+<td>every subscriber has invoices, 4 or 5 each</td>
+</tr>
+<tr>
+<td>amount</td>
+<td>20,008, 100%</td>
+<td>1,000</td>
+<td>Numeric, dollars</td>
+<td>min 10.00, P10 142.89, P25 348.39, median 689.52, P75 1,032.02, P90 1,237.52, max 1,374.52; mean 690.25, standard deviation 395.22; no zeros; a series stepping by 1.37 (P-14)</td>
+</tr>
+<tr>
+<td>invoice_date</td>
+<td>20,008, 100%</td>
+<td>365</td>
+<td>Date</td>
+<td>2025-11-12 to 2026-11-11, 54 or 55 a day; 2026-10-31 has 63 with phase one's 8</td>
+</tr>
+<tr>
+<td>status</td>
+<td>20,008, 100%</td>
+<td>4</td>
+<td>Controlled discrete, clean</td>
+<td>open 5,008, overdue 5,000, paid 5,000, void 5,000; every month holds all four (P-15)</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>20,008, 100%</td>
+<td>20,008</td>
+<td>Timestamp, near-unique</td>
+<td>2026-11-12 00:42:13.412 to 2026-11-19 18:44:49.125</td>
+</tr>
+</tbody>
+</table>
+<p>Only phase one's 8 invoices have items; the other 20,000 have none (P-15).</p>
+<h3>2.2 Overlap with existing sources</h3>
+<p>The three source systems carry some of the same facts twice; where both are populated they agree on every row in phase one. Counted in Snowflake, 2026-11-19 19:40 UTC.</p>
+<table>
+<thead>
+<tr>
+<th>Same fact, two places</th>
+<th>Agreement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account Name and customer.customer_name, by Subscriber_Id__c</td>
+<td>14 of 14 equal</td>
+</tr>
+<tr>
+<td>Product2 Name and product.product_name, by product code</td>
+<td>2 of 2 equal</td>
+</tr>
+<tr>
+<td>Opportunity AccountId and its Contract's AccountId</td>
+<td>13 of 13 equal</td>
+</tr>
+<tr>
+<td>OpportunityLineItem UnitPrice and the product's unit_price</td>
+<td>13 of 13 equal</td>
+</tr>
+<tr>
+<td>invoice_item unit_price and the product's unit_price</td>
+<td>8 of 8 equal</td>
+</tr>
+<tr>
+<td>invoice amount and its item's amount, phase one's invoices</td>
+<td>8 of 8 equal</td>
+</tr>
+</tbody>
+</table>
+<p>Harbor holds none of these sources: the repository's dbt sources read only <code>client</code> (<code>models/staging/_sources.yml</code>), staged as <code>stg_databp__client</code>.</p>
+<h3>2.3 Machine-assisted analyses</h3>
+<p>NA: no column is a normalization candidate under section 11.2 of the standard. The only free-text columns with more than 50 distinct values, customer_name and email, follow one generated pattern on every row (P-14), so a synonym scan has nothing to find.</p>
+<h2>3. Profile results</h2>
+<p>Numbered P-1, P-2, ... in one series. An anomaly carries SOLUTION NEEDED and closes with RESOLVED, the resolver, the date, and the solution, in that order.</p>
+<p>P-1. SOLUTION NEEDED. The design joins Salesforce's products to the platform's: the design document's source-to-target map (knowledge 111 item 806, section 6.1) joins a license to the platform through Product2.ProductCode, and the usage report names products by product_code (design sketch, item 805, section 8.4). The platform's product table, as designed in the sketch's section 8.2, has no product code: tenant_id, product_id, product_name, unit_price, updated_at. No designed column joins Product2 to product, so the reconciliation cannot compare a license or a usage report with an entitlement or an invoice item by product. RESOLVED, Ray Serrano, 2026-11-19 (answer 2a): the platform's product carries product_code, the code Salesforce's Product2.ProductCode and the usage report also carry; written into the design sketch (item 805, section 8.2) and the design document (item 806, section 6.1 and decision D-11).</p>
+<p>P-2. SOLUTION NEEDED. Decision D-7 of the design document defines a license as a Contract with the line items of its won Opportunity. As designed (sketch, section 8.3), Contract carries Id, AccountId, StartDate, EndDate, ContractTerm, Status and Tenant__c, and Opportunity carries Id, AccountId, StageName, CloseDate and Tenant__c: no column joins a Contract to its Opportunity, so a Contract's licensed units cannot be found except by matching on the subscriber's Account alone. RESOLVED, Ray Serrano, 2026-11-19 (answer 1y): Opportunity carries ContractId, Salesforce's standard field for the contract associated with an opportunity (Salesforce object reference, read 2026-11-19); written into the design sketch (item 805, section 8.3) and the design document (item 806, section 6.1 and the evidence of decision D-7).</p>
+<p>P-3. client, customer and invoice each declare a primary key: client (client_id); customer (tenant_id, customer_id); invoice (tenant_id, invoice_id). None declares a foreign key. Read from DATABP_SRC's information schema, 2026-11-19 16:29 UTC.</p>
+<p>P-4. Every customer belongs to a client: customer.tenant_id = client.client_id matches 5,000 of 5,000 customers, and all 20 clients have customers. Counted 2026-11-19 16:30 UTC.</p>
+<p>P-5. Every invoice belongs to a customer: invoice (tenant_id, customer_id) = customer (tenant_id, customer_id) matches 20,000 of 20,000 invoices, and all 5,000 customers have invoices. Counted 2026-11-19 16:30 UTC.</p>
+<p>P-6. SOLUTION NEEDED. The reconciliation's paths, first round, by the reverse use of the Permutation Coverage Method (testing methodology, knowledge 2 item 83; Ray, 2026-11-19, answer 1y). Grain: one subscriber, one product, one month. Dimensions: each of the four documents (license, entitlement, usage report, invoice item) present or absent, and, where both sides are present, licensed against reported units, licensed against entitled units, and entitled against reported units, each less, equal or greater. Brute force: 80 combinations. Collapsed by which of the five checks fire (reported beyond licensed, entitled beyond licensed, billed without entitlement, entitled without billing, entitled beyond reported): 30 outcomes, 12 of which depend on three rules no design decision states: whether a usage report with no license is reported beyond licensed; whether an entitlement with no license is entitled beyond licensed; whether an entitlement with no usage report is entitled beyond reported. If an absent document counts as zero units, the 80 combinations collapse to 14 paths: no check fires; reported beyond licensed alone; with entitled beyond licensed; with that and entitled without billing; with those and entitled beyond reported; reported and entitled beyond licensed with entitled beyond reported; reported beyond licensed with billed without entitlement; with entitled without billing; entitled beyond licensed, entitled without billing and entitled beyond reported; entitled beyond licensed with entitled beyond reported; billed without entitlement alone; entitled without billing alone; with entitled beyond reported; entitled beyond reported alone. Not yet enumerated, for the second round: the join keys that do not match (Subscriber_Id__c, product_code), restated usage reports, the three changes after the close (design sketch, section 8.6), and each data provider seeing only its own rows. RESOLVED, Ray Serrano, 2026-11-19 (answer 1y): an absent document counts as zero units in every check (design document, item 806, decision D-12), which gives the 14 paths above. The second round's dimensions remain to be enumerated.</p>
+<p>P-7. Phase one's rows, path by path (design decisions D-12 to D-15; Ray, 2026-11-19, answer 1y). One data provider, client 3 ("Client 3"), chosen because clients 1 and 2 carry the earlier demo's edits; one month, October 2026, the month of the design document's worked example; its first 14 subscribers by customer_id, read from DATABP_SRC on 2026-11-19 at 18:01 UTC; two products, created for phase one: the equities feed (product_code EQUITIES, 50 dollars a unit) and the options feed (OPTIONS, 40 dollars a unit), the worked example's prices. Each path's units are chosen so that exactly its checks fire, with an absent document counted as zero; billed units equal licensed units, or reported units where no license exists. The expected checks and dollars were computed from the units, not typed, and all 14 match the paths of P-6 (2026-11-19 18:02 UTC). Dollars: unbilled is units reported beyond licensed times the unit price; at risk is units entitled beyond reported times the unit price (design document, section 6.3).</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Subscriber</th>
+<th>Product</th>
+<th>Licensed</th>
+<th>Entitled</th>
+<th>Reported</th>
+<th>Billed</th>
+<th>Checks that fire</th>
+<th>Dollars</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PA1</td>
+<td>3</td>
+<td>equities</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>none</td>
+<td>none</td>
+</tr>
+<tr>
+<td>PA2</td>
+<td>23</td>
+<td>options</td>
+<td>10</td>
+<td>10</td>
+<td>12</td>
+<td>10</td>
+<td>reported beyond licensed</td>
+<td>unbilled 80</td>
+</tr>
+<tr>
+<td>PA3</td>
+<td>43</td>
+<td>equities</td>
+<td>absent</td>
+<td>12</td>
+<td>12</td>
+<td>12</td>
+<td>reported beyond licensed, entitled beyond licensed</td>
+<td>unbilled 600</td>
+</tr>
+<tr>
+<td>PA4</td>
+<td>63</td>
+<td>options</td>
+<td>10</td>
+<td>12</td>
+<td>12</td>
+<td>absent</td>
+<td>reported beyond licensed, entitled beyond licensed, entitled without billing</td>
+<td>unbilled 80</td>
+</tr>
+<tr>
+<td>PA5</td>
+<td>83</td>
+<td>equities</td>
+<td>10</td>
+<td>14</td>
+<td>12</td>
+<td>absent</td>
+<td>reported beyond licensed, entitled beyond licensed, entitled without billing, entitled beyond reported</td>
+<td>unbilled 100, at risk 100</td>
+</tr>
+<tr>
+<td>PA6</td>
+<td>103</td>
+<td>options</td>
+<td>10</td>
+<td>14</td>
+<td>12</td>
+<td>10</td>
+<td>reported beyond licensed, entitled beyond licensed, entitled beyond reported</td>
+<td>unbilled 80, at risk 80</td>
+</tr>
+<tr>
+<td>PA7</td>
+<td>123</td>
+<td>equities</td>
+<td>10</td>
+<td>absent</td>
+<td>12</td>
+<td>10</td>
+<td>reported beyond licensed, billed without entitlement</td>
+<td>unbilled 100</td>
+</tr>
+<tr>
+<td>PA8</td>
+<td>143</td>
+<td>options</td>
+<td>10</td>
+<td>10</td>
+<td>12</td>
+<td>absent</td>
+<td>reported beyond licensed, entitled without billing</td>
+<td>unbilled 80</td>
+</tr>
+<tr>
+<td>PA9</td>
+<td>163</td>
+<td>equities</td>
+<td>10</td>
+<td>12</td>
+<td>absent</td>
+<td>absent</td>
+<td>entitled beyond licensed, entitled without billing, entitled beyond reported</td>
+<td>at risk 600</td>
+</tr>
+<tr>
+<td>PA10</td>
+<td>183</td>
+<td>options</td>
+<td>10</td>
+<td>12</td>
+<td>10</td>
+<td>10</td>
+<td>entitled beyond licensed, entitled beyond reported</td>
+<td>at risk 80</td>
+</tr>
+<tr>
+<td>PA11</td>
+<td>203</td>
+<td>equities</td>
+<td>10</td>
+<td>absent</td>
+<td>10</td>
+<td>10</td>
+<td>billed without entitlement</td>
+<td>none</td>
+</tr>
+<tr>
+<td>PA12</td>
+<td>223</td>
+<td>options</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>absent</td>
+<td>entitled without billing</td>
+<td>none</td>
+</tr>
+<tr>
+<td>PA13</td>
+<td>243</td>
+<td>equities</td>
+<td>10</td>
+<td>10</td>
+<td>absent</td>
+<td>absent</td>
+<td>entitled without billing, entitled beyond reported</td>
+<td>at risk 500</td>
+</tr>
+<tr>
+<td>PA14</td>
+<td>263</td>
+<td>options</td>
+<td>10</td>
+<td>10</td>
+<td>8</td>
+<td>10</td>
+<td>entitled beyond reported</td>
+<td>at risk 80</td>
+</tr>
+</tbody>
+</table>
+<p>Rows, 97 in all: product 2; Product2 2 (ProductCode EQUITIES and OPTIONS, Tenant__c 3); Account 14, one per subscriber (Subscriber_Id__c the customer_id, Tenant__c 3); Opportunity 13, one per path with a license, StageName Closed Won (the won stage as a third-party description of Salesforce's opportunity stages names it, CData; stage names are each Salesforce organization's own), CloseDate 2026-09-30, ContractId its Contract; OpportunityLineItem 13 (Quantity the licensed units, UnitPrice the product's price); Contract 13 (StartDate 2026-10-01, ContractTerm 12, EndDate 2027-09-30, Status Activated, one of the Contract status values in Salesforce's object reference); entitlement 12 (start 2026-10-01, end 2027-09-30); usage_declaration 12 (usage_month 2026-10, declared_at 2026-11-05); invoice 8 and invoice_item 8 (invoice_date 2026-10-31, status open, a value today's invoices use; invoice_id from 100001, above data provider 3's highest, 19,983; amount the item's units times its price). Salesforce ids are 18-character ids from a fixed seed. The answer key holds the 14 rows of the table above, in databp-dbt beside the models (D-8, D-14).</p>
+<p>P-8. Every designed table has the grain the design gives it: 0 duplicates on each key, and on each business key the reconciliation groups by (sections 2.1.1 to 2.1.9). Counted in Snowflake, 2026-11-19 19:28 UTC.</p>
+<p>P-9. Every designed join matches all its rows, at most one row per row, so each hop is many-to-one or one-to-one as drawn. Counted in Snowflake, 19:29 UTC, except joins 3, 11 and 12, counted in SQL Server at 19:30 UTC (see P-10).</p>
+<table>
+<thead>
+<tr>
+<th>Join</th>
+<th>Rows matched</th>
+<th>Cardinality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3 entitlement to customer</td>
+<td>12 of 12</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>4 entitlement to product</td>
+<td>12 of 12</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>5 invoice_item to invoice</td>
+<td>8 of 8</td>
+<td>one to one in phase one</td>
+</tr>
+<tr>
+<td>6 invoice_item to product</td>
+<td>8 of 8</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>7 Opportunity to Account</td>
+<td>13 of 13</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>8 OpportunityLineItem to Opportunity</td>
+<td>13 of 13</td>
+<td>one to one in phase one</td>
+</tr>
+<tr>
+<td>9 OpportunityLineItem to Product2</td>
+<td>13 of 13</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>10 Contract to Account</td>
+<td>13 of 13</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>11 Account to customer</td>
+<td>14 of 14</td>
+<td>one to one</td>
+</tr>
+<tr>
+<td>12 usage_declaration to customer</td>
+<td>12 of 12</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>13 usage_declaration to Product2</td>
+<td>12 of 12</td>
+<td>many to one</td>
+</tr>
+<tr>
+<td>14 Opportunity to Contract</td>
+<td>13 of 13; 13 of 13 Contracts have one</td>
+<td>one to one</td>
+</tr>
+<tr>
+<td>15 Product2 to product</td>
+<td>2 of 2</td>
+<td>one to one</td>
+</tr>
+</tbody>
+</table>
+<p>P-10. SOLUTION NEEDED. The connector does not copy <code>DATABP_SRC.dbo.customer</code> to Snowflake: its table list (tutorial step 26) names client, invoice and the nine designed tables, and Snowflake refuses <code>DATABP_LAB.DATABP_SRC_DBO.CUSTOMER</code> as not existing (19:28 UTC). Joins 3, 11 and 12 reach customer, the subscriber every check is reported for, so the pipeline cannot make them, and the subscriber's name is not available downstream. Proposed: add <code>DATABP_SRC.dbo.customer</code> to the connector's table list. RESOLVED, Ray Serrano, 2026-11-19 (answer 1y): <code>DATABP_SRC.dbo.customer</code> added to the connector's table list at about 19:35 UTC (tutorial step 26); <code>DATABP_LAB.DATABP_SRC_DBO.CUSTOMER</code> holds 5,000 rows, SQL Server's count, at 19:38:01 UTC, and joins 3, 11 and 12 measured on the Snowflake copies at 19:38:16 UTC match as in SQL Server: 12 of 12, 14 of 14 and 12 of 12, at most one row each.</p>
+<p>P-11. Columns that hold one value in phase one, by the phase's scope and not by a defect: every tenant column (one data provider); Contract StartDate, EndDate, ContractTerm and Status, Opportunity StageName and CloseDate, entitlement start_date and end_date, usage_month and declared_at (one month, one contract shape, one reporting date); OpportunityLineItem Quantity (every license 10 units); Account OwnerId (one owner); invoice_item item_id (one item per invoice). The reversal risk "single-value columns masquerading as dimensions" (Profiling standard, section 4) does not apply to them as source columns; it applies to any check or chart that relies on their variety, which phase one cannot show. Later phases vary them where the method's later rounds need it.</p>
+<p>P-12. The reconciliation works on the Snowflake copies: the generator's verify query, run on <code>DATABP_LAB</code>'s three schemas, derives 14 rows, and all 14 match the answer key's five checks (2026-11-19 19:30:17 UTC). The copies therefore carry every value the checks read, and the data reaches the warehouse unchanged for the reconciliation's purposes.</p>
+<p>P-13. Test contamination, named: client 1's name is "Client 1 (changed 2026-11-18)" and client 2's is "Client 2 (demo)", the earlier demo's edits that P-7 notes. The other 18 names follow "Client" and the client_id. Phase one uses client 3, so the app's figures are untouched; a demo showing the client list would show the two edits.</p>
+<p>P-14. The existing tables are generated, not real: customer_name is "Customer" and the customer_id on 5,000 of 5,000 rows, email is "c", the customer_id, "@example.com" on 5,000 of 5,000, invoice amounts are 1,000 values stepping by 1.37 from 10.00 to 1,374.52, about 20 invoices each, and invoice dates run 54 or 55 a day for a year with the four statuses in every month. Counted in Snowflake, 2026-11-19 19:40 UTC. No free-text column holds anything but its pattern.</p>
+<p>P-15. SOLUTION NEEDED. Two questions about what counts as billed. First, invoice status: void appears on 5,000 invoices, and the reconciliation's billing (the generator's verify query) counts every item whatever its invoice's status; a void invoice is presumably not billing, but no decision says so. Second, the 20,000 existing invoices have no items, so billing read from items ignores them; among them 5 are October 2026 invoices of data provider 3 for phase-one subscribers (invoice_id 23, 5123, 5143, 10243 and 15003, for subscribers 23, 123, 143, 243 and 3), all void. Phase one is unaffected either way, since its 8 invoices are open and itemized, and the 5 are void and carry no items. Proposed: billing counts the items of invoices whose status is not void, and an invoice with no items is not billing. RESOLVED, Ray Serrano, 2026-11-19 (answer 1y): billing counts only the items of invoices whose status is not void, and an invoice with no items is not billing (design document, item 806, decision D-16); invoice.status integrates (section 6.1).</p>
+<p>P-16. SOLUTION NEEDED. The app shows what changed since the last month-end close (design, D-2), which needs to know when a source row changed. Two places hold it: each source table's updated_at, and the connector's journal tables in Snowflake with its <code>_SNOWFLAKE_UPDATED_AT</code>. No decision names which the design reads, so the updated_at columns are deferred until it does (section 6.2). RESOLVED, Ray Serrano, 2026-11-19 (answer 3b): change times are read from each source table's updated_at (design document, item 806, decision D-17); the five updated_at columns integrate (section 6.1).</p>
+<h2>4. Cleansing advice for source administration</h2>
+<p>The source owner is DataBP's own demo team, since the sources are generated.</p>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Impact</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clients 1 and 2 carry demo edits in their names (P-13)</td>
+<td>A client list shown in the demo reads "(changed 2026-11-18)" and "(demo)"</td>
+<td>Restore both names, or keep them and say why when shown</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Integration actions</h2>
+<p>Integrate now, as the design's source-to-target map (design, section 6.1) places them: the 63 columns of section 6.1 below. Not loaded: the 7 columns of section 6.3. Each verdict's check is input to the design's testing plan (design, section 8, checks from the profile).</p>
+<h2>6. Verdict summary</h2>
+<p>Each verdict names its check. For a profile of the platform's own surfaces, the verdicts read as fitness: fit, fit under named conditions, unfit. Here every source is designed, so Integrate reads as fit for the reconciliation.</p>
+<h3>6.1 Integrate</h3>
+<p>63 columns; each row of the appendix marked Integrate names its concept and check. By table:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Columns, and the concept they integrate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>client</td>
+<td>client_id, client_name: the data provider</td>
+</tr>
+<tr>
+<td>customer</td>
+<td>tenant_id, customer_id, customer_name, updated_at: the subscriber under its data provider, and when it last changed</td>
+</tr>
+<tr>
+<td>invoice</td>
+<td>tenant_id, invoice_id, customer_id, amount, invoice_date, status, updated_at: the invoice header, whether it bills (not void, D-16), and when it last changed</td>
+</tr>
+<tr>
+<td>product</td>
+<td>tenant_id, product_id, product_code, product_name, unit_price, updated_at: the data product, and when it last changed</td>
+</tr>
+<tr>
+<td>entitlement</td>
+<td>tenant_id, entitlement_id, customer_id, product_id, units, start_date, end_date, updated_at: entitled units per period, and when they last changed</td>
+</tr>
+<tr>
+<td>invoice_item</td>
+<td>tenant_id, invoice_id, item_id, product_id, units, unit_price, amount, updated_at: billed units, and when they last changed</td>
+</tr>
+<tr>
+<td>Account</td>
+<td>Id, Tenant__c, Subscriber_Id__c: the subscriber in Salesforce, joined to the platform</td>
+</tr>
+<tr>
+<td>Product2</td>
+<td>Id, ProductCode, Tenant__c: the product in Salesforce, joined by code</td>
+</tr>
+<tr>
+<td>Contract</td>
+<td>Id, AccountId, StartDate, EndDate, Status, Tenant__c: the license and its period</td>
+</tr>
+<tr>
+<td>Opportunity</td>
+<td>Id, ContractId, StageName, Tenant__c: the won Opportunity behind a license</td>
+</tr>
+<tr>
+<td>OpportunityLineItem</td>
+<td>Id, OpportunityId, Product2Id, Quantity, UnitPrice: licensed units per product</td>
+</tr>
+<tr>
+<td>usage_declaration</td>
+<td>tenant_id, declaration_id, customer_id, product_code, usage_month, declared_units, declared_at: reported units per month</td>
+</tr>
+</tbody>
+</table>
+<h3>6.2 Defer</h3>
+<p>None: P-15 and P-16 are resolved (design decisions D-16 and D-17), and no column waits on a condition.</p>
+<h3>6.3 Reject</h3>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>customer.email</td>
+<td>Not used by the app; the design's map does not carry it (design, section 6.1)</td>
+</tr>
+<tr>
+<td>Account.Name</td>
+<td>Structural duplicate of customer.customer_name, equal on 14 of 14 (section 2.2)</td>
+</tr>
+<tr>
+<td>Account.OwnerId</td>
+<td>Not used by the app; one value in phase one</td>
+</tr>
+<tr>
+<td>Product2.Name</td>
+<td>Structural duplicate of product.product_name, equal on 2 of 2 (section 2.2)</td>
+</tr>
+<tr>
+<td>Contract.ContractTerm</td>
+<td>Not used; the license period is StartDate to EndDate</td>
+</tr>
+<tr>
+<td>Opportunity.AccountId</td>
+<td>Structural duplicate of its Contract's AccountId, equal on 13 of 13 (section 2.2)</td>
+</tr>
+<tr>
+<td>Opportunity.CloseDate</td>
+<td>Not used by the reconciliation</td>
+</tr>
+</tbody>
+</table>
+<h2>Appendix — Column inventory</h2>
+<p>Populated and distinct counts from Snowflake, 2026-11-19 19:27 to 19:40 UTC. Discipline tier applies to controlled columns only; NA elsewhere.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Column</th>
+<th>Populated</th>
+<th>%</th>
+<th>Distinct</th>
+<th>Field type</th>
+<th>Discipline tier</th>
+<th>Reversal risks</th>
+<th>Verdict</th>
+<th>Reason</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>client.client_id</td>
+<td>20</td>
+<td>100</td>
+<td>20</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The data provider's identifier</td>
+<td>grain-unique</td>
+</tr>
+<tr>
+<td>2</td>
+<td>client.client_name</td>
+<td>20</td>
+<td>100</td>
+<td>20</td>
+<td>Label</td>
+<td>NA</td>
+<td>Test contamination, P-13</td>
+<td>Integrate</td>
+<td>The data provider's name; clients 1 and 2 carry demo edits, outside phase one</td>
+<td>not-null</td>
+</tr>
+<tr>
+<td>3</td>
+<td>customer.tenant_id</td>
+<td>5,000</td>
+<td>100</td>
+<td>20</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The subscriber's data provider</td>
+<td>relationship to client, join 1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>customer.customer_id</td>
+<td>5,000</td>
+<td>100</td>
+<td>5,000</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The subscriber's identifier</td>
+<td>grain-unique with tenant_id</td>
+</tr>
+<tr>
+<td>5</td>
+<td>customer.customer_name</td>
+<td>5,000</td>
+<td>100</td>
+<td>5,000</td>
+<td>Label</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The subscriber's name the app shows</td>
+<td>not-null</td>
+</tr>
+<tr>
+<td>6</td>
+<td>customer.email</td>
+<td>5,000</td>
+<td>100</td>
+<td>5,000</td>
+<td>Contact</td>
+<td>NA</td>
+<td>None</td>
+<td>Reject</td>
+<td>Not used by the app; not in the design's map</td>
+<td>None: not loaded</td>
+</tr>
+<tr>
+<td>7</td>
+<td>customer.updated_at</td>
+<td>5,000</td>
+<td>100</td>
+<td>5,000</td>
+<td>Timestamp</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>When the source last changed the row (D-17)</td>
+<td>null-slice bound: 0 nulls</td>
+</tr>
+<tr>
+<td>8</td>
+<td>invoice.tenant_id</td>
+<td>20,008</td>
+<td>100</td>
+<td>20</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The invoice's data provider</td>
+<td>relationship to client</td>
+</tr>
+<tr>
+<td>9</td>
+<td>invoice.invoice_id</td>
+<td>20,008</td>
+<td>100</td>
+<td>20,008</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The invoice's identifier</td>
+<td>grain-unique with tenant_id</td>
+</tr>
+<tr>
+<td>10</td>
+<td>invoice.customer_id</td>
+<td>20,008</td>
+<td>100</td>
+<td>5,000</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The invoiced subscriber</td>
+<td>relationship to customer, join 2</td>
+</tr>
+<tr>
+<td>11</td>
+<td>invoice.amount</td>
+<td>20,008</td>
+<td>100</td>
+<td>1,000</td>
+<td>Numeric, dollars</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The invoice total</td>
+<td>equals the sum of its items where items exist</td>
+</tr>
+<tr>
+<td>12</td>
+<td>invoice.invoice_date</td>
+<td>20,008</td>
+<td>100</td>
+<td>365</td>
+<td>Date</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The billing date, which places an item in its month</td>
+<td>not-null</td>
+</tr>
+<tr>
+<td>13</td>
+<td>invoice.status</td>
+<td>20,008</td>
+<td>100</td>
+<td>4</td>
+<td>Controlled discrete</td>
+<td>Clean</td>
+<td>None</td>
+<td>Integrate</td>
+<td>Whether the invoice bills: void does not (P-15, D-16)</td>
+<td>vocabulary-exact: open, overdue, paid, void</td>
+</tr>
+<tr>
+<td>14</td>
+<td>invoice.updated_at</td>
+<td>20,008</td>
+<td>100</td>
+<td>20,008</td>
+<td>Timestamp</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>When the source last changed the row (D-17)</td>
+<td>null-slice bound: 0 nulls</td>
+</tr>
+<tr>
+<td>15</td>
+<td>product.tenant_id</td>
+<td>2</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The product's data provider</td>
+<td>relationship to client</td>
+</tr>
+<tr>
+<td>16</td>
+<td>product.product_id</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The product's identifier</td>
+<td>grain-unique with tenant_id</td>
+</tr>
+<tr>
+<td>17</td>
+<td>product.product_code</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Controlled discrete</td>
+<td>Clean</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The code shared with Salesforce and the usage report</td>
+<td>unique per data provider; matched by Product2, join 15</td>
+</tr>
+<tr>
+<td>18</td>
+<td>product.product_name</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Label</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The product's name the app shows</td>
+<td>not-null</td>
+</tr>
+<tr>
+<td>19</td>
+<td>product.unit_price</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Numeric, dollars</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The price that turns units into dollars</td>
+<td>greater than zero</td>
+</tr>
+<tr>
+<td>20</td>
+<td>product.updated_at</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Timestamp</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>When the source last changed the row (D-17)</td>
+<td>null-slice bound: 0 nulls</td>
+</tr>
+<tr>
+<td>21</td>
+<td>entitlement.tenant_id</td>
+<td>12</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value in phase one, P-11</td>
+<td>Integrate</td>
+<td>The entitlement's data provider</td>
+<td>relationship to client</td>
+</tr>
+<tr>
+<td>22</td>
+<td>entitlement.entitlement_id</td>
+<td>12</td>
+<td>100</td>
+<td>12</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The entitlement's identifier</td>
+<td>grain-unique with tenant_id</td>
+</tr>
+<tr>
+<td>23</td>
+<td>entitlement.customer_id</td>
+<td>12</td>
+<td>100</td>
+<td>12</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The entitled subscriber</td>
+<td>relationship to customer, join 3</td>
+</tr>
+<tr>
+<td>24</td>
+<td>entitlement.product_id</td>
+<td>12</td>
+<td>100</td>
+<td>2</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The entitled product</td>
+<td>relationship to product, join 4</td>
+</tr>
+<tr>
+<td>25</td>
+<td>entitlement.units</td>
+<td>12</td>
+<td>100</td>
+<td>3</td>
+<td>Numeric count</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>Entitled units</td>
+<td>greater than zero</td>
+</tr>
+<tr>
+<td>26</td>
+<td>entitlement.start_date</td>
+<td>12</td>
+<td>100</td>
+<td>1</td>
+<td>Date</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>Start of the entitled period</td>
+<td>not after end_date</td>
+</tr>
+<tr>
+<td>27</td>
+<td>entitlement.end_date</td>
+<td>12</td>
+<td>100</td>
+<td>1</td>
+<td>Date</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>End of the entitled period</td>
+<td>not before start_date</td>
+</tr>
+<tr>
+<td>28</td>
+<td>entitlement.updated_at</td>
+<td>12</td>
+<td>100</td>
+<td>12</td>
+<td>Timestamp</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>When the source last changed the row (D-17)</td>
+<td>null-slice bound: 0 nulls</td>
+</tr>
+<tr>
+<td>29</td>
+<td>invoice_item.tenant_id</td>
+<td>8</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The item's data provider</td>
+<td>relationship to client</td>
+</tr>
+<tr>
+<td>30</td>
+<td>invoice_item.invoice_id</td>
+<td>8</td>
+<td>100</td>
+<td>8</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The item's invoice</td>
+<td>relationship to invoice, join 5</td>
+</tr>
+<tr>
+<td>31</td>
+<td>invoice_item.item_id</td>
+<td>8</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The item's number within its invoice</td>
+<td>grain-unique with tenant_id and invoice_id</td>
+</tr>
+<tr>
+<td>32</td>
+<td>invoice_item.product_id</td>
+<td>8</td>
+<td>100</td>
+<td>2</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The billed product</td>
+<td>relationship to product, join 6</td>
+</tr>
+<tr>
+<td>33</td>
+<td>invoice_item.units</td>
+<td>8</td>
+<td>100</td>
+<td>2</td>
+<td>Numeric count</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>Billed units</td>
+<td>greater than zero</td>
+</tr>
+<tr>
+<td>34</td>
+<td>invoice_item.unit_price</td>
+<td>8</td>
+<td>100</td>
+<td>2</td>
+<td>Numeric, dollars</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The billed price</td>
+<td>greater than zero</td>
+</tr>
+<tr>
+<td>35</td>
+<td>invoice_item.amount</td>
+<td>8</td>
+<td>100</td>
+<td>3</td>
+<td>Numeric, dollars</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The billed amount</td>
+<td>equals units times unit_price</td>
+</tr>
+<tr>
+<td>36</td>
+<td>invoice_item.updated_at</td>
+<td>8</td>
+<td>100</td>
+<td>8</td>
+<td>Timestamp</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>When the source last changed the row (D-17)</td>
+<td>null-slice bound: 0 nulls</td>
+</tr>
+<tr>
+<td>37</td>
+<td>Account.Id</td>
+<td>14</td>
+<td>100</td>
+<td>14</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The subscriber's Salesforce identifier</td>
+<td>grain-unique</td>
+</tr>
+<tr>
+<td>38</td>
+<td>Account.Name</td>
+<td>14</td>
+<td>100</td>
+<td>14</td>
+<td>Label</td>
+<td>NA</td>
+<td>Same concept, different form</td>
+<td>Reject</td>
+<td>Duplicate of customer.customer_name, 14 of 14 equal</td>
+<td>None: not loaded</td>
+</tr>
+<tr>
+<td>39</td>
+<td>Account.OwnerId</td>
+<td>14</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Reject</td>
+<td>Not used by the app</td>
+<td>None: not loaded</td>
+</tr>
+<tr>
+<td>40</td>
+<td>Account.Tenant__c</td>
+<td>14</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The subscriber's data provider in Salesforce</td>
+<td>relationship to customer, join 11</td>
+</tr>
+<tr>
+<td>41</td>
+<td>Account.Subscriber_Id__c</td>
+<td>14</td>
+<td>100</td>
+<td>14</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The platform's subscriber, carried in Salesforce</td>
+<td>unique per data provider; join 11</td>
+</tr>
+<tr>
+<td>42</td>
+<td>Product2.Id</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The product's Salesforce identifier</td>
+<td>grain-unique</td>
+</tr>
+<tr>
+<td>43</td>
+<td>Product2.Name</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Label</td>
+<td>NA</td>
+<td>Same concept, different form</td>
+<td>Reject</td>
+<td>Duplicate of product.product_name, 2 of 2 equal</td>
+<td>None: not loaded</td>
+</tr>
+<tr>
+<td>44</td>
+<td>Product2.ProductCode</td>
+<td>2</td>
+<td>100</td>
+<td>2</td>
+<td>Controlled discrete</td>
+<td>Clean</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The product code that joins Salesforce to the platform</td>
+<td>relationship to product, join 15</td>
+</tr>
+<tr>
+<td>45</td>
+<td>Product2.Tenant__c</td>
+<td>2</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The product's data provider in Salesforce</td>
+<td>relationship to client</td>
+</tr>
+<tr>
+<td>46</td>
+<td>Contract.Id</td>
+<td>13</td>
+<td>100</td>
+<td>13</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The license's identifier</td>
+<td>grain-unique</td>
+</tr>
+<tr>
+<td>47</td>
+<td>Contract.AccountId</td>
+<td>13</td>
+<td>100</td>
+<td>13</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The licensed subscriber</td>
+<td>relationship to Account, join 10</td>
+</tr>
+<tr>
+<td>48</td>
+<td>Contract.StartDate</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Date</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>Start of the license</td>
+<td>not after EndDate</td>
+</tr>
+<tr>
+<td>49</td>
+<td>Contract.EndDate</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Date</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>End of the license</td>
+<td>not before StartDate</td>
+</tr>
+<tr>
+<td>50</td>
+<td>Contract.ContractTerm</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Numeric, months</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Reject</td>
+<td>Not used; the period is StartDate to EndDate</td>
+<td>None: not loaded</td>
+</tr>
+<tr>
+<td>51</td>
+<td>Contract.Status</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Controlled discrete</td>
+<td>Clean</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>Whether the license is in force</td>
+<td>vocabulary-exact</td>
+</tr>
+<tr>
+<td>52</td>
+<td>Contract.Tenant__c</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The license's data provider</td>
+<td>equals its Account's Tenant__c</td>
+</tr>
+<tr>
+<td>53</td>
+<td>Opportunity.Id</td>
+<td>13</td>
+<td>100</td>
+<td>13</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The won Opportunity's identifier</td>
+<td>grain-unique</td>
+</tr>
+<tr>
+<td>54</td>
+<td>Opportunity.AccountId</td>
+<td>13</td>
+<td>100</td>
+<td>13</td>
+<td>Key</td>
+<td>NA</td>
+<td>Same concept, different form</td>
+<td>Reject</td>
+<td>Duplicate of its Contract's AccountId, 13 of 13 equal</td>
+<td>None: not loaded</td>
+</tr>
+<tr>
+<td>55</td>
+<td>Opportunity.ContractId</td>
+<td>13</td>
+<td>100</td>
+<td>13</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The license it belongs to</td>
+<td>relationship to Contract, join 14</td>
+</tr>
+<tr>
+<td>56</td>
+<td>Opportunity.StageName</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Controlled discrete</td>
+<td>Clean</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>Whether the Opportunity is won</td>
+<td>vocabulary-exact</td>
+</tr>
+<tr>
+<td>57</td>
+<td>Opportunity.CloseDate</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Date</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Reject</td>
+<td>Not used by the reconciliation</td>
+<td>None: not loaded</td>
+</tr>
+<tr>
+<td>58</td>
+<td>Opportunity.Tenant__c</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The Opportunity's data provider</td>
+<td>equals its Contract's Tenant__c</td>
+</tr>
+<tr>
+<td>59</td>
+<td>OpportunityLineItem.Id</td>
+<td>13</td>
+<td>100</td>
+<td>13</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The line item's identifier</td>
+<td>grain-unique</td>
+</tr>
+<tr>
+<td>60</td>
+<td>OpportunityLineItem.OpportunityId</td>
+<td>13</td>
+<td>100</td>
+<td>13</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The line item's Opportunity</td>
+<td>relationship to Opportunity, join 8</td>
+</tr>
+<tr>
+<td>61</td>
+<td>OpportunityLineItem.Product2Id</td>
+<td>13</td>
+<td>100</td>
+<td>2</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The licensed product</td>
+<td>relationship to Product2, join 9</td>
+</tr>
+<tr>
+<td>62</td>
+<td>OpportunityLineItem.Quantity</td>
+<td>13</td>
+<td>100</td>
+<td>1</td>
+<td>Numeric count</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>Licensed units</td>
+<td>greater than zero</td>
+</tr>
+<tr>
+<td>63</td>
+<td>OpportunityLineItem.UnitPrice</td>
+<td>13</td>
+<td>100</td>
+<td>2</td>
+<td>Numeric, dollars</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The licensed price</td>
+<td>greater than zero</td>
+</tr>
+<tr>
+<td>64</td>
+<td>usage_declaration.tenant_id</td>
+<td>12</td>
+<td>100</td>
+<td>1</td>
+<td>Key</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The report's data provider</td>
+<td>relationship to client</td>
+</tr>
+<tr>
+<td>65</td>
+<td>usage_declaration.declaration_id</td>
+<td>12</td>
+<td>100</td>
+<td>12</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The report's identifier</td>
+<td>grain-unique with tenant_id</td>
+</tr>
+<tr>
+<td>66</td>
+<td>usage_declaration.customer_id</td>
+<td>12</td>
+<td>100</td>
+<td>12</td>
+<td>Key</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The reporting subscriber</td>
+<td>relationship to customer, join 12</td>
+</tr>
+<tr>
+<td>67</td>
+<td>usage_declaration.product_code</td>
+<td>12</td>
+<td>100</td>
+<td>2</td>
+<td>Controlled discrete</td>
+<td>Clean</td>
+<td>None</td>
+<td>Integrate</td>
+<td>The reported product</td>
+<td>relationship to Product2, join 13</td>
+</tr>
+<tr>
+<td>68</td>
+<td>usage_declaration.usage_month</td>
+<td>12</td>
+<td>100</td>
+<td>1</td>
+<td>Date</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>The month reported</td>
+<td>first day of a month</td>
+</tr>
+<tr>
+<td>69</td>
+<td>usage_declaration.declared_units</td>
+<td>12</td>
+<td>100</td>
+<td>3</td>
+<td>Numeric count</td>
+<td>NA</td>
+<td>None</td>
+<td>Integrate</td>
+<td>Reported units</td>
+<td>zero or more</td>
+</tr>
+<tr>
+<td>70</td>
+<td>usage_declaration.declared_at</td>
+<td>12</td>
+<td>100</td>
+<td>1</td>
+<td>Timestamp</td>
+<td>NA</td>
+<td>Single value, P-11</td>
+<td>Integrate</td>
+<td>When reported; the latest report counts</td>
+<td>not-null</td>
+</tr>
+</tbody>
+</table>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>NOT BUILT.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

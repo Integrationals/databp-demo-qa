@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The build log · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / The build log</div><h1>The build log</h1><p class="lead">How the reconciliation POC was built, step by step with its commands, and how it is proven.</p></div></section>
+<main class="doc dressed">
+<nav class="sect pillrow" aria-label="On this page"><div class="in"><ul class="pills"><li><a href="#1-the-question-and-what-the-app-shows">1. The question, and what the app shows</a></li><li><a href="#2-the-platform-layer-by-layer">2. The platform, layer by layer</a></li><li><a href="#3-the-build-step-by-step">3. The build, step by step</a></li><li><a href="#4-source-data-designed-backwards-from-the-app">4. Source data, designed backwards from the app</a></li><li><a href="#5-decisions-that-shaped-it">5. Decisions that shaped it</a></li><li><a href="#6-how-it-is-proven">6. How it is proven</a></li><li><a href="#7-how-we-deliver">7. How we deliver</a></li><li><a href="#8-what-comes-next">8. What comes next</a></li></ul></div></nav><section class="sect"><div class="in"><!-- Pilot knowledge 111 item 820, version 14: The build log: how the DataBP reconciliation POC was built --><p>This POC answers one question for a data provider on DataBP: do my records about each subscriber agree, and what do the disagreements cost? It runs end to end on a production-shaped platform: three source systems in SQL Server, change data capture into Snowflake, dbt models and governed metrics, a Hex app and an analyst agent, Morgan, that answers in plain words. Every figure on the site comes from one place, the dbt Semantic Layer, and every figure is checked against an answer key computed independently of the platform.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>What</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Twelve months of reconciliation, 18 subscriber paths a month</td>
+<td>216 of 216 rows equal the answer key</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Source to Snowflake, by change data capture</td>
+<td>25,705 rows on each side, 0 differences</td>
+</tr>
+<tr>
+<td>3</td>
+<td>dbt project, development and Production</td>
+<td>137 of 137 models, seeds and tests pass</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Governed metrics</td>
+<td>17 metrics, read the same through the Semantic Layer, Hex and Morgan</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Delivery</td>
+<td>Each change from a design decision, a test plan and a reviewed pull request</td>
+</tr>
+</tbody>
+</table>
+</div></section><section class="sect sky"><div class="in"><h2 id="1-the-question-and-what-the-app-shows">1. The question, and what the app shows</h2>
+<p>A data provider licenses its feeds to subscribers. Four documents describe each subscriber, product and month, and they come from three systems: the license (Salesforce), the entitlement and the invoice (the DataBP platform), and the usage report the subscriber declares (usage reporting). The app runs five checks on them:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Check</th>
+<th>What it catches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Reported beyond licensed</td>
+<td>Usage the license does not cover: revenue not billed</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Entitled beyond licensed</td>
+<td>Access granted past the contract</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Billed without entitlement</td>
+<td>An invoice with no entitlement behind it</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Entitled without billing</td>
+<td>Access granted and never invoiced</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Entitled beyond reported</td>
+<td>Access unused or unreported: revenue at risk</td>
+</tr>
+</tbody>
+</table>
+<p>Two dollar figures follow from the units: unbilled revenue (units reported beyond licensed times the unit price) and revenue at risk (units entitled beyond reported times the unit price). The app shows one subscriber's case step by step, the month's totals, and who and where, with a month picker, hover and click on every indicator, and the formula behind every dollar.</p>
+</div></section><section class="sect "><div class="in"><h2 id="2-the-platform-layer-by-layer">2. The platform, layer by layer</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Layer</th>
+<th>What we built</th>
+<th>How we know it works</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Sources</td>
+<td>SQL Server on AWS RDS: platform, Salesforce and usage-reporting databases, Change Tracking on every table</td>
+<td>Rows read back through a secured function; schema and joins profiled</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Ingestion</td>
+<td>Snowflake Openflow, bring-your-own-cloud, in our AWS VPC; SQL Server connector</td>
+<td>Row counts per table and tenant equal SQL Server's</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Bronze to silver</td>
+<td>dbt: 12 staging views; 7 silver tables keyed by hashed business keys</td>
+<td>Unit tests; silver counts reconcile with staging</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Gold</td>
+<td>dbt: dimensions and atomic facts; one reconciliation table</td>
+<td>Five check tests; the answer-key test</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Metrics</td>
+<td>dbt Semantic Layer in Production</td>
+<td>Each metric equals the answer key's total</td>
+</tr>
+<tr>
+<td>6</td>
+<td>App and agent</td>
+<td>Hex app; Morgan on AWS Lambda over the Semantic Layer</td>
+<td>Read live on the site, figure by figure</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sources.</strong> The three systems live in one SQL Server instance on AWS RDS, as three databases, so the integration problem is real: Salesforce knows subscribers and products by its own identifiers, the platform by its own, and usage reports by product codes. Every table has SQL Server Change Tracking on, which is what the ingestion reads.</p>
+<p><strong>Ingestion.</strong> Snowflake Openflow runs in bring-your-own-cloud mode: Snowflake keeps the control screens, while the machines that move data run in our AWS network, in two private subnets with no inbound path from the internet and outbound traffic through a NAT gateway. Openflow's agent builds its own Kubernetes cluster there; the runtime reads SQL Server from inside the network, so SQL Server is never exposed to Snowflake's addresses. The connector carries inserts, updates and deletes into DATABP_LAB in Snowflake, one schema per source database. A landing reconciliation compares every table's rows per tenant on both sides.</p>
+<p><strong>Transformation.</strong> The dbt project follows a medallion design. Bronze is the connector's copies, read through staging views that only rename, cast and carry the deleted flag. Silver holds one cleaned table per source document, each keyed by an md5 hash of its business key qualified by its issuer's namespace, so Salesforce's subscriber and the platform's subscriber land on the same key. Gold is the mart: dimensions for subscriber and product, atomic facts for licenses, entitlements, usage reports and invoice items, and one table per subscriber, product and month that carries each check's result. A full Universal Data Model integration is the production path; for a POC we chose the medallion layers and said so in the design.</p>
+<p><strong>Metrics.</strong> The dbt Semantic Layer defines the metrics once: units on each side, units beyond, the two dollar figures and the count of disagreements per check. The Hex app, Morgan and any other consumer ask the Semantic Layer, never the tables, so a number means the same thing everywhere.</p>
+<p><strong>App.</strong> The Hex app was built by Hex's own agent from SQL cells we wrote on the Semantic Layer; we kept the cells and checked every figure the agent placed. It is embedded on this site and re-queries the Semantic Layer when the month changes.</p>
+<p><strong>Any BI tool.</strong> We used Hex for convenience and quick access. Because every figure comes from the Semantic Layer, the dashboard is the only part tied to a BI tool. dbt's Semantic Layer connector for Tableau, published on Tableau Exchange, connects Tableau Desktop, Tableau Server and Tableau Cloud live to the same metrics, with the dbt host, the environment and a service token; a Tableau dashboard would show the same 17 metrics with the same definitions, Morgan would agree with it, and the aggregation stays the Semantic Layer's, not the workbook's. Sources, ingestion, models, metrics and Morgan stay exactly as they are.</p>
+<p><strong>Morgan.</strong> Morgan is an analyst agent: a conversation core with a guard, a persona and a route to the metrics, deployed as an AWS Lambda function that streams its answer. The route speaks to the Semantic Layer's API, lists the metrics, asks for them by dimension and month, and shows the query behind every figure under the answer. Persona and route are plugins, so the same service can run a different persona over a different source.</p>
+</div></section><section class="sect dots"><div class="in"><h2 id="3-the-build-step-by-step">3. The build, step by step</h2>
+<p>These are the steps in the order we took them, with the main command or screen for each, so the platform can be built again from this page; the build tutorial keeps every value. For readers who know Informatica PowerCenter: an Openflow runtime plays the part of an integration service instance, a connector the part of a mapping, and the connector's processors the part of its transformations.</p>
+<ol>
+<li>
+<p><strong>The AWS network.</strong> A VPC with two private subnets in two availability zones, a NAT gateway in a public subnet for outbound traffic only, and a security group for Openflow. Nothing in the private subnets is reachable from the internet.</p>
+</li>
+<li>
+<p><strong>The source, SQL Server on AWS RDS</strong>, in the same VPC, its port 1433 open to the two private subnets only. Three databases, one per source system, each with Change Tracking and snapshot isolation on, and Change Tracking on every table:</p>
+<div class="highlight"><pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">DATABP_SFDC</span><span class="p">;</span><span class="w">   </span><span class="c1">-- likewise DATABP_USAGE; DATABP_SRC holds the platform</span>
+<span class="k">ALTER</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">DATABP_SFDC</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">CHANGE_TRACKING</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="p">(</span><span class="n">CHANGE_RETENTION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="n">DAYS</span><span class="p">,</span><span class="w"> </span><span class="n">AUTO_CLEANUP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">ON</span><span class="p">);</span>
+<span class="k">ALTER</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">DATABP_SFDC</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">ALLOW_SNAPSHOT_ISOLATION</span><span class="w"> </span><span class="k">ON</span><span class="p">;</span>
+<span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">dbo</span><span class="p">.</span><span class="n">Contract</span><span class="w"> </span><span class="n">ENABLE</span><span class="w"> </span><span class="n">CHANGE_TRACKING</span><span class="w"> </span><span class="k">WITH</span><span class="w"> </span><span class="p">(</span><span class="n">TRACK_COLUMNS_UPDATED</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">OFF</span><span class="p">);</span><span class="w">   </span><span class="c1">-- each table</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>The Openflow deployment, in Snowflake.</strong> First, as ACCOUNTADMIN, the privilege that lets SYSADMIN create and own deployments, as Snowflake's setup guide for bring-your-own-cloud gives it for Openflow's current generation:</p>
+<div class="highlight"><pre><span></span><code><span class="n">USE</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">ACCOUNTADMIN</span><span class="p">;</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="n">OPENFLOW</span><span class="w"> </span><span class="n">DEPLOYMENT</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">ACCOUNT</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">SYSADMIN</span><span class="p">;</span>
+</code></pre></div>
+<p>Then, as SYSADMIN, the deployment itself, of type bring your own cloud, in our own VPC. We made it in Snowsight (Ingestion, Openflow, Deployments, Create); the same deployment in SQL, per Snowflake's reference for CREATE OPENFLOW DEPLOYMENT:</p>
+<div class="highlight"><pre><span></span><code><span class="n">USE</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">SYSADMIN</span><span class="p">;</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="n">OPENFLOW</span><span class="w"> </span><span class="n">DEPLOYMENT</span><span class="w"> </span><span class="n">DATABP_OPENFLOW</span>
+<span class="w">  </span><span class="n">DEPLOYMENT_TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BYOC</span>
+<span class="w">  </span><span class="n">VPC_TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'PROVIDED'</span><span class="p">;</span><span class="w">   </span><span class="c1">-- our own VPC; 'MANAGED' makes Snowflake build one</span>
+</code></pre></div>
+<p>No command returns the CloudFormation template: Snowflake offers it only as a download in the Openflow screen, once the deployment exists, and it is not retrievable over SQL. We downloaded it there. It comes with nearly every value already filled in. An excerpt of ours, its values masked:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">Parameters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">SnowflakeAccountURL</span><span class="p">:</span><span class="w">        </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">String</span><span class="p p-Indicator">,</span><span class="nt"> Default</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;filled in by Snowflake&gt;</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">SnowflakeOAuthClientID</span><span class="p">:</span><span class="w">     </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">String</span><span class="p p-Indicator">,</span><span class="nt"> Default</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;filled in by Snowflake&gt;</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">SnowflakeOAuthClientSecret</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">String</span><span class="p p-Indicator">,</span><span class="nt"> Default</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;filled in by Snowflake&gt;</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">ControlPlaneURL</span><span class="p">:</span><span class="w">            </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">String</span><span class="p p-Indicator">,</span><span class="nt"> Default</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;filled in by Snowflake&gt;</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">DataPlaneURL</span><span class="p">:</span><span class="w">               </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">String</span><span class="p p-Indicator">,</span><span class="nt"> Default</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;filled in by Snowflake&gt;</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">DeploymentId</span><span class="p">:</span><span class="w">               </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">String</span><span class="p p-Indicator">,</span><span class="nt"> Default</span><span class="p">:</span><span class="w"> </span><span class="nv">&lt;filled in by Snowflake&gt;</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="c1"># ... 20 more, each filled in by Snowflake or optional with a default</span>
+<span class="w">  </span><span class="nt">InfraVPC</span><span class="p">:</span><span class="w">             </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">EC2</span><span class="p p-Indicator">::</span><span class="nv">VPC</span><span class="p p-Indicator">::</span><span class="nv">Id</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w">             </span><span class="c1"># the cloud admin's choice</span>
+<span class="w">  </span><span class="nt">PrivateSubnet1</span><span class="p">:</span><span class="w">       </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">EC2</span><span class="p p-Indicator">::</span><span class="nv">Subnet</span><span class="p p-Indicator">::</span><span class="nv">Id</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w">          </span><span class="c1"># the cloud admin's choice</span>
+<span class="w">  </span><span class="nt">PrivateSubnet2</span><span class="p">:</span><span class="w">       </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">EC2</span><span class="p p-Indicator">::</span><span class="nv">Subnet</span><span class="p p-Indicator">::</span><span class="nv">Id</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w">          </span><span class="c1"># the cloud admin's choice</span>
+<span class="w">  </span><span class="nt">PrivateSecurityGroup</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">EC2</span><span class="p p-Indicator">::</span><span class="nv">SecurityGroup</span><span class="p p-Indicator">::</span><span class="nv">Id</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w">   </span><span class="c1"># the cloud admin's choice</span>
+<span class="nt">Resources</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">OpenflowAgentInstance</span><span class="p">:</span><span class="w">      </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">EC2</span><span class="p p-Indicator">::</span><span class="nv">Instance</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">OpenflowAgentRole</span><span class="p">:</span><span class="w">          </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">IAM</span><span class="p p-Indicator">::</span><span class="nv">Role</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">EC2InstanceProfile</span><span class="p">:</span><span class="w">         </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">IAM</span><span class="p p-Indicator">::</span><span class="nv">InstanceProfile</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">SnowflakeOAuthSecret</span><span class="p">:</span><span class="w">       </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">SecretsManager</span><span class="p p-Indicator">::</span><span class="nv">Secret</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">SnowflakeOAuthSecretPolicy</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">SecretsManager</span><span class="p p-Indicator">::</span><span class="nv">ResourcePolicy</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">TerraformStateBucket</span><span class="p">:</span><span class="w">       </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">S3</span><span class="p p-Indicator">::</span><span class="nv">Bucket</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">EC2InstanceConnectEndpoint</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> Type</span><span class="p">:</span><span class="w"> </span><span class="nv">AWS</span><span class="p p-Indicator">::</span><span class="nv">EC2</span><span class="p p-Indicator">::</span><span class="nv">InstanceConnectEndpoint</span><span class="w"> </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>Of the template's 30 parameters, the cloud admin supplies four, all from the network built in step 1. Snowflake writes the rest, including the sign-in between the agent and Snowflake.</p>
+</li>
+<li>
+<p><strong>The stack, in AWS.</strong> The template goes to CloudFormation with those four values:</p>
+<div class="highlight"><pre><span></span><code>aws cloudformation create-stack --stack-name databp-openflow \
+  --template-body file://databp-openflow.yaml \
+  --parameters ParameterKey=InfraVPC,ParameterValue=&lt;vpc&gt; \
+               ParameterKey=PrivateSubnet1,ParameterValue=&lt;private subnet a&gt; \
+               ParameterKey=PrivateSubnet2,ParameterValue=&lt;private subnet b&gt; \
+               ParameterKey=PrivateSecurityGroup,ParameterValue=&lt;security group&gt; \
+  --capabilities CAPABILITY_NAMED_IAM
+</code></pre></div>
+<p>The stack creates Openflow's agent, a small EC2 machine with its IAM role, its secret, and an S3 bucket the template names for Terraform state. The agent then builds a Kubernetes cluster (EKS) in the private subnets, with a management node and node groups that scale from zero for runtimes. The deployment turns ACTIVE in about an hour.</p>
+</li>
+<li>
+<p><strong>The runtime</strong>, the compute a connector runs on, from Openflow's form or in SQL:</p>
+<div class="highlight"><pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="n">OPENFLOW</span><span class="w"> </span><span class="n">RUNTIME</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">OPENFLOW</span><span class="p">.</span><span class="n">DATABP_RUNTIME</span><span class="w"> </span><span class="k">IN</span><span class="w"> </span><span class="n">DEPLOYMENT</span><span class="w"> </span><span class="ss">"DATABP_OPENFLOW"</span>
+<span class="w">  </span><span class="n">NODE_TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SMALL</span><span class="w"> </span><span class="n">MIN_NODES</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="n">MAX_NODES</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="n">EXECUTE_AS_ROLE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DATABP_LAB_EXEC_RL</span><span class="p">;</span>
+</code></pre></div>
+<p>On bring-your-own-cloud the runtime reaches SQL Server inside the VPC, so it needs no external access integration. A node starts in the runtime's node group within a minute.</p>
+</li>
+<li>
+<p><strong>The connector</strong>, from Openflow's connector library: Microsoft SQL Server CT, the Change Tracking connector, installed onto the runtime. It arrives as one process group of 60 processors in four groups: snapshot load, incremental load, metrics and staleness prevention. Its parameters, then Enable all controller services, then Start:</p>
+<div class="highlight"><pre><span></span><code>SQLServer Connection URL    jdbc:sqlserver://&lt;RDS endpoint&gt;:1433;encrypt=true;trustServerCertificate=true
+Username, Password          from the RDS-managed secret in AWS Secrets Manager, pasted by the engineer
+Query Interval              10 sec
+Destination Database        DATABP_LAB
+Destination Schema Pattern  ${source.database.name}_${source.schema.name}
+Authentication Strategy     SNOWFLAKE_MANAGED   (the runtime acts as its execute-as role)
+Included Table Names        DATABP_SRC.dbo.client,DATABP_SRC.dbo.customer,DATABP_SRC.dbo.invoice,...
+</code></pre></div>
+<p>The connector takes a snapshot of each named table, then polls Change Tracking every 10 seconds and merges each change into the landing table in Snowflake through a journal table, one schema per source database: DATABP_SRC_DBO, DATABP_SFDC_DBO, DATABP_USAGE_DBO. A change in SQL Server shows in Snowflake within one to four minutes.</p>
+</li>
+<li>
+<p><strong>Snowflake roles for reading and for dbt.</strong> A read role over the landing schemas, and a service user that signs in by key pair only:</p>
+<div class="highlight"><pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">DATABP_DBT_RL</span><span class="p">;</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="n">DATABP_DBT_SVC</span><span class="w"> </span><span class="k">TYPE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SERVICE</span><span class="w"> </span><span class="n">DEFAULT_ROLE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DATABP_DBT_RL</span><span class="w"> </span><span class="n">DEFAULT_WAREHOUSE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">COMPUTE_WH</span><span class="p">;</span>
+<span class="k">ALTER</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="n">DATABP_DBT_SVC</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">RSA_PUBLIC_KEY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'&lt;public key&gt;'</span><span class="p">;</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">DATABP_LAB_READ_RL</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">DATABP_DBT_RL</span><span class="p">;</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="k">SCHEMA</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">DATABP_DBT_RL</span><span class="p">;</span>
+<span class="k">GRANT</span><span class="w"> </span><span class="k">USAGE</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">WAREHOUSE</span><span class="w"> </span><span class="n">COMPUTE_WH</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="n">DATABP_DBT_RL</span><span class="p">;</span>
+</code></pre></div>
+<p>The Semantic Layer gets its own service user and role the same way.</p>
+</li>
+<li>
+<p><strong>dbt platform.</strong> A project on the repository Integrationals/databp-dbt, a Development and a Production environment, both on Snowflake by key pair; the Semantic Layer configured on Production with its service user and a service token. Staging, silver and gold build in one command, and the metrics answer from the command line:</p>
+<div class="highlight"><pre><span></span><code>dbt build
+dbt sl query --metrics unbilled_revenue,revenue_at_risk --group-by metric_time__month
+</code></pre></div>
+<p>In Production the job "DataBP build" runs <code>dbt build</code> after every merge.</p>
+</li>
+<li>
+<p><strong>The source data.</strong> The generator writes the paths into SQL Server, writes the answer key, and verifies the loaded rows month by month; the landing reconciliation then compares SQL Server with Snowflake:</p>
+<div class="highlight"><pre><span></span><code>python3 generator/run.py lab tables     # tables, with Change Tracking on each
+python3 generator/run.py lab load       # phase one, one transaction
+python3 generator/run.py lab amend      # twelve months
+python3 generator/run.py lab amend2     # no repeated figure within a month
+python3 generator/run.py lab key        # the answer key, a dbt seed
+python3 generator/run.py lab verify     # the five checks, re-derived in SQL
+python3 generator/reconcile_landing.py  # SQL Server against Snowflake
+</code></pre></div>
+</li>
+<li>
+<p><strong>The Hex app.</strong> SQL cells ask the Semantic Layer directly, for example:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">semantic_layer</span><span class="p">.</span><span class="n">query</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">'unbilled_revenue'</span><span class="p">,</span><span class="w"> </span><span class="s1">'revenue_at_risk'</span><span class="p">],</span>
+<span class="w">                                      </span><span class="n">group_by</span><span class="o">=</span><span class="p">[</span><span class="n">TimeDimension</span><span class="p">(</span><span class="s1">'metric_time'</span><span class="p">,</span><span class="w"> </span><span class="s1">'MONTH'</span><span class="p">)])</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<p>Hex's agent builds the page from those cells, given one prompt through the Hex command line, <code>hex thread create "&lt;prompt&gt;" --project &lt;project id&gt;</code>; the app is published in Hex and embedded on this site at its latest-version address. In Tableau the same step is a connection, not code: the dbt Semantic Layer connector from Tableau Exchange, given the dbt host, the environment and a service token.</p>
+</li>
+<li>
+<p><strong>Morgan.</strong> One command packages the service, writes its secrets to AWS Parameter Store, and creates its role, log group, Lambda function and public address; the persona and the route are two of its settings:</p>
+<div class="highlight"><pre><span></span><code>python3 agent/deploy.py     # the function runs with AGENT_PERSONA=morgan, AGENT_ROUTE=dbt_semantic_layer
+</code></pre></div>
+</li>
+<li>
+<p><strong>This site.</strong> Its pages are built from their Pilot sources and served by GitHub Pages from the repository's main branch: <code>python3 tools/build.py --env prod</code>.</p>
+</li>
+</ol>
+</div></section><section class="sect sky"><div class="in"><h2 id="4-source-data-designed-backwards-from-the-app">4. Source data, designed backwards from the app</h2>
+<p>The source systems are synthetic, so we designed the data from what the app must prove, not from volume. We profiled the existing tables, drew the designed ones, and found two missing joins before any data existed (a contract to its won opportunity, and Salesforce's products to the platform's), which became design decisions. Then we used the Permutation Coverage Method in reverse: the four documents present or absent, and three unit comparisons where both exist, gave 80 combinations; with an absent document counted as zero units, they collapse to 14 distinct paths of the checks' logic. One set of rows per path covers every behavior; more rows on the same path add volume, not coverage.</p>
+<p>A generator writes those rows into SQL Server and computes the answer key from the same paths: each check's expected result and both dollar figures, per subscriber, product and month. Its verify act derives the checks again in SQL from the loaded tables, independently of the generator. It grew in phases while the app was built beside it: 14 paths for October 2026; then four more paths and twelve months of usage reports and invoices; then a constraint that no figure repeats within a month, checked by the generator before anything loads. Every change was proved in a scratch schema first, then applied to the lab in one transaction.</p>
+</div></section><section class="sect "><div class="in"><h2 id="5-decisions-that-shaped-it">5. Decisions that shaped it</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Decision</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>An absent document counts as zero units</td>
+<td>Every check has a defined answer; 80 cases become 14 paths</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Billing means items of invoices not void</td>
+<td>The billing checks match how finance counts</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Keys hashed in silver, by issuer namespace</td>
+<td>Three systems join on one subscriber and product</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Atomic rows; the metric layer adds them up</td>
+<td>One number had hidden two; see below</td>
+</tr>
+<tr>
+<td>5</td>
+<td>One governed metric layer for every consumer</td>
+<td>The app and the agent cannot disagree</td>
+</tr>
+</tbody>
+</table>
+<p><strong>One number hid two.</strong> The first gold tables held license lines and usage reports separately, and a derived metric subtracted the totals: reported units minus licensed units. For one subscriber it was right. For the data provider it read 2 units, because three subscribers' shortfalls (22 units) cancelled seven subscribers' excesses (24 units). The data mart standard we work to already named this case, a per-row reduction feeding a total, and required it to live in one table with its own unit test and reconciliation. Rebuilt that way, each subscriber, product and month carries its own units beyond and units short, and the metric layer sums each as a separate metric: 24 and 22. Following the standard fixed the number without any new logic in the app.</p>
+</div></section><section class="sect dots"><div class="in"><h2 id="6-how-it-is-proven">6. How it is proven</h2>
+<p>Testing follows seven layers, from built-in tests to the semantic surface, and every planned test is named in a test plan before the code.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Layer</th>
+<th>What runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Built-in tests</td>
+<td>Keys not null and unique; relationships across silver</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Unit tests</td>
+<td>15, each seen failing before its logic existed</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Logic assertions</td>
+<td>The answer key: every check and dollar, all 216 rows</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Reconciliations</td>
+<td>SQL Server to Snowflake; staging to silver; facts to documents</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Semantic surface and live reads</td>
+<td>Metrics against the key; the site read figure by figure</td>
+</tr>
+</tbody>
+</table>
+<p>The answer key is the center of it: written by the generator from the paths, re-derived in SQL from the source tables, compared row by row by a dbt test in Production, and read again through the Semantic Layer, Hex and Morgan. A mismatch anywhere stops the release.</p>
+</div></section><section class="sect sky"><div class="in"><h2 id="7-how-we-deliver">7. How we deliver</h2>
+<p>Each piece of work is an issue with a branch, and each branch carries its documents: a design with numbered decisions, a test plan, and an implementation guide where the build has steps. Code merges only through a pull request written to a template whose center is a test tutorial: each risk, the test that catches it, how it was seen failing first, and its result on the exact commit reviewed. After every merge the same steps run: the source change, the landing reconciliation, the development build, the Production job, the metrics against the key, and a live read of the site.</p>
+<p>The build was done by Ray Serrano with AI agents doing the hands-on engineering under his decisions: Claude across the platform, Hex's agent on the app's layout. Every step, value and decision was written into a working log as it happened; this build log is drawn from it.</p>
+<p>Problems were handled the same way, by evidence. Production's first build failed because its dbt role could not read two schemas the development role could; the grant was fixed, and a check that Production can read every declared source now runs before every pull request. A Semantic Layer outage was narrowed by excluding each cause with one test, from the token to the warehouse, until it cleared on the provider's side. A published app found stale in a live read led to a fixed close for every Hex change: publish, then read live.</p>
+</div></section><section class="sect "><div class="in"><h2 id="8-what-comes-next">8. What comes next</h2>
+<p>The steps from here, multi-tenant first, have their own page: <a href="next-steps.html">Next steps</a>.</p><p class="note">Every step with its values is kept in Pilot, our knowledge base; the branch documents behind each decision are in <a href="documents.html">Documents</a>.</p></div></section>
+</main>
+<section class="endband"><div class="in"><p class="brand-label">Entitlement and billing reconciliation</p><h2>See it running</h2><p>The live app and Morgan answer from the same governed metrics, on the platform this site describes.</p><div class="ctas"><a class="brand-btn" href="./#app">Try the live app</a><a class="brand-btn ghost" href="ask.html">Ask Morgan</a></div></div></section>
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

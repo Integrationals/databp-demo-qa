@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DataBP POC · Integrationals</title>
+  <link rel="stylesheet" href="https://static.hex.site/embed/embedStyles.css" />
+  <style>
+    body { margin: 0; }
+    .band { padding: 72px 24px; }
+    .band .in { max-width: 1100px; margin: 0 auto; }
+    .band.navy { background: var(--brand-navy); color: #d6deea; }
+    .band.navy h1, .band.navy h2 { color: #fff; }
+    .band.sky { background: var(--brand-sky); }
+    .band.dots { background-color: var(--brand-gray); background-image: radial-gradient(rgba(15,57,82,.12) 1px, transparent 1px); background-size: 18px 18px; }
+    .hero { padding-top: 64px; padding-bottom: 56px; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 22px 22px; }
+    .hero h1 { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.12; margin: 0 0 14px; max-width: 20ch; }
+    .hero .sub { color: var(--brand-yellow); font-weight: 600; font-size: clamp(17px, 2vw, 21px); margin: 0 0 16px; max-width: 46ch; }
+    .hero p.lead { font-size: 16px; line-height: 1.7; max-width: 62ch; margin: 0 0 28px; }
+    .hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 56px; }
+    /* The one move: the path a figure takes, lit station by station once on load. */
+    .flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; position: relative; }
+    .flow::before { content: ""; position: absolute; left: 8%; right: 8%; top: 21px; height: 2px; background: rgba(255,255,255,.18); }
+    .flow::after { content: ""; position: absolute; left: 8%; top: 21px; height: 2px; width: 0; background: var(--brand-yellow); animation: run 2.4s .4s ease-out forwards; }
+    .flow li { position: relative; text-align: center; padding: 0 6px; }
+    .flow .dot { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 12px; background: var(--brand-navy); border: 2px solid rgba(255,255,255,.3); display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 15px; position: relative; z-index: 1; animation: lit .3s ease-out forwards; }
+    .flow li:nth-child(1) .dot { animation-delay: .4s } .flow li:nth-child(2) .dot { animation-delay: .85s }
+    .flow li:nth-child(3) .dot { animation-delay: 1.3s } .flow li:nth-child(4) .dot { animation-delay: 1.75s }
+    .flow li:nth-child(5) .dot { animation-delay: 2.2s } .flow li:nth-child(6) .dot { animation-delay: 2.65s }
+    .flow strong { display: block; color: #fff; font-size: 15px; }
+    .flow span { display: block; font-size: 13px; color: #aebbd0; line-height: 1.45; margin-top: 2px; }
+    @keyframes run { to { width: 84%; } }
+    @keyframes lit { to { border-color: var(--brand-yellow); background: var(--brand-yellow); color: var(--brand-teal); } }
+    @media (prefers-reduced-motion: reduce) { .flow::after { animation: none; width: 84%; } .flow .dot { animation: none; border-color: var(--brand-yellow); background: var(--brand-yellow); color: var(--brand-teal); } }
+    @media (max-width: 760px) { .flow { grid-template-columns: repeat(3, 1fr); row-gap: 24px; } .flow::before, .flow::after { display: none; } }
+    .hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center; margin-bottom: 56px; }
+    .hero-grid .ctas { margin-bottom: 0; }
+    .case { background: #fff; color: var(--brand-text); border-radius: 14px; padding: 22px; box-shadow: 0 18px 50px rgba(0,0,0,.35); transform: rotate(-1.5deg); }
+    .case h3 { margin: 0 0 4px; font-size: 16px; }
+    .case .who { margin: 0 0 16px; font-size: 13px; color: var(--brand-muted); }
+    .docs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .docs div { background: var(--brand-sky); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--brand-muted); }
+    .docs b { display: block; font-size: 22px; color: var(--brand-ink); font-weight: 600; }
+    .docs small { display: block; font-size: 11px; }
+    .verdict { border-top: 1px solid var(--brand-line); padding-top: 14px; font-size: 14px; line-height: 1.6; }
+    .verdict b { color: #c0392b; }
+    @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } .case { transform: none; } }
+    h2 { font-size: clamp(24px, 3vw, 32px); margin: 0 0 10px; }
+    .intro { max-width: 64ch; line-height: 1.7; margin: 0 0 28px; }
+    .how { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 28px; padding: 0; list-style: none; }
+    .how li { background: var(--brand-sky); color: var(--brand-ink); border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+    #app { scroll-margin-top: 64px; }
+    .hex-embed { width: 100%; max-width: 960px; }
+    .hex-embed iframe { width: 100%; max-width: 960px; height: 1500px; background: #fff; border-radius: 14px; box-shadow: var(--brand-shadow); }
+    .proof { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 28px; }
+    .proof .brand-card { padding: 22px; }
+    .proof b { display: block; font-size: 28px; color: var(--brand-ink); font-weight: 600; line-height: 1.2; }
+    .proof p { margin: 8px 0 0; font-size: 14px; line-height: 1.55; }
+    .ways { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 28px; }
+    .ways a.brand-card { display: block; padding: 22px; text-decoration: none; color: var(--brand-text); transition: transform .15s, box-shadow .15s; }
+    .ways a.brand-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15,57,82,.14); }
+    .ways h3 { margin: 0 0 8px; font-size: 18px; }
+    .ways p { margin: 0; font-size: 14px; line-height: 1.6; }
+    .close { text-align: center; }
+    .close h2 { margin-bottom: 8px; } .close p { margin: 0 auto 24px; max-width: 56ch; line-height: 1.7; }
+    @media (max-width: 900px) { .proof, .ways { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .proof, .ways { grid-template-columns: 1fr; } .band { padding: 52px 20px; } }
+  </style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<main>
+  <section class="band navy hero">
+    <div class="in">
+<div class="hero-grid">
+        <div>
+      <p class="brand-label">Entitlement and billing reconciliation</p>
+      <h1>Recover the revenue your market data has already earned</h1>
+      <p class="sub">Unbilled revenue and revenue at risk, found for every subscriber, every month.</p>
+      <p class="lead">Licenses in Salesforce, entitlements and invoices on the platform, usage reports from subscribers: four documents, three systems. This POC checks them against each other on a production-shaped platform, and every figure comes from one governed definition. Try the live app below, or ask Morgan, our analyst, in your own words.</p>
+      <div class="ctas"><a class="brand-btn" href="#app">Try the live app</a><a class="brand-btn ghost" href="ask.html">Ask Morgan</a></div>
+        </div>
+        <aside class="case" aria-label="One case from October 2026">
+          <h3>Subscriber 43, Equities feed</h3>
+          <p class="who">October 2026, unit price $50.00</p>
+          <div class="docs">
+            <div><b>0</b>units licensed<small>Salesforce</small></div>
+            <div><b>14</b>units entitled<small>The platform</small></div>
+            <div><b>17</b>units reported<small>Usage reporting</small></div>
+            <div><b>9</b>units billed<small>The platform</small></div>
+          </div>
+          <p class="verdict">17 units reported beyond licensed &times; $50.00 = <b>$850 unbilled</b></p>
+        </aside>
+      </div>
+      <ol class="flow" aria-label="The path every figure takes">
+        <li><div class="dot">1</div><strong>SQL Server</strong><span>Three source systems, change tracking on</span></li>
+        <li><div class="dot">2</div><strong>Openflow</strong><span>Change data capture, in our own AWS network</span></li>
+        <li><div class="dot">3</div><strong>Snowflake</strong><span>Landing, reconciled to the source</span></li>
+        <li><div class="dot">4</div><strong>dbt</strong><span>Bronze, silver and gold, tested</span></li>
+        <li><div class="dot">5</div><strong>Semantic Layer</strong><span>17 metrics, defined once</span></li>
+        <li><div class="dot">6</div><strong>Hex and Morgan</strong><span>The app and the analyst</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="band" id="app">
+    <div class="in">
+      <h2>The reconciliation, live</h2>
+      <p class="intro">One data provider, twelve months of licenses, entitlements, usage reports and invoices. The app asks the Semantic Layer each time you change the month. We use Hex here for convenience: every figure comes from the Semantic Layer, so the same app runs in Tableau, through dbt's connector, or in any BI tool.</p>
+      <ul class="how"><li>Pick a month</li><li>Hover an indicator for its dollars</li><li>Click it for the figures behind them</li></ul>
+      <div class="hex-embed">
+        <iframe title="DataBP Reconciliation, a Hex app" width="800" height="600" style="border: none;" src="https://app.hex.tech/01a1eff9-7a35-764d-8355-d36074aff764/app/0350cj528sWFyzIWZJSZL6/latest?embedded=true"> </iframe>
+        <a href="https://hex.tech/?embed">
+          <img src="https://static.hex.site/embed/hex-logo-embed.png" alt="Hex - a modern data workspace for collaborative notebooks, data apps, dashboards, and reports."/>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band dots">
+    <div class="in">
+      <h2>How we know the numbers are right</h2>
+      <p class="intro">An answer key, computed from the generated cases and never from the platform, is checked at every layer.</p>
+      <div class="proof">
+        <div class="brand-card"><b>216 of 216</b><p>Subscriber, product and month rows equal the answer key, every check and dollar.</p></div>
+        <div class="brand-card"><b>0 differences</b><p>25,705 rows in SQL Server, 25,705 landed in Snowflake.</p></div>
+        <div class="brand-card"><b>137 of 137</b><p>Models, seeds, tests and unit tests pass in development and Production.</p></div>
+        <div class="brand-card"><b>One definition</b><p>The app and Morgan read the same 17 metrics, so they cannot disagree.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band sky">
+    <div class="in">
+      <h2>Go deeper</h2>
+      <div class="ways">
+        <a class="brand-card" href="business.html"><h3>The business</h3><p>Market data licensing from the exchange to the subscriber, and where reconciliation fits.</p></a>
+        <a class="brand-card" href="openflow.html"><h3>The platform</h3><p>Openflow in our own AWS network, level by level, from the VPC to the connector.</p></a>
+        <a class="brand-card" href="ask.html">
+<!-- morgan-card:start -->
+<svg class="morgan card-face" viewBox="0 0 120 120" width="56" height="56" role="img" aria-label="Morgan, the POC's analyst agent">
+  <defs>
+    <radialGradient id="mgc-skin" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#f0c7a2"/><stop offset=".75" stop-color="#e2b08a"/><stop offset="1" stop-color="#cf9873"/></radialGradient>
+    <linearGradient id="mgc-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3d2b"/><stop offset="1" stop-color="#3b261a"/></linearGradient>
+    <linearGradient id="mgc-coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14204f"/><stop offset="1" stop-color="#071139"/></linearGradient>
+    <clipPath id="mgc-clip"><circle cx="60" cy="60" r="58"/></clipPath>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="#eaf6ff"/>
+  <g clip-path="url(#mgc-clip)">
+    <path d="M30 56 C26 30 44 16 60 16 C78 16 96 30 90 58 C92 76 88 92 84 98 L36 98 C31 90 27 74 30 56 Z" fill="url(#mgc-hair)"/>
+    <path d="M52 76 L68 76 L72 104 L48 104 Z" fill="#d49e78"/>
+    <path d="M51 79 Q60 86 69 79 L69 83 Q60 89 51 83 Z" fill="#c08664" opacity=".35"/>
+    <path d="M14 122 C16 102 32 92 48 90 L60 108 L72 90 C88 92 104 102 106 122 Z" fill="url(#mgc-coat)"/>
+    <path d="M48 90 L60 108 L54 96 Z M72 90 L60 108 L66 96 Z" fill="#ffffff"/>
+    <path d="M44 91 L56 112 L50 120 L38 98 Z M76 91 L64 112 L70 120 L82 98 Z" fill="#1d2b63"/>
+    <circle cx="60" cy="101" r="2.2" fill="#ffbe0c"/>
+    <g class="mg-head">
+      <ellipse cx="38.5" cy="60" rx="4" ry="6" fill="#d9a580"/>
+      <ellipse cx="81.5" cy="60" rx="4" ry="6" fill="#d9a580"/>
+      <circle cx="38.5" cy="68" r="1.8" fill="#ffbe0c"/>
+      <circle cx="81.5" cy="68" r="1.8" fill="#ffbe0c"/>
+      <path d="M40 52 C40 34 50 28 60 28 C70 28 80 34 80 52 C80 68 72 80 60 81 C48 80 40 68 40 52 Z" fill="url(#mgc-skin)"/>
+      <path d="M38 50 C36 30 50 20 62 21 C76 22 86 32 82 52 C78 40 70 33 60 34 C54 40 46 44 38 50 Z" fill="url(#mgc-hair)"/>
+      <path d="M58 22 C66 26 74 32 79 44" stroke="#7a553d" stroke-width="1.3" fill="none" opacity=".7"/>
+      <path d="M47 46 Q51.5 43.6 55 45.5" stroke="#4a3426" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M65 45.5 Q68.5 43.6 73 46" stroke="#4a3426" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <g class="mg-eyes">
+        <ellipse cx="51" cy="52" rx="4.2" ry="3.1" fill="#ffffff"/>
+        <ellipse cx="69" cy="52" rx="4.2" ry="3.1" fill="#ffffff"/>
+        <circle cx="51.4" cy="52.2" r="2.4" fill="#5b3a26"/>
+        <circle cx="69.4" cy="52.2" r="2.4" fill="#5b3a26"/>
+        <circle cx="51.6" cy="52.4" r="1.2" fill="#1b120c"/>
+        <circle cx="69.6" cy="52.4" r="1.2" fill="#1b120c"/>
+        <circle cx="52.4" cy="51.4" r=".7" fill="#ffffff"/>
+        <circle cx="70.4" cy="51.4" r=".7" fill="#ffffff"/>
+        <path d="M46.6 50.6 Q51 47.8 55.4 50.6" stroke="#2f1f15" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <path d="M64.6 50.6 Q69 47.8 73.4 50.6" stroke="#2f1f15" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      </g>
+      <path d="M60 54 Q58.6 61 57.2 63 Q59 64.4 61.6 63.4" stroke="#b97f5c" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+      <ellipse cx="47" cy="63" rx="4" ry="2.4" fill="#e8907a" opacity=".28"/>
+      <ellipse cx="73" cy="63" rx="4" ry="2.4" fill="#e8907a" opacity=".28"/>
+      <path class="mg-mouth" d="M53.5 69 Q60 73.5 66.5 69" stroke="#a5495a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path class="mg-grin" d="M53 68.5 Q60 76 67 68.5 Q60 71.5 53 68.5 Z" fill="#a5495a"/>
+    </g>
+  </g>
+</svg>
+<!-- morgan-card:end --><h3>Ask Morgan</h3><p>Our analyst answers in plain words and shows the query behind every figure.</p></a>
+        <a class="brand-card" href="build-log.html"><h3>Build log</h3><p>How it was built, step by step with its commands, and how it is proven.</p></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band navy close">
+    <div class="in">
+<!-- morgan-close:start -->
+<svg class="morgan close-face" viewBox="0 0 120 120" width="96" height="96" role="img" aria-label="Morgan, the POC's analyst agent">
+  <defs>
+    <radialGradient id="mgx-skin" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#f0c7a2"/><stop offset=".75" stop-color="#e2b08a"/><stop offset="1" stop-color="#cf9873"/></radialGradient>
+    <linearGradient id="mgx-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3d2b"/><stop offset="1" stop-color="#3b261a"/></linearGradient>
+    <linearGradient id="mgx-coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14204f"/><stop offset="1" stop-color="#071139"/></linearGradient>
+    <clipPath id="mgx-clip"><circle cx="60" cy="60" r="58"/></clipPath>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="#eaf6ff"/>
+  <g clip-path="url(#mgx-clip)">
+    <path d="M30 56 C26 30 44 16 60 16 C78 16 96 30 90 58 C92 76 88 92 84 98 L36 98 C31 90 27 74 30 56 Z" fill="url(#mgx-hair)"/>
+    <path d="M52 76 L68 76 L72 104 L48 104 Z" fill="#d49e78"/>
+    <path d="M51 79 Q60 86 69 79 L69 83 Q60 89 51 83 Z" fill="#c08664" opacity=".35"/>
+    <path d="M14 122 C16 102 32 92 48 90 L60 108 L72 90 C88 92 104 102 106 122 Z" fill="url(#mgx-coat)"/>
+    <path d="M48 90 L60 108 L54 96 Z M72 90 L60 108 L66 96 Z" fill="#ffffff"/>
+    <path d="M44 91 L56 112 L50 120 L38 98 Z M76 91 L64 112 L70 120 L82 98 Z" fill="#1d2b63"/>
+    <circle cx="60" cy="101" r="2.2" fill="#ffbe0c"/>
+    <g class="mg-head">
+      <ellipse cx="38.5" cy="60" rx="4" ry="6" fill="#d9a580"/>
+      <ellipse cx="81.5" cy="60" rx="4" ry="6" fill="#d9a580"/>
+      <circle cx="38.5" cy="68" r="1.8" fill="#ffbe0c"/>
+      <circle cx="81.5" cy="68" r="1.8" fill="#ffbe0c"/>
+      <path d="M40 52 C40 34 50 28 60 28 C70 28 80 34 80 52 C80 68 72 80 60 81 C48 80 40 68 40 52 Z" fill="url(#mgx-skin)"/>
+      <path d="M38 50 C36 30 50 20 62 21 C76 22 86 32 82 52 C78 40 70 33 60 34 C54 40 46 44 38 50 Z" fill="url(#mgx-hair)"/>
+      <path d="M58 22 C66 26 74 32 79 44" stroke="#7a553d" stroke-width="1.3" fill="none" opacity=".7"/>
+      <path d="M47 46 Q51.5 43.6 55 45.5" stroke="#4a3426" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M65 45.5 Q68.5 43.6 73 46" stroke="#4a3426" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <g class="mg-eyes">
+        <ellipse cx="51" cy="52" rx="4.2" ry="3.1" fill="#ffffff"/>
+        <ellipse cx="69" cy="52" rx="4.2" ry="3.1" fill="#ffffff"/>
+        <circle cx="51.4" cy="52.2" r="2.4" fill="#5b3a26"/>
+        <circle cx="69.4" cy="52.2" r="2.4" fill="#5b3a26"/>
+        <circle cx="51.6" cy="52.4" r="1.2" fill="#1b120c"/>
+        <circle cx="69.6" cy="52.4" r="1.2" fill="#1b120c"/>
+        <circle cx="52.4" cy="51.4" r=".7" fill="#ffffff"/>
+        <circle cx="70.4" cy="51.4" r=".7" fill="#ffffff"/>
+        <path d="M46.6 50.6 Q51 47.8 55.4 50.6" stroke="#2f1f15" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <path d="M64.6 50.6 Q69 47.8 73.4 50.6" stroke="#2f1f15" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      </g>
+      <path d="M60 54 Q58.6 61 57.2 63 Q59 64.4 61.6 63.4" stroke="#b97f5c" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+      <ellipse cx="47" cy="63" rx="4" ry="2.4" fill="#e8907a" opacity=".28"/>
+      <ellipse cx="73" cy="63" rx="4" ry="2.4" fill="#e8907a" opacity=".28"/>
+      <path class="mg-mouth" d="M53.5 69 Q60 73.5 66.5 69" stroke="#a5495a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path class="mg-grin" d="M53 68.5 Q60 76 67 68.5 Q60 71.5 53 68.5 Z" fill="#a5495a"/>
+    </g>
+  </g>
+</svg>
+<!-- morgan-close:end -->
+      <h2>Ask about any month</h2>
+      <p>Which subscribers cost the most in November? Why is subscriber 43 unbilled? Morgan answers from the same governed metrics as the app.</p>
+      <a class="brand-btn" href="ask.html">Ask Morgan</a>
+    </div>
+  </section>
+</main>
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

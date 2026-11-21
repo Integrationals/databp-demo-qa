@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DIG-655 Test Plan: Reconciliation dashboard build · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Test plan</div><h1>DIG-655 Test Plan: Reconciliation dashboard build</h1><p class="lead">Every logic path and the test that proves it, written before the code.</p></div></section>
+<main class="doc">
+<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 814, version 41, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 814, version 41: DIG-655 Test Plan: Reconciliation dashboard build --><h3>Test Plan</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Test Plan</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-655 — Reconciliation dashboard build, four increments to the Hex app — branch <code>rayserrano2735/dig-655-reconciliation-dashboard-build</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Entitlement and billing reconciliation: design document, knowledge 111 item 806 v46 — implementation guides: DIG-655 Implementation Guide, Increment 1 of 4: staging and silver, knowledge 111 item 815; Increment 2 of 4: gold and the five checks, knowledge 111 item 816 — QA standard: K#2 I#167</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — AGREED 2026-11-19 (Ray, answer 2y)</strong> — written 2026-11-19 22:44Z</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that builds and tests each increment</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-19</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Executive summary</h2>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Logic areas</th>
+<th>Brute-force paths</th>
+<th>Unique paths after collapse</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>silver usage_report</td>
+<td>LA-1 restated usage reports</td>
+<td>4</td>
+<td>3</td>
+</tr>
+<tr>
+<td>silver license_line</td>
+<td>LA-2 keys conformed to the platform; LA-3 the license chain</td>
+<td>20</td>
+<td>9</td>
+</tr>
+<tr>
+<td>silver invoice_item</td>
+<td>LA-4 change time; LA-5 product lookup</td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td>silver entitlement</td>
+<td>LA-6 product lookup</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>every silver table</td>
+<td>LA-7 deleted at the source; LA-8 change hash</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td>gold subscriber_product_month_metric (increment 2)</td>
+<td>LA-9 the five checks; LA-10 coverage and filters</td>
+<td>208</td>
+<td>22</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Logic areas</h2>
+<h3>LA-1 Restated usage reports (silver usage_report)</h3>
+<p>Dimensions: the number of reports for one data provider, subscriber, product and month (one, or two or more); and, with two or more, whether the latest declared_at is unique or shared by two reports. Brute force 4. Collapse: with one report two equal times cannot occur, so 3 paths. Design D-2: one report per month counts.</p>
+<h3>LA-2 Keys conformed to the platform (silver license_line)</h3>
+<p>Dimensions: the Account's Tenant__c and Subscriber_Id__c name a platform subscriber (yes or no); the Product2's Tenant__c and ProductCode name a platform product (yes or no). Brute force 4; no collapse, since each pair fails on its own. Design D-19.</p>
+<h3>LA-3 The license chain (silver license_line)</h3>
+<p>Dimensions: for a line item, its Opportunity, Contract, Account and Product2 each present (yes or no). Brute force 16. Collapse: any missing piece drops the line item, whichever it is, so the paths are all present and each one missing alone: 5. Design D-7.</p>
+<h3>LA-4 Change time (silver invoice_item)</h3>
+<p>Dimensions: the invoice's updated_at against its item's: later, earlier or equal. Brute force 3; no collapse. Design D-17.</p>
+<h3>LA-5 and LA-6 Product lookup (silver invoice_item, silver entitlement)</h3>
+<p>Dimension: the row's product_id names a platform product (yes or no). Brute force 2 each; no collapse. Design D-11, D-19.</p>
+<h3>LA-7 Deleted at the source; LA-8 change hash (every silver table)</h3>
+<p>LA-7: the staging row is marked deleted (yes or no), 2 paths, one test on subscriber standing for the shared filter. LA-8: a non-key column changes (yes or no), 2 paths, one test on product standing for the shared expression. Design D-19, D-20.</p>
+<h3>LA-9 The five checks; LA-10 coverage and filters (gold, increment 2)</h3>
+<p>LA-9: the source profile's round one, 80 combinations collapsed to the 14 paths of profile result P-6 (design D-12). LA-10: seven filters, each one document's (license covers the month, Contract Activated, Opportunity won, entitlement covers the month, invoice in the month, invoice not void, latest usage report): brute force 128; each failing filter only removes its own document, so the paths are all passing and each one failing alone: 8 (D-7, D-16). Their tests are named in the path table below (increment 2 guide, knowledge 111 item 816).</p>
+<h3>Paths</h3>
+<p>Each logic area states its dimensions, brute-force count, collapse and reason, then provides this table:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Scenario</th>
+<th>Expected result</th>
+<th>Unit-test name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>One report</td>
+<td>It is kept</td>
+<td>ut_usage_report_latest_wins</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Two reports, different declared_at</td>
+<td>The later is kept</td>
+<td>ut_usage_report_latest_wins</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Two reports, same declared_at</td>
+<td>The higher declaration_id is kept</td>
+<td>ut_usage_report_latest_wins</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Subscriber and product both on the platform</td>
+<td>subscriber_hk and product_hk equal the platform's own</td>
+<td>ut_license_line_conformed_keys</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Subscriber not on the platform</td>
+<td>subscriber_hk has no match in silver subscriber</td>
+<td>relationships test on license_line.subscriber_hk</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Product not on the platform</td>
+<td>product_hk has no match in silver product</td>
+<td>relationships test on license_line.product_hk</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Neither on the platform</td>
+<td>Both relationships tests fail</td>
+<td>the two relationships tests above</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Whole chain present</td>
+<td>The line item is kept</td>
+<td>ut_license_line_chain</td>
+</tr>
+<tr>
+<td>9 to 12</td>
+<td>Opportunity, Contract, Account or Product2 missing alone</td>
+<td>The line item is dropped</td>
+<td>ut_license_line_chain</td>
+</tr>
+<tr>
+<td>13 to 15</td>
+<td>Invoice later, item later, or equal</td>
+<td>updated_at is the later, or either when equal</td>
+<td>ut_invoice_item_updated_at</td>
+</tr>
+<tr>
+<td>16, 17</td>
+<td>Item's product found, or not</td>
+<td>product_hk set, or null and the not_null test fails</td>
+<td>ut_invoice_item_updated_at; not_null on invoice_item.product_hk</td>
+</tr>
+<tr>
+<td>18, 19</td>
+<td>Entitlement's product found, or not</td>
+<td>product_hk set, or null and the not_null test fails</td>
+<td>not_null on entitlement.product_hk</td>
+</tr>
+<tr>
+<td>20, 21</td>
+<td>Row deleted at the source, or not</td>
+<td>Absent from silver, or present</td>
+<td>ut_subscriber_deleted_excluded</td>
+</tr>
+<tr>
+<td>22, 23</td>
+<td>Non-key column changed, or not</td>
+<td>A new change_hash, or the same</td>
+<td>ut_product_change_hash</td>
+</tr>
+<tr>
+<td>24 to 37</td>
+<td>The 14 paths of P-6</td>
+<td>Exactly the answer key's checks and dollars per path</td>
+<td>assert_checks_match_answer_key on the loaded rows; per check, ut_check_reported_beyond_licensed, ut_check_entitled_beyond_licensed, ut_check_billed_without_entitlement, ut_check_entitled_without_billing, ut_check_entitled_beyond_reported</td>
+</tr>
+<tr>
+<td>38 to 45</td>
+<td>All filters pass; each of the seven fails alone</td>
+<td>Only the failing filter's document is absent</td>
+<td>ut_license_line_month_filters (coverage, Activated, won), ut_entitlement_month_coverage, ut_invoice_item_month_filters (month, void); the latest report by ut_usage_report_latest_wins</td>
+</tr>
+<tr>
+<td>46 to 49</td>
+<td>Reported only, licensed only, equal, two license lines (D-22)</td>
+<td>Each row keeps its own two sides; no netting</td>
+<td>ut_subscriber_product_month_two_sides</td>
+</tr>
+<tr>
+<td>50 to 53</td>
+<td>Paths PA15 to PA18, October 2026 (D-23)</td>
+<td>Exactly the answer key's checks and dollars per path</td>
+<td>assert_checks_match_answer_key on the loaded rows</td>
+</tr>
+<tr>
+<td>54</td>
+<td>Every path's subscriber, November 2026 to September 2027, units from a fixed seed (D-23)</td>
+<td>Exactly the answer key's checks and dollars per path and month</td>
+<td>assert_checks_match_answer_key; generator/run.py verify, month by month</td>
+</tr>
+<tr>
+<td>55</td>
+<td>Every month, November 2026 to September 2027: subscriber 43's four unit counts and the five checks' counts (D-24)</td>
+<td>All different within the month; the checks and dollars exactly the answer key's</td>
+<td>generator/phase_one_c.py all_differ, per month, run by its summary; generator/run.py verify, month by month; assert_checks_match_answer_key; read live in the Hex app</td>
+</tr>
+</tbody>
+</table>
+<h3>2.1 Coverage by changed file, all seven layers</h3>
+<p>Every code file the branch changes or adds, from <code>git diff --name-only</code> against its base at a stated clock, one row per file: every layer filled with its named artifacts, or "n/a: reason" (COVERAGE: EVERY FILE, EVERY LAYER, K#2 I#226). The row count equals the diff's; existing tests on a changed file are kept and named beside the new.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+<th>1 Built-ins</th>
+<th>2 Expectations</th>
+<th>3 Unit tests</th>
+<th>4 Logic assertions</th>
+<th>5 Detectors</th>
+<th>6 Reconciliations</th>
+<th>7 Semantic surface</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>macros/business_key.sql</td>
+<td>Changed: keys of several parts</td>
+<td>n/a: a macro, proved through the models that call it</td>
+<td>n/a: no distribution to expect (design 8)</td>
+<td>Every silver unit test calls it</td>
+<td>n/a: no logic beyond concatenation</td>
+<td>n/a: design 8, no detectors</td>
+<td>n/a</td>
+<td>n/a: increment 3</td>
+</tr>
+<tr>
+<td>models/staging/_sources.yml</td>
+<td>Changed: 11 tables added</td>
+<td>not_null on each source key</td>
+<td>n/a: design 8</td>
+<td>n/a: declarations</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>rec_landing_matches_sql_server</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>models/staging/stg_databp__client.sql and its yml</td>
+<td>Changed: hashing moves to silver (D-20)</td>
+<td>Its tests move to silver client</td>
+<td>n/a: design 8</td>
+<td>n/a: renames only</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>assert_silver_counts_match_staging</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>models/staging/stg_databp__*.sql, 11 new, with their yml</td>
+<td>Added: rename, cast, deleted flag</td>
+<td>Keys not_null</td>
+<td>n/a: design 8</td>
+<td>n/a: renames only</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>assert_silver_counts_match_staging</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>models/silver/*.sql, 7 new, with _silver.yml and _silver_unit_tests.yml</td>
+<td>Added: the seven silver tables (D-19)</td>
+<td>34: keys not_null and unique (14), foreign keys not_null (10), relationships (10)</td>
+<td>n/a: design 8</td>
+<td>6 unit tests, LA-1 to LA-8</td>
+<td>3 assertions</td>
+<td>n/a: design 8</td>
+<td>assert_silver_counts_match_staging</td>
+<td>n/a: no metrics yet</td>
+</tr>
+<tr>
+<td>models/marts/client_dim.sql and yml, renamed from dim_client (D-21)</td>
+<td>Changed: reads silver client</td>
+<td>not_null and unique on client_hk, kept</td>
+<td>n/a: design 8</td>
+<td>n/a: a pass-through</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>count equals silver client</td>
+<td>client_count, same value before and after</td>
+</tr>
+<tr>
+<td>dbt_project.yml</td>
+<td>Changed: silver folder and schema</td>
+<td>n/a: configuration</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>tests/*.sql, 4 new</td>
+<td>Added: singular tests</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>the 3 assertions</td>
+<td>n/a</td>
+<td>the count reconciliation</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>generator/reconcile_landing.py</td>
+<td>Added: the landing reconciliation</td>
+<td>n/a: a script</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>rec_landing_matches_sql_server itself</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>README.md</td>
+<td>Changed: the layers named</td>
+<td>n/a: documentation</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>| models/marts/subscriber_dim and product_dim, .sql and .yml, 4 new | Added: dimensions read from silver (D-21) | not_null and unique on each key | n/a: design 8 | n/a: pass-throughs | n/a | n/a | n/a: counts equal silver by construction | n/a: entities only |
+| models/marts/license_line_month_metric, entitlement_month_metric, usage_report_metric, invoice_item_metric, .sql and .yml, 8 new | Added: atomic facts (design 6.1, silver to gold) | Keys not_null and unique; foreign keys not_null | n/a: design 8 | ut_license_line_month_filters, ut_entitlement_month_coverage, ut_invoice_item_month_filters | n/a | n/a | assert_subscriber_product_month_reconciles reads each | licensed_units, entitled_units, reported_units, billed_units, billed_amount |
+| models/marts/subscriber_product_month_metric.sql and .yml, 2 new | Added: the nested-aggregation exception (D-22) | Key not_null and unique; foreign keys and unit_price not_null | n/a: design 8 | ut_subscriber_product_month_two_sides and the five ut_check_* | assert_checks_match_answer_key | n/a | assert_subscriber_product_month_reconciles | The eleven metrics, results in 3.1 |
+| models/marts/_marts_unit_tests.yml, 1 new | Added: nine unit tests | n/a | n/a | The nine tests themselves | n/a | n/a | n/a | n/a |
+| tests/assert_checks_match_answer_key.sql and assert_subscriber_product_month_reconciles.sql, 2 new | Added: singular tests | n/a | n/a | n/a | The answer-key test | n/a | The reconciliation | n/a |
+| generator/phase_one_b.py, 1 new | Added: the amendment of phase one (D-23) | n/a: a script | n/a: design 8 | n/a: its checks are computed from the units, never typed | generator/run.py verify, month by month, against the answer key | n/a: design 8 | n/a | n/a |
+| generator/run.py and generator/phase_one.py | Changed: the acts amend and key; verify month by month, its query taking a month (D-23) | n/a: scripts | n/a | n/a | generator/run.py verify itself | n/a | n/a | n/a |
+| seeds/seed_reconciliation_answer_key.csv | Changed: 216 rows, 18 paths by twelve months (D-23) | n/a: a seed | n/a | n/a | assert_checks_match_answer_key reads it | n/a | n/a | Each metric per month against the key's totals |
+| README.md | Changed: the amendment named (D-23) | n/a: documentation | n/a | n/a | n/a | n/a | n/a | n/a |</p>
+<p>| generator/phase_one_c.py, 1 new | Added: the second amendment, no repeated figure within a month (D-24) | n/a: a script | n/a: design 8 | n/a: its checks are computed from the units, never typed | all_differ per month; generator/run.py verify, month by month, against the answer key | n/a: design 8 | n/a | n/a |
+| generator/run.py | Changed: the act amend2; key written from phase_one_c.py (D-24) | n/a: a script | n/a | n/a | generator/run.py verify itself | n/a | n/a | n/a |
+| seeds/seed_reconciliation_answer_key.csv | Changed: 5 of 216 rows, from phase_one_c.py (D-24) | n/a: a seed | n/a | n/a | assert_checks_match_answer_key reads it | n/a | n/a | Each month's totals against the key's |
+| README.md | Changed: the second amendment named (D-24) | n/a: documentation | n/a | n/a | n/a | n/a | n/a | n/a |</p>
+<p>Pull request 6, branch rayserrano2735/dig-655-no-ties: <code>git diff --name-only 596f2c7...HEAD</code>, 4 files, every one in a row above.</p>
+<p>Pull request 4, branch rayserrano2735/dig-655-phase-one-amendment: <code>git diff --name-only fc934f7...78b32e0</code>, 2026-11-20 11:34 UTC, 5 files, every one in a row above.</p>
+<p>Brought to <code>git diff --name-only origin/main...HEAD</code> at commit c473306, 2026-11-20 01:48 UTC: 61 files, every one in a row above (the 24 staging files in two rows, the 9 silver files in one, the 17 gold files in five). dbt_project.yml's row also covers the dbt-cloud project-id the <code>dbt sl</code> commands need. Increments 3 and 4 add no model files.</p>
+<h2>3. Seven-layer proof plan</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Named artifacts</th>
+<th>Expected result</th>
+<th>Applicability and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 — Built-ins</td>
+<td>34 silver tests: 7 primary keys not_null and unique, 10 foreign keys not_null, 10 relationships; client_dim's 2 and the source's 2 kept; the 11 new source keys not_null; each of the 12 staging views' key not_null</td>
+<td>All pass</td>
+<td>Applies: every new table has keys</td>
+</tr>
+<tr>
+<td>2 — Expectations</td>
+<td>None</td>
+<td>None</td>
+<td>NA: no distribution is known before more phases land (design 8, layer 2)</td>
+</tr>
+<tr>
+<td>3 — Unit tests</td>
+<td>ut_usage_report_latest_wins, ut_license_line_conformed_keys, ut_license_line_chain, ut_invoice_item_updated_at, ut_subscriber_deleted_excluded, ut_product_change_hash; gold's ut_check_reported_beyond_licensed, ut_check_entitled_beyond_licensed, ut_check_billed_without_entitlement, ut_check_entitled_without_billing, ut_check_entitled_beyond_reported, ut_subscriber_product_month_two_sides, ut_license_line_month_filters, ut_entitlement_month_coverage and ut_invoice_item_month_filters in increment 2</td>
+<td>Written and seen failing before the model exists, then passing</td>
+<td>Applies: LA-1 to LA-10</td>
+</tr>
+<tr>
+<td>4 — Logic assertions</td>
+<td>assert_invoice_amount_equals_items, assert_contract_tenant_matches_account, assert_opportunity_tenant_matches_contract; assert_checks_match_answer_key in increment 2 (D-8)</td>
+<td>Zero rows returned</td>
+<td>Applies: the profile's checks (design 8, checks from the profile)</td>
+</tr>
+<tr>
+<td>5 — Detectors</td>
+<td>None</td>
+<td>None</td>
+<td>NA: the demo runs no detectors (design 8, layer 5)</td>
+</tr>
+<tr>
+<td>6 — Reconciliations</td>
+<td>rec_landing_matches_sql_server: each landed table's count per tenant against SQL Server's through the agent function; assert_silver_counts_match_staging: each silver table's count against its staging rows not deleted, distinct keys for usage_report; assert_subscriber_product_month_reconciles: the exception's licensed, entitled, reported and billed units and billed amount per month against the four document tables, and each row's sides (D-22)</td>
+<td>The two sides agree</td>
+<td>Applies: three source systems through one connector</td>
+</tr>
+<tr>
+<td>7 — Semantic surface</td>
+<td>Increment 3: each of the eleven metrics on subscriber_product_month_metric read for October 2026 through <code>dbt sl query</code> and through dbt's MCP, the route Claude uses, each against the answer key's total; client_count read before and after the merge</td>
+<td>The same value by both routes</td>
+<td>Applies from increment 3; in increment 1 only client_count</td>
+</tr>
+</tbody>
+</table>
+<h3>3.1 Layer 7 results, development</h3>
+<p>Read with <code>dbt sl query</code>, grouped by month, October 2026, at 2026-11-20 01:49 UTC, against the totals computed from the generator's paths and the answer key (generator/phase_one.py, the same run): all eleven equal.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Semantic Layer</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>units_reported_beyond_licensed</td>
+<td>24</td>
+<td>24</td>
+</tr>
+<tr>
+<td>units_licensed_not_reported</td>
+<td>22</td>
+<td>22</td>
+</tr>
+<tr>
+<td>units_entitled_beyond_licensed</td>
+<td>26</td>
+<td>26</td>
+</tr>
+<tr>
+<td>units_entitled_beyond_reported</td>
+<td>30</td>
+<td>30</td>
+</tr>
+<tr>
+<td>unbilled_revenue</td>
+<td>1,120</td>
+<td>1,120</td>
+</tr>
+<tr>
+<td>revenue_at_risk</td>
+<td>1,440</td>
+<td>1,440</td>
+</tr>
+<tr>
+<td>disagreements_reported_beyond_licensed</td>
+<td>7</td>
+<td>7</td>
+</tr>
+<tr>
+<td>disagreements_entitled_beyond_licensed</td>
+<td>6</td>
+<td>6</td>
+</tr>
+<tr>
+<td>disagreements_billed_without_entitlement</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>disagreements_entitled_without_billing</td>
+<td>6</td>
+<td>6</td>
+</tr>
+<tr>
+<td>disagreements_entitled_beyond_reported</td>
+<td>6</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<p>The second route, dbt's MCP, reads Production's Semantic Layer. After the merge (main d0757c4) and the job "DataBP build" (run [id], success 2026-11-20 02:25:50 UTC, after Ray's grants to DATABP_DBT_RL on DATABP_SFDC_DBO and DATABP_USAGE_DBO), it returned the same eleven values at 02:26 UTC. The Hex app DataBP Reconciliation, on the same Semantic Layer, returned them again at 02:28 UTC: subscriber 43's case (0 licensed, 12 reported, 600 dollars unbilled), October's totals, and 13 subscribers and products with a disagreement, the answer key's paths PA2 to PA14.</p>
+<h3>3.2 Full-build guardrails</h3>
+<table>
+<thead>
+<tr>
+<th>Artifacts</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dbt build of the whole project in development, target claude, schemas DBT_CLAUDE_*</td>
+<td>No error and no test failing</td>
+</tr>
+<tr>
+<td>Before every pull request: the Production role, DATABP_DBT_RL, can read every source schema the project declares, shown by <code>SHOW GRANTS TO ROLE DATABP_DBT_RL</code>, and to each role it holds, naming USAGE on each schema in models/staging/_sources.yml (DATABP_SRC_DBO reaches it through DATABP_LAB_READ_RL, read 2026-11-20 04:43 UTC) (Ray, 2026-11-19 21:24 ET, answer 2y, after Production's first build of DIG-655 failed on DATABP_SFDC_DBO and DATABP_USAGE_DBO, which development's role could read)</td>
+<td>Every declared schema listed with USAGE; a missing one stops the pull request</td>
+</tr>
+<tr>
+<td>After every change to an embedded Hex app or its page: the live page read in Chrome, the frame's width and height measured and each figure compared with the answer key (Ray's 1y, 2026-11-19 22:25 ET, after the site's own checks passed while the frame rendered 300 pixels wide)</td>
+<td>The frame at 960 pixels; every figure equal to the answer key</td>
+</tr>
+<tr>
+<td>The structure comparison: each committed DDL file, one per data model the branch maintains, compared with the structure the build left in that environment, after every build in dev, QA and production (Ray, 2026-11-01)</td>
+<td>Identical, keys and descriptions included; a difference fails the cycle</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Consumer-question probes</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Runnable probe</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>Increment 4: the Hex app filtered to subscriber 83, path PA5, against the answer key's row for it</td>
+<td>The four checks of PA5 and no others</td>
+</tr>
+<tr>
+<td>Q-2</td>
+<td>Increment 4: change one entitlement's units in SQL Server through the agent function, let the connector and the build run, read the app's figure</td>
+<td>The figure moves by the changed units times the price</td>
+</tr>
+</tbody>
+</table>
+<h3>4.1 Finance workbook and initial UAT proofs</h3>
+<p>For finance reporting branches, name row/key/value parity checks against the shared report query, totals at the declared grain, Excel types/date/rounding checks and refresh preservation of consumer observations. State consumer-review cases, dispositions and acceptance evidence for the exact workbook revision under K#12 I#27. Technical verification does not imply consumer acceptance. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h2>5. QA on production-shaped data</h2>
+<h3>5.1 Added and changed tests on QA data</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Every test of section 3</td>
+<td>DataBP has no QA environment: dbt platform holds Development and Production only (tutorial, knowledge 111 item 463, steps 15 and 21), and both read the same landing tables in DATABP_LAB, so development runs on the data Production reads. The tests run in development before the merge, then once in Production by the job DataBP build after it. A QA certification document (K#2 I#168) is waived for DataBP (Ray, 2026-11-19, answer 1y), since development and Production read the same landing data</td>
+</tr>
+</tbody>
+</table>
+<h3>5.2 Regression against production</h3>
+<p>The job DataBP build runs the whole project in Production after the merge; client_count read before and after must agree.</p>
+<h3>5.3 Consumer probes and reconciliations on QA data</h3>
+<p>Q-1, Q-2 and layer 6 rerun in Production after the merge.</p>
+<h3>5.4 Layer 7 in the QA collection</h3>
+<p>The metric battery reruns in Production after increment 3's merge.</p>
+<h2>6. Test artifact inventory</h2>
+<table>
+<thead>
+<tr>
+<th>Artifact classification</th>
+<th>Count</th>
+<th>Sections that make up the count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Built-in tests, layer 1</td>
+<td>61</td>
+<td>3: 34 silver, 11 new source keys, 12 staging keys, 4 kept; with the 4 singular tests, the 65 tests dbt ran at 22:28 UTC</td>
+</tr>
+<tr>
+<td>Unit tests, layer 3</td>
+<td>15</td>
+<td>2 and 3: 6 in increment 1, 9 in increment 2</td>
+</tr>
+<tr>
+<td>Logic assertions, layer 4</td>
+<td>4</td>
+<td>3: 3 in increment 1, 1 in increment 2</td>
+</tr>
+<tr>
+<td>Reconciliations, layer 6</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Semantic verifications, layer 7</td>
+<td>client_count now; 22 in increment 3, eleven metrics by two routes</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Consumer probes</td>
+<td>2</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<h2>7. Origin</h2>
+<table>
+<thead>
+<tr>
+<th>Test or proof</th>
+<th>Design decision proved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ut_usage_report_latest_wins</td>
+<td>D-2</td>
+</tr>
+<tr>
+<td>ut_license_line_conformed_keys, relationships tests</td>
+<td>D-19</td>
+</tr>
+<tr>
+<td>ut_license_line_chain</td>
+<td>D-7</td>
+</tr>
+<tr>
+<td>ut_invoice_item_updated_at</td>
+<td>D-17</td>
+</tr>
+<tr>
+<td>ut_subscriber_deleted_excluded, ut_product_change_hash</td>
+<td>D-19, D-20</td>
+</tr>
+<tr>
+<td>assert_invoice_amount_equals_items</td>
+<td>D-15</td>
+</tr>
+<tr>
+<td>assert_contract_tenant_matches_account, assert_opportunity_tenant_matches_contract</td>
+<td>D-1</td>
+</tr>
+<tr>
+<td>client_dim tests, client_count before and after</td>
+<td>D-21</td>
+</tr>
+<tr>
+<td>ut_check_* (five), assert_checks_match_answer_key</td>
+<td>D-2, D-8, D-10, D-12</td>
+</tr>
+<tr>
+<td>ut_license_line_month_filters, ut_entitlement_month_coverage, ut_invoice_item_month_filters</td>
+<td>D-7, D-16</td>
+</tr>
+<tr>
+<td>ut_subscriber_product_month_two_sides, assert_subscriber_product_month_reconciles</td>
+<td>D-22</td>
+</tr>
+<tr>
+<td>rec_landing_matches_sql_server, assert_silver_counts_match_staging</td>
+<td>D-3, D-4</td>
+</tr>
+<tr>
+<td>generator/run.py verify month by month; assert_checks_match_answer_key over twelve months</td>
+<td>D-8, D-23</td>
+</tr>
+<tr>
+<td>generator/phase_one_c.py all_differ per month</td>
+<td>D-24</td>
+</tr>
+</tbody>
+</table>
+<p>This plan cites the design's decisions and adds none. A test requiring a missing decision returns to the design.</p>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-19 22:36 UTC on version 9. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Test Plan (knowledge 12 item 177): all 15 present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the Test Plan's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The official header</td>
+<td>The field table, Status v1 DRAFT with its write time</td>
+</tr>
+<tr>
+<td>Executive summary, one row per model with business logic</td>
+<td>Section 1: six rows, 243 brute-force paths, 45 after collapse</td>
+</tr>
+<tr>
+<td>Logic areas with dimensions, brute force, collapse and reason, and a path table naming each test</td>
+<td>Section 2: LA-1 to LA-10 and the path table, 45 paths, each with its test</td>
+</tr>
+<tr>
+<td>Every changed file across the seven layers</td>
+<td>Section 2.1: 44 files at commit 82fcc72, grouped in 10 rows</td>
+</tr>
+<tr>
+<td>The seven layers walked, NA with reason</td>
+<td>Section 3, all seven; layers 2 and 5 NA with the design's reason</td>
+</tr>
+<tr>
+<td>One runnable probe per consumer question</td>
+<td>Section 4: Q-1 and Q-2; runnable from increment 4, once the app exists. Partly met until then</td>
+</tr>
+<tr>
+<td>QA: the Branch QA Test and Certification copy before the pull request</td>
+<td>Waived for DataBP (Ray, 2026-11-19, answer 1y): no QA environment exists, and development and Production read the same landing data (section 5.1)</td>
+</tr>
+<tr>
+<td>Artifact inventory agreeing with sections 3 to 6</td>
+<td>Section 6: 61 built-ins, 8 unit tests, 4 assertions, 2 reconciliations, the semantic and probe rows</td>
+</tr>
+<tr>
+<td>Origin: each test's design decision</td>
+<td>Section 7</td>
+</tr>
+<tr>
+<td>Checks as source query against target query, never an expected count</td>
+<td>Layer 6 pairs SQL Server with Snowflake and staging with silver; no count is a pass condition</td>
+</tr>
+<tr>
+<td>Unit tests written and run before the behavior they prove</td>
+<td>Section 3, layer 3: each failed against a version without its logic at 22:27:07 UTC, then passed at 22:27:26 UTC</td>
+</tr>
+<tr>
+<td>Agreed before any code</td>
+<td>Written 22:23 UTC; the first model code ran at 22:26 UTC; agreement by Ray's pre-authorization of 16:06 ET once this section passes</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried: D-1, D-2, D-3, D-4, D-7, D-8, D-12, D-15, D-16, D-17, D-19, D-20, D-21, each in section 7 with its tests; D-8 and D-12 by increment 2's tests.</p>
+<p>Verdict: compliant, with the QA requirement waived by Ray and the consumer probes runnable from increment 4.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DIG-656 Implementation Guide: Morgan, a pluggable agent service · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Implementation guide</div><h1>DIG-656 Implementation Guide: Morgan, a pluggable agent service</h1><p class="lead">Building and deploying the service.</p></div></section>
+<main class="doc">
+<p class="note">Morgan, the agent (DIG-656). Built from Pilot knowledge 111 item 818, version 5, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 818, version 5: DIG-656 Implementation Guide: Morgan, a pluggable agent service --><h3>Implementation Guide (one part)</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Implementation Guide</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-656 — Morgan: build — branch <code>rayserrano2735/dig-656-morgan-build</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Morgan, the POC's agent: design document, knowledge 111 item 817 v8 — profiling: none: the design's references say why — test plan: DIG-656 Test Plan: Morgan, knowledge 111 item 819</td>
+</tr>
+<tr>
+<td><strong>Prerequisites</strong></td>
+<td>Sage's code at rayserrano2735/digest-datavault 47c4608, infra/aws; the vault items "dv-digest Anthropic API key", "DataBP Semantic Layer Credential Token 2" and "Agent Code - Morgan"; the claude-ws AWS key (project setup, item 802)</td>
+</tr>
+<tr>
+<td><strong>Companions</strong></td>
+<td>None: one part. The page lives in Integrationals/databp-demo, built in the same workflow</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — DRAFT</strong> — written 2026-11-20 13:48Z (written inside Ray's workflow approval of 2026-11-20 08:46 ET, answer 1y; not separately agreed)</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Claude, who builds; Ray, who decides</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-20</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Purpose and grounding recap</h2>
+<p>This guide implements Morgan, the POC's agent: design document, knowledge 111 item 817 v8 and does not relitigate its decisions.</p>
+<table>
+<thead>
+<tr>
+<th>Design decision</th>
+<th>Settled rule used by the implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td>Sage's conversation loop, streaming, guard, access code, allowance and page are copied, changed only where DataBP differs</td>
+</tr>
+<tr>
+<td>D-2</td>
+<td>Metric tools call dbt's hosted Semantic Layer GraphQL interface, Production environment [id]</td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>The catalogue is read at start and kept 15 minutes</td>
+</tr>
+<tr>
+<td>D-4, D-5</td>
+<td>Morgan's instructions and suggested questions; the page "Ask Morgan"</td>
+</tr>
+<tr>
+<td>D-6</td>
+<td>Secrets in AWS Parameter Store under /databp/morgan, from the three vault items</td>
+</tr>
+<tr>
+<td>D-7, D-8</td>
+<td>One function, databp-morgan-conversation, values as Sage's; model claude-sonnet-5-5</td>
+</tr>
+<tr>
+<td>D-9</td>
+<td>A core apart from a persona and a route, chosen by the settings AGENT_PERSONA and AGENT_ROUTE</td>
+</tr>
+</tbody>
+</table>
+<p>Code in this guide is an illustrative pattern: more than pseudocode, less than shipping code. Do not copy it into the repo; implement it against the branch. Development is done when the output is shown correct against real data, per K#12 I#26.</p>
+<h3>Pattern declaration</h3>
+<ul>
+<li>Patterns instantiated: Sage's conversation function and its streaming entry point (DV Digest design D-10 to D-13)</li>
+<li>Patterns introduced: The pluggable agent: a route is any object with list_tools and call_tool returning results shaped as an MCP client's, so the core is unchanged when the route changes (D-9)</li>
+</ul>
+<h2>2. Scope</h2>
+<h3>Deliverables</h3>
+<ol>
+<li>agent/core: conversation.py, web.py, asgi.py and plugins.py, from Sage's conversation_function.py, web_functions.py and conversation_asgi.py.</li>
+<li>agent/routes/dbt_semantic_layer.py: list-metrics, get-dimensions and query-metrics over GraphQL.</li>
+<li>agent/personas/morgan.py: Morgan's instructions and suggested questions.</li>
+<li>agent/deploy.py, agent/run.sh and agent/requirements-lambda.txt, from Sage's deployment.</li>
+<li>agent/tests: Sage's tests kept, plus the route's and the plugins'.</li>
+<li>In databp-demo: ask.html, Morgan's page with her portrait.</li>
+</ol>
+<h3>Finance workbook delivery</h3>
+<p>For finance reporting branches, name the repository generation script, shared mart-level report query and parameters, reproducible generation/refresh steps, workbook metadata and sheets, and preservation of consumer observations under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h3>What stays the same</h3>
+<p>The dbt project, its models, metrics and tests; the Hex app; DV Digest and Sage.</p>
+<h3>Intentionally not done</h3>
+<p>The site's beautification and the rename to POC (Ray, 08:29 ET); Sage's invitation function and its MCP connector; more environments than one (D-7).</p>
+<h3>Identity recipes</h3>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Natural code</th>
+<th>Surrogate-key composition</th>
+<th>Minting location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>None: Morgan mints no keys</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Grounded in code and complete consumer set</h2>
+<p>Every edit below names a file and object read from the stated branch.</p>
+<table>
+<thead>
+<tr>
+<th>Touched object</th>
+<th>Exact file</th>
+<th>Consumers found</th>
+<th>Verification command and clock</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>conversation loop</td>
+<td>Sage infra/aws/conversation_function.py, answer() and the guard</td>
+<td>conversation_asgi.py, handler()</td>
+<td>Read at 47c4608, 2026-11-20 13:50 UTC</td>
+</tr>
+<tr>
+<td>the MCP session</td>
+<td>Sage infra/aws/web_functions.py, digest_session()</td>
+<td>answer() only</td>
+<td>Same read</td>
+</tr>
+<tr>
+<td>the streaming entry</td>
+<td>Sage infra/aws/conversation_asgi.py, app</td>
+<td>run.sh through the Lambda web adapter</td>
+<td>Same read</td>
+</tr>
+<tr>
+<td>the deployment</td>
+<td>Sage infra/aws/deploy_functions.py and deploy_lambda.py</td>
+<td>none in DataBP</td>
+<td>Same read</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Baseline</h2>
+<table>
+<thead>
+<tr>
+<th>Baseline ID</th>
+<th>Behavior or value</th>
+<th>Capture command or query</th>
+<th>Captured result and clock</th>
+<th>Reconciliation condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B-1</td>
+<td>October 2026 unbilled revenue through the hosted Semantic Layer with Token 2</td>
+<td>sl_probe.py, createQuery then query</td>
+<td>1,410 dollars, 2026-11-20 13:46 UTC</td>
+<td>Morgan's answer for October equals it</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Ordered implementation steps</h2>
+<ol>
+<li>Copy Sage's three core files into agent/core, renaming imports; replace digest_session with plugins.route_session(), and SYSTEM_PROMPT with plugins.persona().SYSTEM_PROMPT; the guard's retry wording names the persona's product, not DV Digest. Keep every limit and constant.</li>
+<li>Write agent/routes/dbt_semantic_layer.py: a class whose list_tools() returns the three tools with Sage's input schemas, and whose call_tool() runs GraphQL: metrics for list-metrics and get-dimensions, createQuery then query (polled each 0.5 seconds, 60 seconds at most) for query-metrics, returning rows and labels as Sage's backend does. get-manifest-version returns a clock bucket of 15 minutes, so the core's catalogue cache holds 15 minutes (D-3).</li>
+<li>Write agent/personas/morgan.py: the instructions (who Morgan is; the data provider, four documents, five checks, two dollar figures, months; every figure from a query; synthetic data) and four suggested questions (D-5).</li>
+<li>Write agent/deploy.py from Sage's deployment: one function databp-morgan-conversation, its role, its log group, its URL with CORS for https://integrationals.github.io and http://localhost:8000, the three secrets into /databp/morgan from their vault references.</li>
+<li>Tests: Sage's kept with the route mocked; new ones for the route (GraphQL calls mocked) and the plugins; seen red, then green.</li>
+<li>Deploy; ask the two probe questions through the function URL; then the page.</li>
+</ol>
+<p>Each step states the exact file, object, pattern citation, design or profiling citation, literal first-pass code, expected movement, and any required target rebuild.</p>
+<h2>6. Tests</h2>
+<h3>Existing-test dispositions</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Layer</th>
+<th>Disposition: keep, rewrite, or delete</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sage's test_web_functions.py, conversation and guard tests</td>
+<td>3</td>
+<td>Keep, rewritten against agent.core with a fake route</td>
+<td>The core is Sage's</td>
+</tr>
+<tr>
+<td>Sage's invitation and access-request tests</td>
+<td>3</td>
+<td>Delete</td>
+<td>The invitation function is not copied</td>
+</tr>
+</tbody>
+</table>
+<h3>New and changed tests</h3>
+<p>agent/tests/test_route.py: list_tools names three tools; list-metrics maps GraphQL metrics; get-dimensions refuses an unknown metric with the list of metrics; query-metrics builds createQuery with the metric and group_by, polls to SUCCESSFUL, returns rows; a FAILED query becomes a refusal. agent/tests/test_plugins.py: AGENT_PERSONA=morgan loads Morgan; an unknown persona or route fails at start.</p>
+<h2>7. Build sequence and verification</h2>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Literal command</th>
+<th>Expected result</th>
+<th>Baseline reconciliation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>python3 -m unittest discover agent/tests</td>
+<td>All pass</td>
+<td>None</td>
+</tr>
+<tr>
+<td>2</td>
+<td>python3 agent/deploy.py</td>
+<td>Function URL printed</td>
+<td>None</td>
+</tr>
+<tr>
+<td>3</td>
+<td>curl the function URL with the access code and "What did October's disagreements cost?"</td>
+<td>Reply with 1,410 and 2,070 and two queries</td>
+<td>B-1</td>
+</tr>
+</tbody>
+</table>
+<h3>Verification queries</h3>
+<p>dbt's MCP query_metrics for unbilled_revenue and revenue_at_risk by month, October 2026, equals Morgan's reply.</p>
+<h2>8. Decisions recorded in this guide</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Weed-level choice</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G-1</td>
+<td>The route mimics an MCP client's list_tools and call_tool</td>
+<td>Sage's core runs unchanged against any route (D-9)</td>
+</tr>
+<tr>
+<td>G-2</td>
+<td>The catalogue's 15 minutes come from get-manifest-version returning a 15-minute clock bucket</td>
+<td>The core's cache stays Sage's code (D-3)</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Rollback</h2>
+<p>Delete the function databp-morgan-conversation, its role and log group, and the parameters under /databp/morgan; revert the pull requests.</p>
+<h2>10. What this guide does not cover</h2>
+<table>
+<thead>
+<tr>
+<th>Exclusion</th>
+<th>Canonical home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The page's design moves</td>
+<td>The site's beautification phase</td>
+</tr>
+<tr>
+<td>More environments</td>
+<td>Design D-7</td>
+</tr>
+</tbody>
+</table>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>NOT BUILT.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

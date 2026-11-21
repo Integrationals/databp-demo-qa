@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market data: the business behind the POC</title>
+<style>
+:root{--bg:#fbfaf7;--ink:#22211e;--muted:#6b6963;--line:#c9c6bd;--card:#ffffff;
+--p-fill:#EEEDFE;--p-line:#534AB7;--p-ink:#3C3489;--p-sub:#534AB7;
+--d-fill:#E1F5EE;--d-line:#0F6E56;--d-ink:#085041;--d-sub:#0F6E56;
+--q-fill:#FAECE7;--b-fill:#FBEAF0;--b-line:#993556;--b-ink:#72243E;--b-sub:#993556;--q-line:#993C1D;--q-ink:#712B13;--q-sub:#993C1D}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1a;--ink:#ecebe6;--muted:#a3a19a;--line:#4a4944;--card:#252523;
+--p-fill:#3C3489;--p-line:#AFA9EC;--p-ink:#EEEDFE;--p-sub:#CECBF6;
+--d-fill:#085041;--d-line:#5DCAA5;--d-ink:#E1F5EE;--d-sub:#9FE1CB;
+--q-fill:#712B13;--b-fill:#72243E;--b-line:#ED93B1;--b-ink:#FBEAF0;--b-sub:#F4C0D1;--q-line:#F0997B;--q-ink:#FAECE7;--q-sub:#F5C4B3}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+.crumbs{font-size:13px;color:var(--muted);margin-bottom:6px}
+.crumbs a{color:var(--muted)}
+h1{font-size:22px;font-weight:600;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 14px}
+.diagram{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:inherit}
+.p rect{fill:var(--p-fill);stroke:var(--p-line)}.p .t{fill:var(--p-ink)}.p .s{fill:var(--p-sub)}
+.d rect{fill:var(--d-fill);stroke:var(--d-line)}.d .t{fill:var(--d-ink)}.d .s{fill:var(--d-sub)}
+.b rect{fill:var(--b-fill);stroke:var(--b-line)}.b .t{fill:var(--b-ink)}.b .s{fill:var(--b-sub)}
+.q rect{fill:var(--q-fill);stroke:var(--q-line)}.q .t{fill:var(--q-ink)}.q .s{fill:var(--q-sub)}
+.t{font-size:15px;font-weight:600}.s{font-size:13px}
+.arr{stroke:var(--muted);stroke-width:1.5;fill:none}
+.serve{stroke:var(--b-line);stroke-width:1.5;stroke-dasharray:1 4;stroke-linecap:round;fill:none}
+.bill{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:6 4;fill:none}
+.lead-line{stroke:var(--muted);stroke-width:1;stroke-dasharray:4 4;fill:none}
+.al{fill:var(--muted);font-size:12px}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:15px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td:first-child{color:var(--muted);width:28px}
+.note{color:var(--muted);font-size:14px;margin-top:12px}
+.bar{display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap}
+button{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;cursor:pointer}
+button:hover{border-color:var(--p-line)}button:disabled{opacity:.5;cursor:default}
+.link{cursor:pointer}.link:hover rect,.link:focus rect{stroke-width:2.5}
+.legend.lines svg{display:inline-block;width:34px;height:10px;vertical-align:0;margin-right:4px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);max-width:560px;width:calc(100% - 32px);padding:20px 22px}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog h2{font-size:18px;margin:0 0 2px}
+dialog .who{font-size:14px;color:var(--muted);margin:0 0 12px}
+dialog table{margin-top:4px}
+dialog .basis{font-size:13px;color:var(--muted);margin:12px 0 0}
+dialog .row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap}
+.tag{font-size:12px;color:var(--d-ink);background:var(--d-fill);border:1px solid var(--d-line);border-radius:6px;padding:1px 8px}
+.az{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:14px 16px 4px;margin:0 0 16px}
+.az-sum{margin:0 0 6px}
+.az-t td:nth-child(2){font-weight:600}
+.az-n{padding-left:22px;margin:12px 0 0;font-size:15px}
+.az-n li{margin-bottom:8px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<!-- page-band:start -->
+<section class="page-band"><div class="in"><h1>The business</h1><p class="lead">Market data licensing from the exchange to the subscriber, and where reconciliation fits.</p></div></section>
+<!-- page-band:end -->
+<!-- hand-open:start -->
+<div class="sect hand">
+<!-- hand-open:end -->
+<main>
+<div class="crumbs"><a href="./">DataBP POC</a> / <span id="crumbs"></span></div>
+<h1 id="title"></h1>
+<p class="lead" id="lead"></p>
+<!-- az:start -->
+<section id="az" class="az">
+<!-- Pilot knowledge 111 item 809, version 4: The business, A to Z: market data, DataBP and its reconciliation app -->
+<p class="az-sum">Exchanges sell the market data their trading produces, through vendors, to subscribers who use it to trade and to protect their money. Four documents describe each subscriber's use; DataBP builds software for the sellers, and our app checks that the four agree.</p>
+<table class="az-t"><thead><tr><th>#</th><th>Who or what</th><th>In short</th></tr></thead><tbody>
+<tr class="az-r"><td>1</td><td>The exchange</td><td>Produces market data and licenses it to vendors</td></tr>
+<tr class="az-r"><td>2</td><td>The vendor</td><td>Distributes the data, permits subscribers, reports their use</td></tr>
+<tr class="az-r"><td>3</td><td>The subscriber</td><td>Pays to trade, value holdings, manage risk, prove best execution</td></tr>
+<tr class="az-r"><td>4</td><td>The four documents</td><td>License, entitlement, usage report, invoice</td></tr>
+<tr class="az-r"><td>5</td><td>DataBP and our app</td><td>Software for the sellers; the app checks the four agree</td></tr>
+</tbody></table>
+<ol class="az-n"><li>An exchange is a market where shares, bonds, options and futures trade, and it sells the data its trading produces. In its market data agreement it grants a license to a data recipient: limited, non-exclusive, non-transferable and revocable, for the agreement's term, to use the data and to distribute it to subscribers who sign a subscriber agreement.</li><li>Vendors include market data vendors, broker-dealers and private network providers. A vendor permits each subscriber to receive the data through an entitlement control the exchange approves, and each month submits a usage report to the exchange counting the units each subscriber used, sometimes from counts the subscriber supplies.</li><li>Subscribers pay because the data feeds decisions that make or protect money: people trading from screens (display use, charged per screen); machines trading by algorithm, order routing or market making (non-display use, charged apart); pricing and valuing what they hold; watching risk during the day; and, for brokers, best execution, the duty to obtain the best terms for customers' orders, measured against the NBBO, the national best bid and national best offer: for a stock, the highest priced bid and the lowest priced offer across the exchanges quoting it, and the one price the business's operational side is checked against.</li><li>Each subscriber's use is described by four documents: the license, what was granted; the entitlement, what is permitted; the usage report, what was used, in units of count; and the invoice, what was billed, by the exchange or by the vendor passing the fees on. They should agree.</li><li>DataBP builds software for the sellers: exchanges, trading platforms, index and data providers, data vendors and fintechs. It turns sales opportunities in Salesforce into licensing agreements and offers its Licensing Ledger, which since 2026-10-08 the London Stock Exchange's customers use to check their entitlements against their invoices: entitlement and billing reconciliation. Our app, under the same name, does it for one seller: it compares the four documents for each of its subscribers, shows each disagreement with its dollar amount, and what changed since the last month-end close.</li></ol>
+<p class="note">Sources: course log entries 317 and 318; MEMX Market Data Agreement, section 4; an NYSE filing of 2010-05-12; Euronext Reporting Guidelines v1.6, sections 2.3 and 2.4 and appendix A2.2; EY, on managing market data costs; Regulation NMS, 17 CFR 242.600, and Nasdaq's summary of the SEC's proposed changes to it; Nasdaq, filing SR-NASDAQ-2024-016; Markets Media, "Market data fees: an overview"; FINRA, Regulatory Notice 26-15; SIFMA, comment letter of 2026-08-17; course log entries 312 to 319; Databento's market data licensing FAQ, on who bills; DataBP's site; Kaiko, on its partnership with DataBP; the London Stock Exchange, 2026-10-08; the design document, knowledge 111 item 806.</p>
+</section>
+<!-- az:end -->
+<div class="bar"><button id="up" type="button">Up one</button><button id="home" type="button">Start</button></div>
+<div class="diagram" id="diagram"></div>
+<div class="legend"><span><span class="sw" style="background:var(--b-fill);border:1px solid var(--b-line)"></span>DataBP</span><span><span class="sw" style="background:var(--p-fill);border:1px solid var(--p-line)"></span>The parties</span><span><span class="sw" style="background:var(--d-fill);border:1px solid var(--d-line)"></span>The documents</span><span><span class="sw" style="background:var(--q-fill);border:1px solid var(--q-line)"></span>The app</span></div>
+<div class="legend lines"><span><svg width="34" height="10"><line x1="2" y1="5" x2="30" y2="5" stroke="currentColor" stroke-width="1.5"/><path d="M26 2L31 5L26 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> A step of the loop</span><span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" stroke="currentColor" stroke-width="1.2" stroke-dasharray="6 4"/></svg> Who bills</span><span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" stroke="var(--b-line)" stroke-width="1.5" stroke-dasharray="1 4" stroke-linecap="round"/></svg> Whom DataBP serves</span></div>
+<table id="facts"><thead><tr id="head"></tr></thead><tbody></tbody></table>
+<p class="note" id="note"></p>
+</main>
+<!-- hand-close:start -->
+</div>
+<!-- hand-close:end -->
+<dialog id="doc" aria-labelledby="doc-title">
+<span class="tag">Sample, invented: the core of the document, not a real one</span>
+<h2 id="doc-title"></h2>
+<p class="who" id="doc-who"></p>
+<table><tbody id="doc-rows"></tbody></table>
+<p class="basis" id="doc-basis"></p>
+<div class="row"><span id="doc-more"></span><button id="doc-close" type="button">Close</button></div>
+</dialog>
+
+<script>
+const V={"business": {"level": 0, "parent": null, "title": "Market data: the business behind the POC", "lead": "The summary below runs from the exchange to our app; the diagram under it opens each part. Click a box to open it.", "svg": "<svg viewBox=\"0 0 680 426\" role=\"img\"><title>DataBP, the market data loop, and entitlement and billing reconciliation</title><defs><marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto-start-reverse\"><path d=\"M2 1L8 5L2 9\" fill=\"none\" stroke=\"context-stroke\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></marker></defs><g class=\"b link\" data-go=\"databp\" tabindex=\"0\" role=\"link\"><rect x=\"40\" y=\"30\" width=\"360\" height=\"50\" rx=\"8\"/><text class=\"t\" x=\"220\" y=\"52\" text-anchor=\"middle\">DataBP</text><text class=\"s\" x=\"220\" y=\"72\" text-anchor=\"middle\">Software for the sellers ›</text></g><line class=\"serve\" x1=\"92\" y1=\"80\" x2=\"92\" y2=\"130\"/><line class=\"serve\" x1=\"340\" y1=\"80\" x2=\"340\" y2=\"130\"/><g class=\"p link\" data-go=\"parties\" tabindex=\"0\" role=\"link\"><rect x=\"40\" y=\"130\" width=\"104\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"92\" y=\"152\" text-anchor=\"middle\">Exchange</text><text class=\"s\" x=\"92\" y=\"172\" text-anchor=\"middle\">Sells data ›</text></g><line class=\"arr\" x1=\"146\" y1=\"158\" x2=\"162\" y2=\"158\" marker-end=\"url(#arrow)\"/><g class=\"d link\" data-go=\"documents\" tabindex=\"0\" role=\"link\"><rect x=\"164\" y=\"130\" width=\"104\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"216\" y=\"152\" text-anchor=\"middle\">License</text><text class=\"s\" x=\"216\" y=\"172\" text-anchor=\"middle\">Granted ›</text></g><line class=\"arr\" x1=\"270\" y1=\"158\" x2=\"286\" y2=\"158\" marker-end=\"url(#arrow)\"/><g class=\"p link\" data-go=\"parties\" tabindex=\"0\" role=\"link\"><rect x=\"288\" y=\"130\" width=\"104\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"340\" y=\"152\" text-anchor=\"middle\">Vendor</text><text class=\"s\" x=\"340\" y=\"172\" text-anchor=\"middle\">Distributes ›</text></g><line class=\"arr\" x1=\"394\" y1=\"158\" x2=\"410\" y2=\"158\" marker-end=\"url(#arrow)\"/><g class=\"d link\" data-go=\"documents\" tabindex=\"0\" role=\"link\"><rect x=\"412\" y=\"130\" width=\"104\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"464\" y=\"152\" text-anchor=\"middle\">Entitlement</text><text class=\"s\" x=\"464\" y=\"172\" text-anchor=\"middle\">Permitted ›</text></g><line class=\"arr\" x1=\"518\" y1=\"158\" x2=\"534\" y2=\"158\" marker-end=\"url(#arrow)\"/><g class=\"p link\" data-go=\"parties\" tabindex=\"0\" role=\"link\"><rect x=\"536\" y=\"130\" width=\"104\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"588\" y=\"152\" text-anchor=\"middle\">Subscriber</text><text class=\"s\" x=\"588\" y=\"172\" text-anchor=\"middle\">Uses data ›</text></g><line class=\"arr\" x1=\"588\" y1=\"186\" x2=\"588\" y2=\"228\" marker-end=\"url(#arrow)\"/><text class=\"al\" x=\"612\" y=\"210\" text-anchor=\"middle\">counted</text><g class=\"d link\" data-go=\"documents\" tabindex=\"0\" role=\"link\"><rect x=\"412\" y=\"230\" width=\"228\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"526\" y=\"252\" text-anchor=\"middle\">Usage report</text><text class=\"s\" x=\"526\" y=\"272\" text-anchor=\"middle\">Units each month ›</text></g><path class=\"arr\" d=\"M 526 286 L 526 316 L 70 316 L 70 188\" marker-end=\"url(#arrow)\"/><text class=\"al\" x=\"300\" y=\"310\" text-anchor=\"middle\">submitted by the vendor to the exchange</text><g class=\"d link\" data-go=\"documents\" tabindex=\"0\" role=\"link\"><rect x=\"164\" y=\"230\" width=\"214\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"271\" y=\"252\" text-anchor=\"middle\">Invoice</text><text class=\"s\" x=\"271\" y=\"272\" text-anchor=\"middle\">Billed to the subscriber ›</text></g><line class=\"bill\" x1=\"120\" y1=\"186\" x2=\"200\" y2=\"230\"/><line class=\"bill\" x1=\"340\" y1=\"186\" x2=\"320\" y2=\"230\"/><g class=\"q link\" data-go=\"reconciliation\" tabindex=\"0\" role=\"link\"><rect x=\"40\" y=\"340\" width=\"600\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"340\" y=\"362\" text-anchor=\"middle\">Entitlement and billing reconciliation</text><text class=\"s\" x=\"340\" y=\"382\" text-anchor=\"middle\">Checks the four teal documents agree; what changed since the last close ›</text></g></svg>", "head": ["#", "Concept", "What it is"], "facts": [["Market data", "The prices and trades financial markets produce, sold to investment firms"], ["The parties", "Exchange, vendor and subscriber: who sells, who controls access, who uses"], ["The four documents", "License, entitlement, usage report and invoice, for each subscriber"], ["DataBP", "Software for the sellers: licensing, entitlements and reporting"], ["Entitlement and billing reconciliation", "The app: do the four documents agree, and what changed since the last close"]], "note": "Four concepts: DataBP (pink), the parties (purple), the four documents (teal) and the app (coral). Lines: a solid arrow is a step of the loop; a dashed line, who bills, the exchange or the vendor, which the sources leave open; a dotted line, whom DataBP serves. Sources: the MEMX Market Data Agreement, section 4 and definitions; an NYSE filing of 2010-05-12; Euronext Reporting Guidelines v1.6, sections 2.3 and 2.4 and appendix A2.2; Databento's market data licensing FAQ, on who bills; TRG Screen; the ICE Market Data Vendor Guide, section 2.4.1."}, "parties": {"level": 1, "parent": "business", "title": "The parties", "lead": "Market data moves from the exchange that produces it, through a vendor that controls access, to the subscriber that uses it.", "svg": "<svg viewBox=\"0 0 680 200\" role=\"img\"><title>The parties</title><defs><marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto-start-reverse\"><path d=\"M2 1L8 5L2 9\" fill=\"none\" stroke=\"context-stroke\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></marker></defs><g class=\"p\"><rect x=\"40\" y=\"60\" width=\"160\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"120\" y=\"82\" text-anchor=\"middle\">Exchange</text><text class=\"s\" x=\"120\" y=\"102\" text-anchor=\"middle\">Produces and sells</text></g><g class=\"p\"><rect x=\"260\" y=\"60\" width=\"160\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"340\" y=\"82\" text-anchor=\"middle\">Vendor</text><text class=\"s\" x=\"340\" y=\"102\" text-anchor=\"middle\">Controls access</text></g><g class=\"p\"><rect x=\"480\" y=\"60\" width=\"160\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"560\" y=\"82\" text-anchor=\"middle\">Subscriber</text><text class=\"s\" x=\"560\" y=\"102\" text-anchor=\"middle\">Receives and uses</text></g><text class=\"al\" x=\"229\" y=\"80\" text-anchor=\"middle\">data</text><line class=\"arr\" x1=\"202\" y1=\"90\" x2=\"256\" y2=\"90\" marker-end=\"url(#arrow)\"/><text class=\"al\" x=\"449\" y=\"80\" text-anchor=\"middle\">data</text><line class=\"arr\" x1=\"422\" y1=\"90\" x2=\"476\" y2=\"90\" marker-end=\"url(#arrow)\"/></svg>", "head": ["#", "Party", "What it is"], "facts": [["Exchange", "A market where shares, bonds, options and futures trade; it sells the data its trading produces"], ["Vendor", "Market data vendors, broker-dealers, private network providers and others that control subscribers' access"], ["Subscriber", "The party a vendor permits to receive market data through a subscriber entitlement"], ["DataBP's clients", "Exchanges, trading platforms, index and data providers, data vendors and fintechs"], ["Who is paid", "Some exchanges bill subscribers directly; others let the vendor bill and pass the fees on"]], "note": "Sources: the course log, entries 309, 312, 313 and 317; an NYSE filing of 2010-05-12; DataBP's site, its client types; Databento's market data licensing FAQ, on who is paid."}, "documents": {"level": 1, "parent": "business", "title": "The four documents", "lead": "Four documents describe each subscriber and product. They should agree; the app shows where they do not. Click a document to see a sample of what it holds.", "svg": "<svg viewBox=\"0 0 680 200\" role=\"img\"><title>The four documents</title><defs><marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto-start-reverse\"><path d=\"M2 1L8 5L2 9\" fill=\"none\" stroke=\"context-stroke\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></marker></defs><g class=\"d link\" data-doc=\"license\" tabindex=\"0\" role=\"button\"><rect x=\"40\" y=\"60\" width=\"140\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"110\" y=\"82\" text-anchor=\"middle\">License</text><text class=\"s\" x=\"110\" y=\"102\" text-anchor=\"middle\">Exchange grants ›</text></g><g class=\"d link\" data-doc=\"entitlement\" tabindex=\"0\" role=\"button\"><rect x=\"193\" y=\"60\" width=\"140\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"263\" y=\"82\" text-anchor=\"middle\">Entitlement</text><text class=\"s\" x=\"263\" y=\"102\" text-anchor=\"middle\">Vendor permits ›</text></g><g class=\"d link\" data-doc=\"usage\" tabindex=\"0\" role=\"button\"><rect x=\"346\" y=\"60\" width=\"140\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"416\" y=\"82\" text-anchor=\"middle\">Usage report</text><text class=\"s\" x=\"416\" y=\"102\" text-anchor=\"middle\">Units each month ›</text></g><g class=\"d link\" data-doc=\"invoice\" tabindex=\"0\" role=\"button\"><rect x=\"499\" y=\"60\" width=\"140\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"569\" y=\"82\" text-anchor=\"middle\">Invoice</text><text class=\"s\" x=\"569\" y=\"102\" text-anchor=\"middle\">Amount billed ›</text></g></svg>", "head": ["#", "Document", "What it is"], "facts": [["License", "The right an exchange grants in its market data agreement: limited, revocable, for the agreement's term"], ["Entitlement", "A vendor's permitting a subscriber to receive data, through an entitlement control the exchange approves"], ["Usage report", "The monthly count of units per product, per location or subscriber, sent to the exchange"], ["Invoice", "What the subscriber was billed: product, units, unit price, amount"], ["Who reads them", "In the POC, one data provider's data business team, seeing only its own subscribers"]], "note": "Sources: the course log, entries 314, 316 and 318 (MEMX Market Data Agreement, section 4; an NYSE filing of 2010-05-12; Euronext Reporting Guidelines v1.6, section 2.3); the design document, decision D-1, for who reads them. The invoice's meaning is the design's own, not an industry source."}, "counting": {"level": 2, "parent": "documents", "title": "Counting the use", "lead": "Use is measured in a unit of count, reported each month, and declared by type of use; the three are different things.", "svg": "<svg viewBox=\"0 0 680 200\" role=\"img\"><title>Counting the use</title><defs><marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto-start-reverse\"><path d=\"M2 1L8 5L2 9\" fill=\"none\" stroke=\"context-stroke\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></marker></defs><g class=\"d\"><rect x=\"40\" y=\"60\" width=\"180\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"130\" y=\"82\" text-anchor=\"middle\">Unit of count</text><text class=\"s\" x=\"130\" y=\"102\" text-anchor=\"middle\">What one unit is</text></g><g class=\"d\"><rect x=\"250\" y=\"60\" width=\"180\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"340\" y=\"82\" text-anchor=\"middle\">Usage report</text><text class=\"s\" x=\"340\" y=\"102\" text-anchor=\"middle\">How many, each month</text></g><g class=\"d\"><rect x=\"460\" y=\"60\" width=\"180\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"550\" y=\"82\" text-anchor=\"middle\">Declaration</text><text class=\"s\" x=\"550\" y=\"102\" text-anchor=\"middle\">How the data is used</text></g><line class=\"arr\" x1=\"222\" y1=\"88\" x2=\"247\" y2=\"88\" marker-end=\"url(#arrow)\"/></svg>", "head": ["#", "Term", "What it is"], "facts": [["Unit of count", "The unit used to measure use of market data for invoicing, distinguishing display from non-display use"], ["An example unit", "At CME Group, the default for display terminals is the device"], ["Usage report", "The monthly count of reportable units per information product, per location or subscriber"], ["Declaration", "A data recipient's statement of how it uses the data, such as ICE's annual Non-Display Use Declaration"], ["Not the same", "A declaration states the type of use; a usage report counts units"]], "note": "Sources: the course log, entries 315, 316 and 319: Nasdaq European Data Policies; CME Group, Data Licensing Policy Guidelines; Euronext Reporting Guidelines v1.6, section 2.3; the ICE Market Data Vendor Guide, section 2.4.1."}, "databp": {"level": 1, "parent": "business", "title": "DataBP", "lead": "DataBP builds software for the sellers of market data. The London Stock Exchange offers its customers entitlement and billing reconciliation through DataBP; our app, under the same name, asks it from the seller's side.", "svg": "<svg viewBox=\"0 0 680 230\" role=\"img\"><title>DataBP</title><defs><marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto-start-reverse\"><path d=\"M2 1L8 5L2 9\" fill=\"none\" stroke=\"context-stroke\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></marker></defs><g class=\"b\"><rect x=\"40\" y=\"30\" width=\"190\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"135\" y=\"52\" text-anchor=\"middle\">Its clients</text><text class=\"s\" x=\"135\" y=\"72\" text-anchor=\"middle\">The sellers</text></g><g class=\"b\"><rect x=\"245\" y=\"30\" width=\"190\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"340\" y=\"52\" text-anchor=\"middle\">Licensing Ledger</text><text class=\"s\" x=\"340\" y=\"72\" text-anchor=\"middle\">Licensing, by API</text></g><g class=\"b\"><rect x=\"450\" y=\"30\" width=\"190\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"545\" y=\"52\" text-anchor=\"middle\">Reporting today</text><text class=\"s\" x=\"545\" y=\"72\" text-anchor=\"middle\">Usage and entitlement</text></g><g class=\"b\"><rect x=\"40\" y=\"140\" width=\"290\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"185\" y=\"162\" text-anchor=\"middle\">Reconciliation, customer side</text><text class=\"s\" x=\"185\" y=\"182\" text-anchor=\"middle\">Entitlement and billing reconciliation</text></g><g class=\"b\"><rect x=\"350\" y=\"140\" width=\"290\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"495\" y=\"162\" text-anchor=\"middle\">Our app, seller side</text><text class=\"s\" x=\"495\" y=\"182\" text-anchor=\"middle\">Entitlement and billing reconciliation</text></g></svg>", "head": ["#", "Part", "What it is"], "facts": [["Its clients", "Exchanges, trading platforms, index and data providers, data vendors and fintechs"], ["Licensing Ledger", "DataBP's ledger of licensing and billing information, reached by REST API and by a Model Context Protocol (MCP) server"], ["Reporting today", "Reporting over usage and entitlement data, with a Tableau connection for deeper analysis"], ["Reconciliation, customer side", "Since 2026-10-08, London Stock Exchange customers compare licensed entitlements with invoices, through the Licensing Ledger, by REST API and MCP server"], ["Our app, seller side", "Entitlement and billing reconciliation for one data provider: license, entitlement, usage report and invoice, for its own subscribers"]], "note": "Sources: DataBP's site, its client types and its Business Intelligence and Management Reporting page (https://www.databp.com/solutions/business-intelligence-and-management-reporting/); the London Stock Exchange, 2026-10-08 (https://www.lseg.com/en/about-us/new-at-lseg/making-market-data-administration-simpler-with-ai-ready-licensing-intelligence); the design document, decisions D-1 and D-2, for our app."}, "reconciliation": {"level": 1, "parent": "business", "title": "Entitlement and billing reconciliation", "lead": "The app's name, entitlement and billing reconciliation, is the London Stock Exchange's term for the same check on the customer's side. It asks whether the four documents agree: each of five ways they can disagree is shown with its dollar amount, and the kept history shows each one since the last month-end close.", "svg": "<svg viewBox=\"0 0 680 250\" role=\"img\"><title>Entitlement and billing reconciliation</title><g class=\"q\"><rect x=\"40\" y=\"40\" width=\"112\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"96\" y=\"62\" text-anchor=\"middle\">Reported</text><text class=\"s\" x=\"96\" y=\"82\" text-anchor=\"middle\">Over the license</text></g><g class=\"q\"><rect x=\"162\" y=\"40\" width=\"112\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"218\" y=\"62\" text-anchor=\"middle\">Entitled</text><text class=\"s\" x=\"218\" y=\"82\" text-anchor=\"middle\">Over the license</text></g><g class=\"q\"><rect x=\"284\" y=\"40\" width=\"112\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"340\" y=\"62\" text-anchor=\"middle\">Billed</text><text class=\"s\" x=\"340\" y=\"82\" text-anchor=\"middle\">No entitlement</text></g><g class=\"q\"><rect x=\"406\" y=\"40\" width=\"112\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"462\" y=\"62\" text-anchor=\"middle\">Entitled</text><text class=\"s\" x=\"462\" y=\"82\" text-anchor=\"middle\">Never billed</text></g><g class=\"q\"><rect x=\"528\" y=\"40\" width=\"112\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"584\" y=\"62\" text-anchor=\"middle\">Entitled</text><text class=\"s\" x=\"584\" y=\"82\" text-anchor=\"middle\">Over the report</text></g><g class=\"q\"><rect x=\"40\" y=\"150\" width=\"600\" height=\"56\" rx=\"8\"/><text class=\"t\" x=\"340\" y=\"172\" text-anchor=\"middle\">Since the last close</text><text class=\"s\" x=\"340\" y=\"192\" text-anchor=\"middle\">Restated usage, deleted rows, new licenses</text></g></svg>", "head": ["#", "Disagreement", "What it means"], "facts": [["Reported beyond the license", "The subscriber reports more units than it licensed: revenue not billed"], ["Entitled beyond the license", "The platform grants more than the contract"], ["Billed without entitlement", "Billing with no right behind it"], ["Entitled without billing", "Service given, never invoiced"], ["Entitled beyond reported", "Under-reporting: the usage report counts fewer units than the entitlement allows; revenue at risk"]], "note": "Worked example, invented: Acme Capital licenses 10 units of an equities feed, is entitled to 12, reports 14 for October and is billed for 10; at 50 dollars a unit, the 4 units beyond its license are 200 dollars unbilled. On an options feed it is entitled to 8, reports 5 and is billed for 5; at 40 dollars a unit, the 3 units entitled beyond reported are 120 dollars at risk. Sources: the design document, decision D-10 and sections 6.3 and 6.5; the design sketch, section 8.5; WatersTechnology, “Taking Control”, on how often exchange audits find under-reporting."}};
+const DOCS={"license": {"title": "Market data license agreement", "from": "Example Exchange, the licensor", "to": "Example Vendor, the data recipient", "rows": [["Data", "Equities feed, real time"], ["The right", "Use internally, and distribute to subscribers who sign a subscriber agreement; limited, non-exclusive, non-transferable, revocable"], ["Term", "2026-01-01 to 2026-12-31"], ["Schedule: Acme Capital", "Equities feed, 10 units (devices)"]], "basis": "The right as the MEMX Market Data Agreement, section 4, grants it."}, "entitlement": {"title": "Subscriber entitlement", "from": "Example Vendor", "to": "Acme Capital, the subscriber", "rows": [["Product", "Equities feed"], ["Units permitted", "12 devices"], ["From", "2026-10-01"], ["Through", "The exchange-approved entitlement control"]], "basis": "A vendor's permitting a subscriber to receive data, as an NYSE filing of 2010-05-12 describes it."}, "usage": {"title": "Monthly usage report", "from": "Example Vendor, submitting", "to": "Example Exchange", "rows": [["Month", "October 2026"], ["Unit of count", "Device"], ["Acme Capital, equities feed", "14 units"], ["Counts from", "The subscriber, for its own users"]], "basis": "Submitted by the distributor each month, the subscriber supplying counts, as the Euronext Reporting Guidelines v1.6, sections 2.3 and 2.4 and appendix A2.2, set out.", "more": ["counting", "Counting the use"]}, "invoice": {"title": "Invoice", "from": "Example Exchange, or Example Vendor passing the fee on", "to": "Acme Capital", "rows": [["Month", "October 2026"], ["Equities feed", "10 units at 50 dollars"], ["Amount", "500 dollars"], ["Status", "Issued"]], "basis": "Who bills varies by exchange, as Databento's market data licensing FAQ says."}};
+function openDoc(k){const d=DOCS[k];if(!d)return;
+ document.getElementById("doc-title").textContent=d.title;
+ document.getElementById("doc-who").textContent="From "+d.from+", to "+d.to;
+ const tb=document.getElementById("doc-rows");tb.innerHTML="";
+ d.rows.forEach(r=>{const tr=document.createElement("tr");[r[0],r[1]].forEach((c,j)=>{const td=document.createElement("td");td.textContent=c;if(j===0){td.style.fontWeight="600";td.style.width="40%";td.style.color="var(--ink)"}tr.appendChild(td)});tb.appendChild(tr)});
+ document.getElementById("doc-basis").textContent=d.basis;
+ const mo=document.getElementById("doc-more");mo.innerHTML="";
+ if(d.more){const b=document.createElement("button");b.type="button";b.textContent=d.more[1]+" ›";b.addEventListener("click",()=>{dl.close();go(d.more[0])});mo.appendChild(b)}
+ dl.showModal()}
+const dl=document.getElementById("doc");
+document.getElementById("doc-close").addEventListener("click",()=>dl.close());
+dl.addEventListener("click",e=>{if(e.target===dl)dl.close()});
+function go(id){if(location.hash!=="#"+id)location.hash=id;else render()}
+function current(){const h=location.hash.replace("#","");return V[h]?h:"business"}
+function path(id){const p=[];for(let c=id;c;c=V[c].parent)p.unshift(c);return p}
+function render(){
+ const id=current(),v=V[id];
+ document.getElementById("title").textContent=v.title;
+ document.getElementById("lead").textContent=v.lead;
+ document.getElementById("crumbs").textContent=path(id).map(c=>"Level "+V[c].level+": "+V[c].title).join(" › ");
+ const dg=document.getElementById("diagram");dg.innerHTML=v.svg;
+ dg.querySelectorAll("[data-doc]").forEach(g=>{g.addEventListener("click",()=>openDoc(g.dataset.doc));g.addEventListener("keydown",e=>{if(e.key==="Enter")openDoc(g.dataset.doc)})});
+ dg.querySelectorAll("[data-go]").forEach(g=>{g.addEventListener("click",()=>go(g.dataset.go));g.addEventListener("keydown",e=>{if(e.key==="Enter")go(g.dataset.go)})});
+ const hr=document.getElementById("head");hr.innerHTML="";v.head.forEach(h=>{const th=document.createElement("th");th.textContent=h;hr.appendChild(th)});
+ const tb=document.querySelector("#facts tbody");tb.innerHTML="";
+ v.facts.forEach((f,i)=>{const tr=document.createElement("tr");[i+1,f[0],f[1]].forEach((c,j)=>{const td=document.createElement("td");td.textContent=c;if(j===1)td.style.fontWeight="600";tr.appendChild(td)});tb.appendChild(tr)});
+ document.getElementById("note").textContent=v.note;
+ document.getElementById("az").hidden=(id!=="business");
+ document.getElementById("up").disabled=!v.parent;
+ document.title="Market data: "+v.title;
+}
+document.getElementById("up").addEventListener("click",()=>{const p=V[current()].parent;if(p)go(p)});
+document.getElementById("home").addEventListener("click",()=>go("business"));
+window.addEventListener("hashchange",render);
+render();
+</script>
+<!-- endband:start -->
+<section class="endband"><div class="in"><p class="brand-label">Entitlement and billing reconciliation</p><h2>See it running</h2><p>The live app and Morgan answer from the same governed metrics, on the platform this site describes.</p><div class="ctas"><a class="brand-btn" href="./#app">Try the live app</a><a class="brand-btn ghost" href="ask.html">Ask Morgan</a></div></div></section>
+<!-- endband:end -->
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

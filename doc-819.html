@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DIG-656 Test Plan: Morgan · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Test plan</div><h1>DIG-656 Test Plan: Morgan</h1><p class="lead">The route&#x27;s tests and the live probes.</p></div></section>
+<main class="doc">
+<p class="note">Morgan, the agent (DIG-656). Built from Pilot knowledge 111 item 819, version 2, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 819, version 2: DIG-656 Test Plan: Morgan --><h3>Test Plan</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Test Plan</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-656 — Morgan: build — branch <code>rayserrano2735/dig-656-morgan-build</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Morgan, the POC's agent: design document, knowledge 111 item 817 v8 — implementation guide: DIG-656 Implementation Guide: Morgan, a pluggable agent service, knowledge 111 item 818 — QA standard: K#2 I#167</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — DRAFT</strong> — written 2026-11-20 13:50Z (written inside Ray's workflow approval of 2026-11-20 08:46 ET, answer 1y)</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Claude, who builds and tests; Ray, who decides</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-20</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Executive summary</h2>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Logic areas</th>
+<th>Brute-force paths</th>
+<th>Unique paths after collapse</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>agent.routes.dbt_semantic_layer</td>
+<td>LA-1 the three tools</td>
+<td>6</td>
+<td>5</td>
+</tr>
+<tr>
+<td>agent.core.plugins</td>
+<td>LA-2 choosing persona and route</td>
+<td>4</td>
+<td>3</td>
+</tr>
+<tr>
+<td>agent.core.conversation</td>
+<td>LA-3 Sage's loop and guard, kept</td>
+<td>Sage's own</td>
+<td>Sage's tests</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Logic areas</h2>
+<h3>LA-1 The three tools (route)</h3>
+<p>Dimensions: the tool (list-metrics, get-dimensions, query-metrics) by the outcome (answered, refused). Brute force 6. Collapse: list-metrics has no refusal of its own, so 5. Design D-2, D-3.</p>
+<h3>LA-2 Choosing persona and route (plugins)</h3>
+<p>Dimensions: the persona setting known or unknown, the route setting known or unknown. Brute force 4. Collapse: either unknown fails the same way at start, so 3. Design D-9.</p>
+<h3>LA-3 Sage's loop and guard (core)</h3>
+<p>Sage's own logic areas and tests (DV Digest design D-10 to D-13), kept and run against a fake route. Design D-1.</p>
+<p>Each logic area states its dimensions, brute-force count, collapse and reason, then provides this table:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Scenario</th>
+<th>Expected result</th>
+<th>Unit-test name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>list-metrics</td>
+<td>The 17 metrics with name, label, description</td>
+<td>test_list_metrics</td>
+</tr>
+<tr>
+<td>2</td>
+<td>get-dimensions, known metric</td>
+<td>Its dimension names</td>
+<td>test_get_dimensions</td>
+</tr>
+<tr>
+<td>3</td>
+<td>get-dimensions, unknown metric</td>
+<td>Refusal naming the metrics</td>
+<td>test_unknown_metric_refused</td>
+</tr>
+<tr>
+<td>4</td>
+<td>query-metrics answered</td>
+<td>Rows and labels; createQuery carries the metric and group_by</td>
+<td>test_query_metrics</td>
+</tr>
+<tr>
+<td>5</td>
+<td>query-metrics failed</td>
+<td>Refusal carrying the Semantic Layer's error</td>
+<td>test_failed_query_refused</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Persona and route known</td>
+<td>Morgan and the Semantic Layer route loaded</td>
+<td>test_plugins_load</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Persona unknown</td>
+<td>Start fails, naming the setting</td>
+<td>test_unknown_persona</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Route unknown</td>
+<td>Start fails, naming the setting</td>
+<td>test_unknown_route</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Sage's conversation tests</td>
+<td>As in DV Digest</td>
+<td>agent/tests/test_core.py</td>
+</tr>
+</tbody>
+</table>
+<h3>2.1 Coverage by changed file, all seven layers</h3>
+<p>Every code file the branch changes or adds, from <code>git diff --name-only</code> against its base at a stated clock, one row per file: every layer filled with its named artifacts, or "n/a: reason" (COVERAGE: EVERY FILE, EVERY LAYER, K#2 I#226). The row count equals the diff's; existing tests on a changed file are kept and named beside the new.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+<th>1 Built-ins</th>
+<th>2 Expectations</th>
+<th>3 Unit tests</th>
+<th>4 Logic assertions</th>
+<th>5 Detectors</th>
+<th>6 Reconciliations</th>
+<th>7 Semantic surface</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>agent/ (new folder)</td>
+<td>Added: core, route, persona, deployment, tests</td>
+<td>n/a: no dbt models</td>
+<td>n/a</td>
+<td>LA-1 to LA-3</td>
+<td>the guard, LA-3</td>
+<td>CloudWatch events (design 8)</td>
+<td>the probes against dbt's MCP</td>
+<td>the catalogue of 17 metrics</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Seven-layer proof plan</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Named artifacts</th>
+<th>Expected result</th>
+<th>Applicability and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 — Built-ins</td>
+<td>None</td>
+<td>n/a</td>
+<td>No dbt models change</td>
+</tr>
+<tr>
+<td>2 — Expectations</td>
+<td>None</td>
+<td>n/a</td>
+<td>No dbt models change</td>
+</tr>
+<tr>
+<td>3 — Unit tests</td>
+<td>Paths 1 to 9</td>
+<td>Each seen failing before its code, then passing</td>
+<td>LA-1 to LA-3</td>
+</tr>
+<tr>
+<td>4 — Logic assertions</td>
+<td>The guard: a planted reply with a figure and no query is never served</td>
+<td>Error, no text released</td>
+<td>Design D-1, Sage's D-13</td>
+</tr>
+<tr>
+<td>5 — Detectors</td>
+<td>CloudWatch events start, catalogue, model call, tool request, upstream error</td>
+<td>Present after the probes</td>
+<td>Design 8</td>
+</tr>
+<tr>
+<td>6 — Reconciliations</td>
+<td>Each probe figure against dbt's MCP and the answer key</td>
+<td>Equal</td>
+<td>Morgan, Hex and the MCP agree</td>
+</tr>
+<tr>
+<td>7 — Semantic surface</td>
+<td>The catalogue given to Claude; each probe's query evidence</td>
+<td>17 metrics; real metric names</td>
+<td>The Semantic Layer is Morgan's only input</td>
+</tr>
+</tbody>
+</table>
+<h3>3.1 Full-build guardrails</h3>
+<table>
+<thead>
+<tr>
+<th>Artifacts</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deployment read back: reserved concurrency 2, response streaming, CORS origins, daily cap 200, no secret in the package; the page read live in Chrome</td>
+<td>As the design's D-6 and D-7 set</td>
+</tr>
+<tr>
+<td>The structure comparison: each committed DDL file, one per data model the branch maintains, compared with the structure the build left in that environment, after every build in dev, QA and production (Ray, 2026-11-01)</td>
+<td>Identical, keys and descriptions included; a difference fails the cycle</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Consumer-question probes</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Runnable probe</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>Through the function URL, then on the page: "What did October's disagreements cost?" and "Why is subscriber 43 unbilled?"</td>
+<td>1,410 and 2,070 dollars; 17 units beyond licensed, 850 dollars; query evidence under each</td>
+</tr>
+<tr>
+<td>Q-2</td>
+<td>Ray talks to Morgan on the page</td>
+<td>His approval</td>
+</tr>
+</tbody>
+</table>
+<h3>4.1 Finance workbook and initial UAT proofs</h3>
+<p>For finance reporting branches, name row/key/value parity checks against the shared report query, totals at the declared grain, Excel types/date/rounding checks and refresh preservation of consumer observations. State consumer-review cases, dispositions and acceptance evidence for the exact workbook revision under K#12 I#27. Technical verification does not imply consumer acceptance. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h2>5. QA on production-shaped data</h2>
+<h3>5.1 Added and changed tests on QA data</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Every test above</td>
+<td>DataBP has no QA environment; the QA certification is waived for DataBP (Ray, 2026-11-19, answer 1y); Morgan has one deployment (design D-7)</td>
+</tr>
+</tbody>
+</table>
+<h3>5.2 Regression against production</h3>
+<p>n/a: Morgan is new; nothing in production depends on it.</p>
+<h3>5.3 Consumer probes and reconciliations on QA data</h3>
+<p>The probes run against the one deployment.</p>
+<h3>5.4 Layer 7 in the QA collection</h3>
+<p>The catalogue check runs against the one deployment.</p>
+<h2>6. Test artifact inventory</h2>
+<table>
+<thead>
+<tr>
+<th>Artifact classification</th>
+<th>Count</th>
+<th>Sections that make up the count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit tests</td>
+<td>8 new, plus Sage's kept</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Logic assertions</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Reconciliations</td>
+<td>2 probes</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<h2>7. Origin</h2>
+<table>
+<thead>
+<tr>
+<th>Test or proof</th>
+<th>Design decision proved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Paths 1 to 5</td>
+<td>D-2, D-3</td>
+</tr>
+<tr>
+<td>Paths 6 to 8</td>
+<td>D-9</td>
+</tr>
+<tr>
+<td>Path 9 and the guard</td>
+<td>D-1</td>
+</tr>
+<tr>
+<td>The probes</td>
+<td>D-4, D-5</td>
+</tr>
+<tr>
+<td>The guardrails</td>
+<td>D-6, D-7</td>
+</tr>
+</tbody>
+</table>
+<p>This plan cites the design's decisions and adds none. A test requiring a missing decision returns to the design.</p>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>NOT BUILT.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

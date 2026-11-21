@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morgan, the POC&#x27;s agent: design document · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Design document</div><h1>Morgan, the POC&#x27;s agent: design document</h1><p class="lead">A pluggable agent service: core, persona and route.</p></div></section>
+<main class="doc">
+<p class="note">Morgan, the agent (DIG-656). Built from Pilot knowledge 111 item 817, version 12, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 817, version 12: Morgan, the POC's agent: design document --><h3>Design Document</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 3 — Design Document</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-656 (Morgan: build), under DIG-650 — The DataBP POC: Morgan, an agent that answers from the governed metrics — branch <code>rayserrano2735/dig-656-morgan-build</code> in Integrationals/databp-dbt</td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Profiling: none: Morgan reads no source system; it reads the dbt Semantic Layer, whose metrics the reconciliation's design defines (knowledge 111 item 806) — related records: DV Digest's design for Sage, the agent copied here (knowledge 35 item 324) and its code (rayserrano2735/digest-datavault, infra/aws and docs/ask, read at 47c4608); the reconciliation's design (knowledge 111 item 806); the build tutorial, step 26 (knowledge 111 item 463); DataBP project setup (knowledge 111 item 802); the site's look (knowledge 111 item 811)</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — DRAFT</strong> — written 2026-11-20 13:31Z (not presented for agreement: its compliance section is not built)</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that builds Morgan</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-20</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>0. Target ERD</h2>
+<p>NA: Morgan stores no data; it reads governed metrics and keeps the conversation only in the page.</p>
+<h2>1. Purpose</h2>
+<p>Bin Luo, DataBP's CTO, can ask the POC's questions in his own words and get answers whose every figure comes from a governed metric, with the query behind it on the page. Morgan is the person he talks to: an approachable analyst who walks him through how a disagreement was found and what it costs. It is the DV Digest pattern, Sage, copied to DataBP (Ray, 2026-11-20 08:05 ET: "Now we're going to add the interactive agent"; earlier: "mostly cut and paste").</p>
+<h2>2. Consumer questions</h2>
+<h3>2.1 Questions from consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked by</th>
+<th>Asked at</th>
+<th>Origin</th>
+<th>Question in the asker's words</th>
+<th>Answer</th>
+<th>Decision(s)</th>
+<th>Test probe</th>
+<th>State and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>Ray Serrano</td>
+<td>2026-11-20 08:05 ET</td>
+<td>DataBP session</td>
+<td>"Now we're going to add the interactive agent"</td>
+<td>A chat on the POC site where Morgan answers from the Semantic Layer and shows the query behind each figure</td>
+<td>D-1, D-2, D-5</td>
+<td>P-1</td>
+<td>Answered in design</td>
+</tr>
+<tr>
+<td>Q-2</td>
+<td>Ray Serrano</td>
+<td>2026-11-20 08:23 ET</td>
+<td>DataBP session</td>
+<td>"It has to be personable, somebody you'd want to talk to, a financial advisor"</td>
+<td>Morgan, the approachable analyst, in the site's colors</td>
+<td>D-4</td>
+<td>P-2</td>
+<td>Proven: Ray asked Morgan on the live page, 2026-11-20 09:22 ET: "it is working, bravo"</td>
+</tr>
+</tbody>
+</table>
+<h3>2.2 Questions to consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C-1</td>
+<td>Bin Luo</td>
+<td>Ray Serrano, 2026-11-18</td>
+<td>Which of DataBP's pains the POC should speak to (the reconciliation design's C-1)</td>
+<td>Morgan's suggested questions (D-5)</td>
+<td>The reconciliation's own questions</td>
+<td>Unknown before the CTO round</td>
+<td>Open</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 Questions to source owners</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>None: Morgan reads only the Semantic Layer</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Concept</h2>
+<p>A page sends the conversation, with an access code, to a function on AWS Lambda. The function gives Claude Morgan's instructions, the current catalogue of metrics and dimensions, and three tools: list the metrics, get a metric's dimensions, and query metrics. Each tool calls dbt's hosted Semantic Layer in Production, the same service Hex and dbt's MCP read. The answer streams back to the page as it is written, and the page shows, under the final answer, each query that produced a figure. A reply that states a figure without a query is not shown.</p>
+<h2>4. Data reality</h2>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Measured fact</th>
+<th>Design consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sage's code, read 2026-11-20 at 47c4608</td>
+<td>A conversation function of 463 lines, web functions (access code, daily allowance, secrets from AWS Parameter Store), a deployment script, and an Ask page; Claude reaches the metrics through three tools, list-metrics, get-dimensions and query-metrics, served by a MetricFlow backend on Snowflake</td>
+<td>Copied; the MetricFlow backend and its MCP server are replaced by calls to dbt's hosted Semantic Layer (D-2)</td>
+</tr>
+<tr>
+<td>The Semantic Layer, read 2026-11-20 12:12 UTC</td>
+<td>17 metrics on Production (counted through the GraphQL interface with Token 2, 2026-11-20 13:46 UTC), among them the five disagreement counts, the two dollar figures and the four document unit counts; dimensions include subscriber, product, unit price and month</td>
+<td>The catalogue Morgan is given (D-3)</td>
+</tr>
+<tr>
+<td>The vault, names read 2026-11-20</td>
+<td>"DataBP Semantic Layer Credential Token 1" and "Token 2"; "dv-digest Anthropic API key"; "dv-digest QA access code"; "claude-ws AWS Key"</td>
+<td>Morgan's secrets come from items like these (D-6)</td>
+</tr>
+<tr>
+<td>AWS, read from Sage's deployment script</td>
+<td>Sage deploys to AWS [id], where the lab's agent function digestcards-agent also runs, through the claude-ws key (read with that key, 2026-11-20 13:29 UTC)</td>
+<td>Morgan deploys beside them (D-7)</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Decisions</h2>
+<p>Decision ids are D-1, D-2, D-3, numbered in order within the document.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Decision</th>
+<th>Rationale</th>
+<th>Supporting evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td>Morgan is Sage copied: the conversation function, the web functions, the streaming of answers as they are written, the guard that serves no figure without a query (Sage's D-13), the access code, the daily allowance and the Ask page; only what DataBP changes is new</td>
+<td>Sage is proven in production and Ray asked for a copy</td>
+<td>Ray, 2026-11-20 08:10 ET, answer 2y; DV Digest design D-1 to D-14</td>
+</tr>
+<tr>
+<td>D-2</td>
+<td>Morgan's tools call dbt's hosted Semantic Layer in Production (environment [id]) through its GraphQL interface, in place of Sage's MetricFlow backend on Snowflake</td>
+<td>One route to the metrics: Morgan's figures are Hex's and dbt's MCP's by construction; no Snowflake identity inside Lambda. Cost: Morgan stops when that service stops, as on 2026-11-20 from 03:26 to 04:25 UTC</td>
+<td>Ray, 2026-11-20 08:19 ET, answer 1a</td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>The catalogue (metrics, their descriptions and dimensions) is read from the Semantic Layer when a function starts and kept for 15 minutes</td>
+<td>Sage keys its catalogue to the dbt run behind it; the hosted Semantic Layer gives no run identity through these calls, so a short life keeps a changed metric from going stale for long</td>
+<td>Sage's D-9</td>
+</tr>
+<tr>
+<td>D-4</td>
+<td>Morgan is the approachable analyst: a woman with dark hair in a bun, navy blazer, yellow scarf and earrings, in the site's navy, sky and yellow; her instructions make her walk the user through how a disagreement was found and what it costs, in plain terms, and say that all data is synthetic</td>
+<td>Ray: a person, not a logo, "somebody you'd want to talk to" (08:23 ET); "Let's go with approachable" (08:25 ET)</td>
+<td>Tutorial step 26, item 463 v126</td>
+</tr>
+<tr>
+<td>D-5</td>
+<td>The page is a new page of the POC site, "Ask Morgan", with suggested questions taken from the reconciliation: what October's disagreements cost, why subscriber 43 is unbilled, which check fails most, and how November compares</td>
+<td>The site is bare until its beautification phase (Ray, 08:29 ET), so the page carries function first</td>
+<td>Ray, 2026-11-20 08:29 ET</td>
+</tr>
+<tr>
+<td>D-6</td>
+<td>Secrets live in AWS Parameter Store under the prefix /databp/morgan, written at deploy from vault items by Sage's ensure_secret: the Anthropic key, the Semantic Layer token and the access code. They come from the vault items "dv-digest Anthropic API key", "DataBP Semantic Layer Credential Token 2" and "Agent Code - Morgan" (Ray, 2026-11-20 08:36 ET, answers 1b, 2a, 3a; Morgan's own vault item named by Ray, 2026-11-20 13:50 ET)</td>
+<td>Nothing secret in code, files or the page</td>
+<td>Sage's web_functions.secret and deploy_functions.ensure_secret</td>
+</tr>
+<tr>
+<td>D-7</td>
+<td>One deployment, beside Sage's, in AWS [id], region us-east-1: function databp-morgan-conversation, Python 3.12, 300 seconds, 512 MB, reserved concurrency 2, response streaming, origins https://integrationals.github.io and http://localhost:8000; daily allowance 200 conversations</td>
+<td>A POC has one environment, as the reconciliation's QA waiver reasons; values are Sage's</td>
+<td>Sage's deploy_functions.py; the test plan's QA waiver (item 814, 5.1)</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>The model is Sage's default, claude-sonnet-5-5</td>
+<td>Proven with this prompt shape and tool set</td>
+<td>Sage's conversation_function.py</td>
+</tr>
+<tr>
+<td>D-9</td>
+<td>The agent is a pluggable service: a core (the conversation loop, the tools, streaming, the guard, the access code and allowance) apart from two parts plugged into it, a persona (name, instructions, suggested questions, look) and a route to the metrics (dbt's hosted Semantic Layer for Morgan; Sage's MetricFlow on Snowflake could be another). Morgan is one configuration of the core; the code lives in Integrationals/databp-dbt</td>
+<td>The same agent can serve another client or another semantic layer by a new configuration, not a new copy</td>
+<td>Ray, 2026-11-20 08:36 ET: "we should think of the agent as a pluggable service", answer 4a</td>
+</tr>
+</tbody>
+</table>
+<h2>6. Domain specification</h2>
+<h3>6.1 source-to-target map</h3>
+<table>
+<thead>
+<tr>
+<th>Profile verdict</th>
+<th>Source concept and column</th>
+<th>Target area</th>
+<th>Destination table and column</th>
+<th>Identity recipe</th>
+<th>Pattern</th>
+<th>Additive?</th>
+<th>Decision</th>
+<th>Deliberate collapse, omission, or deferral</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NA</td>
+<td>None: Morgan maps no source column</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>D-2</td>
+<td>Morgan reads metrics; it writes no table</td>
+</tr>
+</tbody>
+</table>
+<p>Completion check: every profiling Integrate row has a destination; every Defer and Reject is named as absent; every written target column traces to a source column or stated derivation.</p>
+<h3>6.2 Dictionary</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Business meaning</th>
+<th>source-to-target mapping</th>
+<th>Mapping state</th>
+<th>Decision</th>
+<th>Verified example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Morgan</td>
+<td>The POC's agent: answers questions about the reconciliation from the governed metrics</td>
+<td>None</td>
+<td>Not mapped</td>
+<td>D-1, D-4</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>Query evidence</td>
+<td>The metric, grouping and filter of each Semantic Layer query behind a figure, shown under the answer</td>
+<td>None</td>
+<td>Not mapped</td>
+<td>D-1</td>
+<td>None yet</td>
+</tr>
+</tbody>
+</table>
+<h3>6.3 Domain content</h3>
+<p>What Morgan knows besides the catalogue: one data provider, data provider 3; four documents per subscriber, product and month (license, entitlement, usage report, invoice); the five checks and the two dollar figures as the reconciliation's design defines them (item 806, D-2, D-10, D-12, D-22); months October 2026 to September 2027, with reports and invoices generated for each (D-23); all data synthetic, generated for the POC.</p>
+<h3>6.4 Instance models</h3>
+<p>NA: Morgan holds no rows.</p>
+<h3>6.5 Worked examples</h3>
+<p>Bin asks: "Why is subscriber 43 unbilled in October?" Morgan queries licensed_units, reported_units, units_reported_beyond_licensed and unbilled_revenue by subscriber and month for subscriber 43 and October 2026, and answers that its usage report counted 17 units with no license behind them, which at 50 dollars a unit is 850 dollars unbilled; under the answer the page shows the query. These are the answer key's figures (generator/phase_one_b.py).</p>
+<h2>7. Deferred decisions</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Deferred decision</th>
+<th>Reason</th>
+<th>Unblocking condition</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>DD-1 to DD-4 settled by Ray, 2026-11-20 08:36 ET: the Anthropic key DV Digest's (1b), the Semantic Layer token Token 2 (2a), the access code its own vault item, Agent Code - Morgan (3a; named 2026-11-20 13:50 ET), the build issue DIG-656 (5y)</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>8. Testing plan</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Required proof or artifact</th>
+<th>Applicability and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1: built-in dbt tests</td>
+<td>NA</td>
+<td>No dbt model changes</td>
+</tr>
+<tr>
+<td>2: dbt-expectations</td>
+<td>NA</td>
+<td>No dbt model changes</td>
+</tr>
+<tr>
+<td>3: PCM unit tests</td>
+<td>Sage's unit tests, kept and run, with the Semantic Layer calls mocked: access code, allowance, history shaping, the no-figure guard, streaming events</td>
+<td>The function's logic is Sage's, tested the same way</td>
+</tr>
+<tr>
+<td>4: logic assertions</td>
+<td>A figure in a reply without a query is never served (Sage's D-13), tested with a planted reply</td>
+<td>The page's promise</td>
+</tr>
+<tr>
+<td>5: detectors</td>
+<td>CloudWatch events for start, catalogue, model call, metric query and upstream error, 14 days, as Sage</td>
+<td>Operational visibility</td>
+</tr>
+<tr>
+<td>6: reconciliation</td>
+<td>Each figure Morgan gives for the probes equals the same metric read through dbt's MCP and the answer key</td>
+<td>Morgan, Hex and the MCP must agree</td>
+</tr>
+<tr>
+<td>7: semantic surface</td>
+<td>The catalogue Morgan is given lists the 15 metrics; each probe's query evidence names real metrics</td>
+<td>The semantic surface is Morgan's only input</td>
+</tr>
+<tr>
+<td>Full-build guardrails, not a methodology layer</td>
+<td>Deployment checks: reserved concurrency 2, daily allowance, origins, streaming mode; no secret in the package; a live read of the page after each change</td>
+<td>Cost, access and the page</td>
+</tr>
+</tbody>
+</table>
+<h3>Consumer-question probes</h3>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Runnable probe</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>On the page: "What did October's disagreements cost?" then "Why is subscriber 43 unbilled?"</td>
+<td>1,410 dollars unbilled and 2,070 at risk; subscriber 43: 17 units reported beyond licensed, 850 dollars; query evidence under each</td>
+</tr>
+<tr>
+<td>Q-2</td>
+<td>Ray reads the page and talks to Morgan</td>
+<td>Ray's approval of the voice and the look</td>
+</tr>
+</tbody>
+</table>
+<h3>Checks from the profile</h3>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Check</th>
+<th>Layer</th>
+<th>Planned artifact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None: no profile</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Handoff boundary</h2>
+<p>The implementation guide decides how: the files copied from Sage and each change, the Semantic Layer client, the prompt in full, the page, the deployment, and the tests. This design decides what and why.</p>
+<h3>Finance workbook and initial UAT</h3>
+<p>For finance reporting branches, state the workbook's consumer, scope, business questions, expected behavior, preliminary-review conditions and final acceptance criteria under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>NOT BUILT.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

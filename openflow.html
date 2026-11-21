@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Openflow BYOC: the DataBP lab, level by level</title>
+<style>
+:root{--bg:#fbfaf7;--ink:#22211e;--muted:#6b6963;--line:#c9c6bd;--card:#ffffff;
+--sf-fill:#EEEDFE;--sf-line:#534AB7;--sf-ink:#3C3489;--sf-sub:#534AB7;
+--aws-fill:#E1F5EE;--aws-line:#0F6E56;--aws-ink:#085041;--aws-sub:#0F6E56;
+--n-fill:#F1EFE8;--n-line:#888780;--n-ink:#444441;--n-sub:#5F5E5A;--accent:#534AB7}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1a;--ink:#ecebe6;--muted:#a3a19a;--line:#4a4944;--card:#252523;
+--sf-fill:#3C3489;--sf-line:#AFA9EC;--sf-ink:#EEEDFE;--sf-sub:#CECBF6;
+--aws-fill:#085041;--aws-line:#5DCAA5;--aws-ink:#E1F5EE;--aws-sub:#9FE1CB;
+--n-fill:#444441;--n-line:#B4B2A9;--n-ink:#F1EFE8;--n-sub:#D3D1C7;--accent:#AFA9EC}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+.crumbs{font-size:13px;color:var(--muted);margin-bottom:6px}.crumbs a{color:var(--muted)}
+h1{font-size:22px;font-weight:600;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 14px}
+.bar{display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap}
+button{font:inherit;font-size:14px;padding:6px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+.diagram{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:inherit}
+.box{cursor:default}.box.link{cursor:pointer}.box.link:hover rect{stroke-width:2}
+.sf rect{fill:var(--sf-fill);stroke:var(--sf-line)}.sf .t{fill:var(--sf-ink)}.sf .s{fill:var(--sf-sub)}
+.aws rect{fill:var(--aws-fill);stroke:var(--aws-line)}.aws .t{fill:var(--aws-ink)}.aws .s{fill:var(--aws-sub)}
+.n rect{fill:var(--n-fill);stroke:var(--n-line)}.n .t{fill:var(--n-ink)}.n .s{fill:var(--n-sub)}
+.t{font-size:15px;font-weight:600}.s{font-size:13px}
+.zone rect{fill:none;stroke:var(--line);stroke-dasharray:5 4}.zone text{fill:var(--muted);font-size:13px;font-weight:600}
+.arr{stroke:var(--muted);stroke-width:1.5;fill:none}
+.al{fill:var(--muted);font-size:12px}
+.lane{fill:var(--ink);font-size:14px;font-weight:600}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:15px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td:first-child{color:var(--muted);width:28px}
+.note{font-size:14px;color:var(--muted);margin-top:12px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<!-- page-band:start -->
+<section class="page-band"><div class="in"><h1>The platform</h1><p class="lead">Openflow in our own AWS network, level by level, from the VPC to the connector.</p></div></section>
+<!-- page-band:end -->
+<!-- hand-open:start -->
+<div class="sect hand">
+<!-- hand-open:end -->
+<main>
+<div class="crumbs"><a href="./">DataBP POC</a> / <span id="crumbs"></span></div>
+<h1 id="title"></h1>
+<p class="lead" id="lead"></p>
+<div class="bar"><button id="up" type="button">Up one</button><button id="home" type="button">Start</button></div>
+<div class="diagram" id="diagram"></div>
+<div class="legend"><span><span class="sw" style="background:var(--sf-fill);border:1px solid var(--sf-line)"></span>Snowflake</span><span><span class="sw" style="background:var(--aws-fill);border:1px solid var(--aws-line)"></span>Your AWS account</span><span><span class="sw" style="background:var(--n-fill);border:1px solid var(--n-line)"></span>Supporting piece</span></div>
+<table id="facts"><thead><tr><th>#</th><th>What</th><th>As built on 2026-11-17</th></tr></thead><tbody></tbody></table>
+<p class="note" id="note"></p>
+</main>
+<!-- hand-close:start -->
+</div>
+<!-- hand-close:end -->
+<script>
+const ARCH_SVG = `<svg viewBox="0 0 680 300" role="img"><title>The architecture in one picture</title>
+<defs><marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--muted)" stroke-width="1.5"/></marker></defs>
+<text x="40" y="30" class="lane">Setup, once (cloud admin)</text>
+<g class="box n link" data-go="agent"><rect x="40" y="48" width="130" height="60" rx="8"/><text class="t" x="105" y="72" text-anchor="middle">Template</text><text class="s" x="105" y="92" text-anchor="middle">From Openflow</text></g>
+<g class="box n link" data-go="agent"><rect x="200" y="48" width="130" height="60" rx="8"/><text class="t" x="265" y="72" text-anchor="middle">CloudFormation</text><text class="s" x="265" y="92" text-anchor="middle">Runs the template</text></g>
+<g class="box aws link" data-go="agent"><rect x="360" y="48" width="130" height="60" rx="8"/><text class="t" x="425" y="72" text-anchor="middle">Agent</text><text class="s" x="425" y="92" text-anchor="middle">Builds the cluster</text></g>
+<g class="box aws link" data-go="cluster"><rect x="520" y="48" width="130" height="60" rx="8"/><text class="t" x="585" y="72" text-anchor="middle">Kubernetes</text><text class="s" x="585" y="92" text-anchor="middle">The deployment</text></g>
+<path d="M 172 78 L 197 78" class="arr" marker-end="url(#ah2)"/><path d="M 332 78 L 357 78" class="arr" marker-end="url(#ah2)"/><path d="M 492 78 L 517 78" class="arr" marker-end="url(#ah2)"/>
+<text x="40" y="170" class="lane">Data, always (data engineer)</text>
+<g class="box aws link" data-go="source"><rect x="40" y="188" width="110" height="60" rx="8"/><text class="t" x="95" y="212" text-anchor="middle">SQL Server</text><text class="s" x="95" y="232" text-anchor="middle">The source</text></g>
+<g class="box aws link" data-go="cluster"><rect x="168" y="188" width="110" height="60" rx="8"/><text class="t" x="223" y="212" text-anchor="middle">Connector</text><text class="s" x="223" y="232" text-anchor="middle">On a runtime</text></g>
+<g class="box sf link" data-go="destination"><rect x="296" y="188" width="110" height="60" rx="8"/><text class="t" x="351" y="212" text-anchor="middle">Landing zone</text><text class="s" x="351" y="232" text-anchor="middle">In Snowflake</text></g>
+<g class="box sf"><rect x="424" y="188" width="100" height="60" rx="8"/><text class="t" x="474" y="212" text-anchor="middle">dbt</text><text class="s" x="474" y="232" text-anchor="middle">Your layers</text></g>
+<g class="box sf"><rect x="542" y="188" width="108" height="60" rx="8"/><text class="t" x="596" y="212" text-anchor="middle">Semantic</text><text class="s" x="596" y="232" text-anchor="middle">To agents</text></g>
+<path d="M 152 218 L 165 218" class="arr" marker-end="url(#ah2)"/><path d="M 280 218 L 293 218" class="arr" marker-end="url(#ah2)"/><path d="M 408 218 L 421 218" class="arr" marker-end="url(#ah2)"/><path d="M 526 218 L 539 218" class="arr" marker-end="url(#ah2)"/>
+<path d="M 585 110 L 585 145 L 223 145 L 223 185" class="arr" stroke-dasharray="4 3" marker-end="url(#ah2)"/>
+<text x="40" y="282" class="al">Dashed: the connector runs on a runtime inside the Kubernetes deployment. Click a box to open it.</text>
+</svg>`;
+const V = {
+architecture:{title:"The architecture in one picture",
+  lead:"Two lanes: building it happens once and belongs to the cloud admin; the data runs all the time and belongs to the data engineer. They share one box, the cluster.",
+  raw:ARCH_SVG,
+  facts:[["The deployment","A Kubernetes cluster in our AWS, built by the agent"],["How it was built","CloudFormation ran the template Openflow provided; that created the agent"],["Runtimes","Each one a NiFi instance, added to the deployment, like adding PowerCenter servers"],["Connectors","Configured on a runtime's canvas; bring SQL Server data into the Snowflake landing zone"],["From there","dbt builds your layers and serves agents through the semantic layer"]],
+  note:"This view is Ray's own summary of 2026-11-17. That the agent builds the cluster is concluded from watching the build, not stated in Snowflake's documentation."},
+ overview:{title:"The deployment, Snowflake side and AWS side",
+  lead:"Snowflake keeps the Openflow screens and the destination; the machines that move the data run in your AWS account, next to the source. Click a box to open it.",
+  zones:[{x:20,y:14,w:640,h:150,label:"Snowflake"},{x:20,y:214,w:640,h:160,label:"Your AWS account (VPC digest-vpc)"}],
+  boxes:[
+   {id:"screens",c:"sf",x:50,y:58,w:250,t:"Openflow screens",s:"Snowflake runs these"},
+   {id:"destination",c:"sf",x:380,y:58,w:250,t:"Destination database",s:"DATABP_LAB"},
+   {id:"agent",c:"aws",x:40,y:262,w:180,t:"Agent",s:"Takes the commands"},
+   {id:"cluster",c:"aws",x:250,y:262,w:180,t:"EKS cluster",s:"Runtimes, connectors"},
+   {id:"source",c:"aws",x:460,y:262,w:180,t:"SQL Server",s:"Source DATABP_SRC"}],
+  arrows:[["M 130 118 L 130 259","commands",138,190],["M 457 292 L 433 292",null],["M 340 259 L 340 190 L 505 190 L 505 121","rows",350,182]],
+  facts:[["Openflow screens","Where you create deployments, runtimes and connectors; Snowflake runs them"],["Agent","First machine in your AWS; carries out the screens' commands"],["EKS cluster","Amazon's Kubernetes; runtimes and connectors run here"],["SQL Server","The source; read inside your network, never exposed to Snowflake"],["Destination database","Where the connector writes the rows, in Snowflake"]],
+  note:"Data crosses into Snowflake at one arrow only: from the cluster to the destination database."},
+ screens:{title:"Openflow screens (Snowflake's side)",
+  lead:"Everything you click in Openflow is a command sent to your deployment; Snowflake hosts these screens for every deployment.",
+  boxes:[
+   {c:"n",x:240,y:20,w:200,t:"Sign-in",s:"Snowflake account login"},
+   {c:"sf",x:30,y:130,w:200,t:"Deployments",s:"DATABP_OPENFLOW"},
+   {c:"sf",x:240,y:130,w:200,t:"Runtimes",s:"DATABP_RUNTIME"},
+   {c:"sf",x:450,y:130,w:200,t:"Connector library",s:"SQL Server, HubSpot"},
+   {c:"aws",go:"agent",x:30,y:240,w:200,t:"Agent",s:"Receives the commands"}],
+  arrows:[["M 340 80 L 340 127",null],["M 130 190 L 130 237",null]],
+  facts:[["Deployment DATABP_OPENFLOW","ACTIVE since 15:46; owner SYSADMIN; agent version 1.79.0; VPC provided by us"],["Who may create one","A role holding CREATE OPENFLOW DEPLOYMENT on the account"],["Roles Openflow sees","Only roles granted directly to the user, not inherited ones"],["Admin roles","ACCOUNTADMIN and similar are refused at sign-in"],["Runtimes and connectors","Created from these screens, then run in your AWS"]],
+  note:"Snowflake's BYOC page says the AWS administrator creates deployments and runtimes here, and data engineers build flows on the runtime canvas."},
+ destination:{title:"Destination database (Snowflake)",
+  lead:"The connector lands each source table in Snowflake and keeps it current; your own models take over from there.",
+  boxes:[
+   {c:"sf",x:240,y:20,w:200,t:"DATABP_LAB",s:"Destination database"},
+   {c:"sf",x:240,y:130,w:200,t:"DATABP_SRC_DBO",s:"Schema named after source"},
+   {c:"sf",x:30,y:240,w:200,t:"Journal tables",s:"Each batch of changes"},
+   {c:"sf",x:450,y:240,w:200,t:"Destination tables",s:"Current state per row"},
+   {c:"n",x:240,y:240,w:200,t:"Merge",s:"Journal into tables"}],
+  arrows:[["M 340 80 L 340 127",null],["M 233 270 L 237 270",null],["M 443 270 L 447 270",null]],
+  facts:[["Schema name","Source database plus source schema: DATABP_SRC and dbo"],["Added columns","_SNOWFLAKE_INSERTED_AT, _SNOWFLAKE_UPDATED_AT, _SNOWFLAKE_DELETED"],["A hard delete","Arrives as _SNOWFLAKE_DELETED = true; the row stays"],["Connector's role","DATABP_LAB_EXEC_RL, warehouse COMPUTE_WH"],["Where we start","Our models read these tables; merge_into builds PARTY"]],
+  note:"Schema naming, added columns and delete handling are from the Nov 11 lab on Snowflake-hosted Openflow; the connector is the same on BYOC."},
+ agent:{title:"The agent (your AWS account)",
+  lead:"A CloudFormation stack creates one small machine; that machine, the agent, then builds the rest and keeps reporting to Snowflake: Openflow shows its last heartbeat.",
+  boxes:[
+   {c:"n",x:30,y:20,w:200,t:"Template",s:"From Openflow, per deployment"},
+   {c:"n",x:240,y:20,w:200,t:"CloudFormation stack",s:"databp-openflow"},
+   {c:"aws",x:240,y:130,w:200,t:"Agent",s:"EC2 t3.medium"},
+   {c:"aws",go:"cluster",x:240,y:240,w:200,t:"EKS cluster",s:"Built by the agent"},
+   {c:"n",x:450,y:130,w:200,t:"Private subnets + NAT",s:"Outbound only"}],
+  arrows:[["M 233 50 L 237 50",null],["M 340 80 L 340 127",null],["M 340 190 L 340 237",null],["M 447 160 L 443 160",null]],
+  facts:[["Stack created","Agent EC2, its IAM role, a secret, an S3 bucket"],["Not in the stack","The EKS cluster: the agent creates it afterwards (concluded from watching the build)"],["Network","Two private subnets in digest-vpc; outbound through a NAT gateway"],["Timing on 2026-11-17","Stack launched 14:51; cluster 15:07; ACTIVE 15:46: about an hour"],["Teardown order","Delete the deployment in Openflow first, then the stack"]],
+  note:"The teardown order follows from who created what; confirm it against Snowflake's documentation before deleting."},
+ cluster:{title:"The EKS cluster (your AWS account)",
+  lead:"Amazon's managed Kubernetes. A management node group is always on; three more node groups, sm, md and lg, start empty and grow when a runtime of that size is created.",
+  boxes:[
+   {c:"aws",x:240,y:20,w:200,t:"Cluster id8ft6g6",s:"Kubernetes 1.36"},
+   {c:"aws",x:30,y:130,w:200,t:"Management group",s:"1 node, m7i.2xlarge"},
+   {c:"aws",x:240,y:130,w:200,t:"sm, md, lg groups",s:"Small runtime: 1 sm node"},
+   {c:"n",x:450,y:130,w:200,t:"Load balancer",s:"Internet-facing ingress"},
+   {c:"aws",go:"destination",x:240,y:240,w:200,t:"DATABP_RUNTIME",s:"NiFi; connectors run here"}],
+  arrows:[["M 340 80 L 340 127",null],["M 340 190 L 340 237",null]],
+  facts:[["Cluster name","The deployment key, id8ft6g6, shown in Openflow's details; not configurable"],["Images","Pulled from Snowflake's image registry; your own ECR is not supported"],["Node groups","Each can grow to 50 nodes; sm, md and lg start at 0"],["Load balancer","Reaches the runtime canvas; sign-in still through Snowflake"],["Private option","Custom Ingress keeps the canvas off the internet"]],
+  note:"Observed 2026-11-17: creating DATABP_RUNTIME (Small, one node) took the sm group from 0 to 1 node, an m7i.xlarge EC2 machine, within a minute; md and lg stayed at 0. What runs on the management node has not been looked at."},
+ source:{title:"SQL Server source (your AWS account)",
+  lead:"SQL Server's Change Tracking records which rows changed; the connector reads them from inside the same network.",
+  boxes:[
+   {c:"aws",x:240,y:20,w:200,t:"databp-lab-sqlserver",s:"RDS, SQL Server Express"},
+   {c:"aws",x:240,y:130,w:200,t:"DATABP_SRC",s:"Change Tracking on"},
+   {c:"aws",x:30,y:240,w:200,t:"client, customer",s:"Tracked tables"},
+   {c:"aws",x:450,y:240,w:200,t:"invoice, sample100",s:"Tracked tables"},
+   {c:"aws",go:"cluster",x:240,y:240,w:200,t:"Connector",s:"Reads on port 1433"}],
+  arrows:[["M 340 80 L 340 127",null],["M 340 190 L 340 237",null]],
+  facts:[["Change Tracking","On; keeps 3 days of changes, Snowflake's recommended minimum"],["What it keeps","Each changed row's latest state, not every change"],["Firewall","Port 1433 open to the two private subnets"],["Express edition","No CDC; the Change Tracking connector is the one that fits"],["Tables needed","A primary key on every table; others are skipped"]],
+  note:"Older firewall rules for Snowflake's public addresses remain from the Nov 11 lab and are listed for removal after the interview."}
+};
+const ORDER=["screens","destination","agent","cluster","source"];
+const NS="http://www.w3.org/2000/svg";
+function el(n,a,p){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function draw(id){
+ const v=V[id], H=id==="overview"?395:315;
+ const svg=el("svg",{viewBox:"0 0 680 "+H,role:"img"});
+ el("title",{},svg).textContent=v.title;
+ const d=el("defs",{},svg),m=el("marker",{id:"ah",viewBox:"0 0 10 10",refX:"8",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},d);
+ el("path",{d:"M2 1L8 5L2 9",fill:"none",stroke:"var(--muted)","stroke-width":"1.5"},m);
+ (v.zones||[]).forEach(z=>{const g=el("g",{class:"zone"},svg);el("rect",{x:z.x,y:z.y,width:z.w,height:z.h,rx:16},g);const t=el("text",{x:z.x+18,y:z.y+24},g);t.textContent=z.label});
+ v.boxes.forEach(b=>{
+  const target=id==="overview"?b.id:b.go;
+  const g=el("g",{class:"box "+b.c+(target?" link":"")},svg);
+  if(target){g.setAttribute("tabindex","0");g.setAttribute("role","link");g.addEventListener("click",()=>go(target));g.addEventListener("keydown",e=>{if(e.key==="Enter")go(target)})}
+  el("rect",{x:b.x,y:b.y,width:b.w,height:60,rx:8,"stroke-width":"1"},g);
+  const t=el("text",{class:"t",x:b.x+b.w/2,y:b.y+24,"text-anchor":"middle"},g);t.textContent=b.t;
+  const s=el("text",{class:"s",x:b.x+b.w/2,y:b.y+44,"text-anchor":"middle"},g);s.textContent=b.s+(target&&id!=="overview"?"  ›":"");
+ });
+ v.arrows.forEach(a=>{el("path",{d:a[0],class:"arr","marker-end":"url(#ah)"},svg);if(a[1]){const t=el("text",{class:"al",x:a[2],y:a[3]},svg);t.textContent=a[1]}});
+ return svg;
+}
+function go(id){if(location.hash!=="#"+id)location.hash=id;else render()}
+function current(){const h=location.hash.replace("#","");return V[h]?h:"architecture"}
+function render(){
+ const id=current(),v=V[id];
+ document.getElementById("title").textContent=v.title;
+ document.getElementById("lead").textContent=v.lead;
+ document.getElementById("crumbs").textContent=id==="architecture"?"Level 0":(id==="overview"?"Level 0 › Level 1":"Level 0 › Level 1 › Level 2");
+ const dg=document.getElementById("diagram");dg.innerHTML="";if(v.raw){dg.innerHTML=v.raw;dg.querySelectorAll("[data-go]").forEach(g=>{g.setAttribute("tabindex","0");g.addEventListener("click",()=>go(g.dataset.go));g.addEventListener("keydown",e=>{if(e.key==="Enter")go(g.dataset.go)})})}else{dg.appendChild(draw(id))}
+ const tb=document.querySelector("#facts tbody");tb.innerHTML="";
+ v.facts.forEach((f,i)=>{const tr=document.createElement("tr");[i+1,f[0],f[1]].forEach((c,j)=>{const td=document.createElement("td");td.textContent=c;if(j===1)td.style.fontWeight="600";tr.appendChild(td)});tb.appendChild(tr)});
+ document.getElementById("note").textContent=v.note||"";
+ document.getElementById("up").disabled=id==="architecture";
+ document.title="Openflow BYOC: "+v.title;
+}
+document.getElementById("up").addEventListener("click",()=>{const c=current();go(c==="overview"?"architecture":"overview")});
+document.getElementById("home").addEventListener("click",()=>go("architecture"));
+window.addEventListener("hashchange",render);
+render();
+</script>
+<!-- endband:start -->
+<section class="endband"><div class="in"><p class="brand-label">Entitlement and billing reconciliation</p><h2>See it running</h2><p>The live app and Morgan answer from the same governed metrics, on the platform this site describes.</p><div class="ctas"><a class="brand-btn" href="./#app">Try the live app</a><a class="brand-btn ghost" href="ask.html">Ask Morgan</a></div></div></section>
+<!-- endband:end -->
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

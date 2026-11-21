@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DIG-655 Implementation Guide, Increment 1 of 4: staging and silver · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Implementation guide, 1 of 4</div><h1>DIG-655 Implementation Guide, Increment 1 of 4: staging and silver</h1><p class="lead">Staging and silver, step by step.</p></div></section>
+<main class="doc">
+<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 815, version 7, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 815, version 7: DIG-655 Implementation Guide, Increment 1 of 4: staging and silver --><h3>Implementation Guide (Increment 1 of 4)</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Implementation Guide</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-655 — Reconciliation dashboard build, four increments to the Hex app — branch <code>rayserrano2735/dig-655-reconciliation-dashboard-build</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Entitlement and billing reconciliation: design document, knowledge 111 item 806 v38 — profiling: Entitlement and billing reconciliation: source profile, knowledge 111 item 813 v51 — test plan: DIG-655 Test Plan, knowledge 111 item 814</td>
+</tr>
+<tr>
+<td><strong>Prerequisites</strong></td>
+<td>Phase one loaded in SQL Server and copied by the connector, customer included (tutorial, knowledge 111 item 463, step 26); the design's bronze-to-silver map, item 806 v38; the test plan, item 814</td>
+</tr>
+<tr>
+<td><strong>Companions</strong></td>
+<td>Increments 2 to 4, gold, the Semantic Layer metrics and the Hex app, are written as their own parts once the silver-to-gold map is agreed</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — AGREED 2026-11-19 (Ray, answer 2y)</strong> — written 2026-11-19 22:44Z</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>The session that builds DIG-655; Ray Serrano, who reviews</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-19</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Purpose and grounding recap</h2>
+<p>This guide implements Entitlement and billing reconciliation: design document, knowledge 111 item 806 v38 and does not relitigate its decisions.</p>
+<table>
+<thead>
+<tr>
+<th>Design decision</th>
+<th>Settled rule used by the implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-6</td>
+<td>An invoice item carries its product; the header's columns ride on each item</td>
+</tr>
+<tr>
+<td>D-7</td>
+<td>A license is a Contract with its won Opportunity's line items; silver keeps the chain whole and leaves the Activated and Closed Won filters to gold</td>
+</tr>
+<tr>
+<td>D-11</td>
+<td>The product's code is the identifier shared by the platform, Salesforce and usage reporting</td>
+</tr>
+<tr>
+<td>D-16</td>
+<td>Void invoices are excluded in gold; silver keeps invoice_status</td>
+</tr>
+<tr>
+<td>D-17</td>
+<td>Change times are each table's updated_at; an item's is the later of its own and its invoice's</td>
+</tr>
+<tr>
+<td>D-18</td>
+<td>Medallion layers: bronze is the connector's copies, silver one table per source document, gold the mart</td>
+</tr>
+<tr>
+<td>D-19</td>
+<td>Seven silver tables, each keyed by md5 of its business key qualified by its issuer's namespace</td>
+</tr>
+<tr>
+<td>D-20</td>
+<td>Hashing happens in silver; staging only renames and carries the deleted flag; business_key takes keys of several parts</td>
+</tr>
+<tr>
+<td>D-21</td>
+<td>Mart tables by suffix: dim_client becomes client_dim</td>
+</tr>
+</tbody>
+</table>
+<p>Code in this guide is an illustrative pattern: more than pseudocode, less than shipping code. Do not copy it into the repo; implement it against the branch. Development is done when the output is shown correct against real data, per K#12 I#26.</p>
+<h3>Pattern declaration</h3>
+<ul>
+<li>Patterns instantiated: Source Staging pattern (knowledge 14 item 37), one view per landed table</li>
+<li>Patterns introduced: The issuer-qualified business key, a candidate pattern (knowledge 34 item 268), not yet in knowledge 14; step 4 shows its first instance in full</li>
+</ul>
+<h2>2. Scope</h2>
+<h3>Deliverables</h3>
+<ol>
+<li>macros/business_key.sql takes keys of several parts</li>
+<li>Eleven landed tables declared as sources, three source systems</li>
+<li>Eleven new staging views, and stg_databp__client without its hashes</li>
+<li>Seven silver tables in schema SILVER, with their key and relationship tests and six unit tests</li>
+<li>client_dim in place of dim_client, read from silver client</li>
+<li>Four singular tests and generator/reconcile_landing.py</li>
+</ol>
+<h3>Finance workbook delivery</h3>
+<p>For finance reporting branches, name the repository generation script, shared mart-level report query and parameters, reproducible generation/refresh steps, workbook metadata and sheets, and preservation of consumer observations under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h3>What stays the same</h3>
+<p>The phase-one generator and its answer key; the metric client_count, its definition unchanged; metricflow_time_spine; the connector's table list.</p>
+<h3>Intentionally not done</h3>
+<p>The gold metric table and dimensions other than client_dim, the Semantic Layer metrics and the Hex app (increments 2 to 4); the generator's verify query carrying D-16; dropping Production's old DIM_CLIENT table, an act after the merge.</p>
+<h3>Identity recipes</h3>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Natural code</th>
+<th>Surrogate-key composition</th>
+<th>Minting location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data provider</td>
+<td>DATABP, CLIENT, client_id</td>
+<td>md5 of DATABP</td>
+<td>CLIENT</td>
+</tr>
+<tr>
+<td>Subscriber</td>
+<td>DATABP, CUSTOMER, tenant_id, customer_id</td>
+<td>md5 of the business key</td>
+<td>silver subscriber; also license_line, entitlement, usage_report, invoice_item from their own columns</td>
+</tr>
+<tr>
+<td>Product</td>
+<td>DATABP, PRODUCT, tenant_id, product_code</td>
+<td>md5 of the business key</td>
+<td>silver product; license_line from Product2, usage_report from its code, entitlement and invoice_item through product</td>
+</tr>
+<tr>
+<td>License line</td>
+<td>SFDC, OPPORTUNITYLINEITEM, Id</td>
+<td>md5 of the business key</td>
+<td>silver license_line</td>
+</tr>
+<tr>
+<td>Entitlement</td>
+<td>DATABP, ENTITLEMENT, tenant_id, entitlement_id</td>
+<td>md5 of the business key</td>
+<td>silver entitlement</td>
+</tr>
+<tr>
+<td>Usage report</td>
+<td>USAGE, USAGE_DECLARATION, tenant_id, declaration_id</td>
+<td>md5 of the business key</td>
+<td>silver usage_report</td>
+</tr>
+<tr>
+<td>Invoice</td>
+<td>DATABP, INVOICE, tenant_id, invoice_id</td>
+<td>md5 of the business key</td>
+<td>silver invoice_item</td>
+</tr>
+<tr>
+<td>Invoice item</td>
+<td>DATABP, INVOICE_ITEM, tenant_id, invoice_id, item_id</td>
+<td>md5 of the business key</td>
+<td>silver invoice_item</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Grounded in code and complete consumer set</h2>
+<p>Every edit below names a file and object read from the stated branch.</p>
+<table>
+<thead>
+<tr>
+<th>Touched object</th>
+<th>Exact file</th>
+<th>Consumers found</th>
+<th>Verification command and clock</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>business_key macro</td>
+<td>macros/business_key.sql</td>
+<td>models/staging/stg_databp__client.sql, the only consumer on main</td>
+<td><code>git grep -l business_key origin/main -- models macros tests seeds</code>, 2026-11-19 22:30 UTC</td>
+</tr>
+<tr>
+<td>stg_databp__client</td>
+<td>models/staging/stg_databp__client.sql</td>
+<td>models/marts/dim_client.sql and its yml</td>
+<td><code>git grep -l stg_databp__client origin/main -- models macros tests seeds</code>, 22:30 UTC</td>
+</tr>
+<tr>
+<td>dim_client and its metric client_count</td>
+<td>models/marts/dim_client.sql and .yml</td>
+<td>Inside the repository, only its own yml and README.md; outside it, Production's table DATABP_MARTS.DIM_CLIENT and the Semantic Layer's client_count</td>
+<td><code>git grep -l dim_client origin/main -- .</code> and <code>git grep -l client_count origin/main -- .</code>, 22:30 UTC</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Baseline</h2>
+<table>
+<thead>
+<tr>
+<th>Baseline ID</th>
+<th>Behavior or value</th>
+<th>Capture command or query</th>
+<th>Captured result and clock</th>
+<th>Reconciliation condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B-1</td>
+<td>client_count and the rows of the client dimension, Production</td>
+<td><code>SELECT COUNT(DISTINCT client_hk), MD5(LISTAGG(client_hk||'|'||client_name, ',') WITHIN GROUP (ORDER BY client_hk)) FROM DATABP_LAB.DATABP_MARTS.DIM_CLIENT</code></td>
+<td>20 and e0a1ebaca27467791c2081f687724967, 2026-11-19 22:28:07 UTC</td>
+<td>The same query on DBT_CLAUDE_MARTS.CLIENT_DIM after the build returns the same two values</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Ordered implementation steps</h2>
+<h3>Step 1. Keys of several parts (macros/business_key.sql)</h3>
+<p>Changes the existing macro; its one consumer, stg_databp__client, stops calling it in step 3, and the seven silver models call it in step 4. A single id keeps its old output, so the change is backward compatible. Design D-19, D-20. Exemplar: the file itself.</p>
+<div class="highlight"><pre><span></span><code><span class="err">{</span><span class="o">#-</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="k">row</span><span class="s1">'s business key inside its issuer'</span><span class="n">s</span><span class="w"> </span><span class="n">namespace</span><span class="w"> </span><span class="p">(</span><span class="n">Harbor</span><span class="s1">'s pattern, D-19):</span>
+<span class="s1">    ISSUER|TABLE|part, or ISSUER|TABLE|part1|part2 when id_expr is a list of parts (D-20). -#}</span>
+<span class="s1">{% macro business_key(source_code, table_code, id_expr) -%}</span>
+<span class="s1">    {%- set parts = id_expr if id_expr is not string else [id_expr] -%}</span>
+<span class="s1">    '</span><span class="err">{{</span><span class="w"> </span><span class="n">source_code</span><span class="w"> </span><span class="err">}}</span><span class="o">|</span><span class="err">{{</span><span class="w"> </span><span class="n">table_code</span><span class="w"> </span><span class="err">}}</span><span class="s1">'</span>
+<span class="s1">    {%- for part in parts %} || '</span><span class="o">|</span><span class="err">'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">part</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">)</span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endfor</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+</code></pre></div>
+<h3>Step 2. Sources for the eleven new landed tables (models/staging/_sources.yml)</h3>
+<p>Instantiates Source Staging (knowledge 14 item 37). Three sources, one per source system (D-3, D-4): databp_src (DATABP_SRC_DBO), databp_sfdc (DATABP_SFDC_DBO), databp_usage (DATABP_USAGE_DBO). Each table is declared by its uppercase identifier, with not_null on its source key. Exemplar: the existing client entry. Delta per table: its name, identifier and key column.</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">databp_sfdc</span>
+<span class="w">    </span><span class="nt">database</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DATABP_LAB</span>
+<span class="w">    </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DATABP_SFDC_DBO</span>
+<span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">loaded_at_field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_SNOWFLAKE_UPDATED_AT</span>
+<span class="w">    </span><span class="nt">tables</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">account</span>
+<span class="w">        </span><span class="nt">identifier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ACCOUNT</span>
+<span class="w">        </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">            </span><span class="nt">data_tests</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">not_null</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<h3>Step 3. Staging views (models/staging/stg_databp__*.sql and .yml)</h3>
+<p>Instantiates Source Staging (knowledge 14 item 37). One view per landed table, every source column kept and renamed to snake case, plus is_deleted, landed_at and changed_at from the connector's columns; no hash (D-20). Exemplar: models/staging/stg_databp__client.sql, rewritten first in this shape. Names follow Object Naming (knowledge 12 item 147, section 2, row 5) with this project's prefix (guide decision G-1): platform tables stg_databp__<table>, Salesforce stg_databp__sfdc_<table>, usage reporting stg_databp__usage_<table>.</p>
+<p>The Salesforce instance shows the renames; the other eleven are the same shape with their own columns:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">landed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="s1">'databp_sfdc'</span><span class="p">,</span><span class="w"> </span><span class="s1">'account'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="p">)</span>
+
+<span class="c1">-- Bronze to staging: renamed, one row per landed row, with the deleted flag; keys are hashed in silver (D-20)</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="w">                                      </span><span class="k">as</span><span class="w"> </span><span class="n">account_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w">                                    </span><span class="k">as</span><span class="w"> </span><span class="n">account_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ownerid</span><span class="w">                                 </span><span class="k">as</span><span class="w"> </span><span class="n">owner_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">tenant__c</span><span class="w">                               </span><span class="k">as</span><span class="w"> </span><span class="n">tenant_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">subscriber_id__c</span><span class="w">                        </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_id</span><span class="p">,</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">_snowflake_deleted</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w">     </span><span class="k">as</span><span class="w"> </span><span class="n">is_deleted</span><span class="p">,</span>
+<span class="w">    </span><span class="n">_snowflake_inserted_at</span><span class="w">                  </span><span class="k">as</span><span class="w"> </span><span class="n">landed_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">_snowflake_updated_at</span><span class="w">                   </span><span class="k">as</span><span class="w"> </span><span class="n">changed_at</span>
+<span class="k">from</span><span class="w"> </span><span class="n">landed</span>
+</code></pre></div>
+<h3>Step 4. Silver tables (models/silver/*.sql), keys hashed in the issuer's namespace</h3>
+<p>First instance in this repository, aligned with the reference architecture. dbt_project.yml gains the silver folder, schema silver, materialized table. Every silver model reads staging rows not deleted, builds its keys with business_key and md5 (D-19), and adds change_hash and landed_at (design 6.1). subscriber is the first instance, in full:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Silver subscriber: the platform's customer, keyed in the platform's namespace (D-19)</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'CUSTOMER'</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="s1">'tenant_id'</span><span class="p">,</span><span class="w"> </span><span class="s1">'customer_id'</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">  </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'CLIENT'</span><span class="p">,</span><span class="w"> </span><span class="s1">'tenant_id'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">                     </span><span class="k">as</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">customer_id</span><span class="w">                                                                  </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">customer_name</span><span class="w">                                                                </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">updated_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="k">coalesce</span><span class="p">(</span><span class="n">customer_name</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">))</span><span class="w">                                             </span><span class="k">as</span><span class="w"> </span><span class="n">change_hash</span><span class="p">,</span>
+<span class="w">    </span><span class="n">landed_at</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__customer'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+</code></pre></div>
+<p>Delta instances. product: key DATABP, PRODUCT, tenant_id, product_code; change_hash over product_name and unit_price. client: key DATABP, CLIENT, client_id; no updated_at at the source. entitlement: product_hk looked up through product by tenant_id and product_id, null when no product matches, which the not_null test catches (LA-6). invoice_item: the header joined on tenant_id and invoice_id; product_hk as entitlement's; updated_at the greater of header and item (D-17).</p>
+<p>license_line, the variation that conforms Salesforce to the platform: the chain joined inside, and its subscriber and product keys built in the platform's namespace from Salesforce's own columns (D-7, D-19). Each of line_item, opportunity, contract, account and product2 is a CTE over its staging view, rows not deleted:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'SFDC'</span><span class="p">,</span><span class="w"> </span><span class="s1">'OPPORTUNITYLINEITEM'</span><span class="p">,</span><span class="w"> </span><span class="s1">'line_item.opportunity_line_item_id'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">license_line_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'CLIENT'</span><span class="p">,</span><span class="w"> </span><span class="s1">'account.tenant_id'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">                                </span><span class="k">as</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'CUSTOMER'</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="s1">'account.tenant_id'</span><span class="p">,</span><span class="w"> </span><span class="s1">'account.subscriber_id'</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'PRODUCT'</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="s1">'product2.tenant_id'</span><span class="p">,</span><span class="w"> </span><span class="s1">'product2.product_code'</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">product_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contract</span><span class="p">.</span><span class="n">contract_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contract</span><span class="p">.</span><span class="n">start_date</span><span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">contract_start_date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contract</span><span class="p">.</span><span class="n">end_date</span><span class="w">        </span><span class="k">as</span><span class="w"> </span><span class="n">contract_end_date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contract</span><span class="p">.</span><span class="n">status</span><span class="w">          </span><span class="k">as</span><span class="w"> </span><span class="n">contract_status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">opportunity</span><span class="p">.</span><span class="n">opportunity_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">opportunity</span><span class="p">.</span><span class="n">stage_name</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">opportunity_stage</span><span class="p">,</span>
+<span class="w">    </span><span class="n">line_item</span><span class="p">.</span><span class="n">quantity</span><span class="w">       </span><span class="k">as</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span>
+<span class="w">    </span><span class="n">line_item</span><span class="p">.</span><span class="n">unit_price</span><span class="w">     </span><span class="k">as</span><span class="w"> </span><span class="n">licensed_unit_price</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="n">contract</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">opportunity</span><span class="p">.</span><span class="n">stage_name</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">contract</span><span class="p">.</span><span class="n">start_date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span>
+<span class="w">        </span><span class="o">||</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">contract</span><span class="p">.</span><span class="n">end_date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">line_item</span><span class="p">.</span><span class="n">quantity</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span>
+<span class="w">        </span><span class="o">||</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">line_item</span><span class="p">.</span><span class="n">unit_price</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">change_hash</span><span class="p">,</span>
+<span class="w">    </span><span class="n">line_item</span><span class="p">.</span><span class="n">landed_at</span>
+<span class="k">from</span><span class="w"> </span><span class="n">line_item</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">opportunity</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">opportunity</span><span class="p">.</span><span class="n">opportunity_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">line_item</span><span class="p">.</span><span class="n">opportunity_id</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">contract</span><span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">contract</span><span class="p">.</span><span class="n">contract_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">opportunity</span><span class="p">.</span><span class="n">contract_id</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">account</span><span class="w">     </span><span class="k">on</span><span class="w"> </span><span class="n">account</span><span class="p">.</span><span class="n">account_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contract</span><span class="p">.</span><span class="n">account_id</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">product2</span><span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">product2</span><span class="p">.</span><span class="n">product2_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">line_item</span><span class="p">.</span><span class="n">product2_id</span>
+</code></pre></div>
+<p>usage_report, the variation that keeps one report per month (D-2):</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">report</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__usage_usage_declaration'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+<span class="w">    </span><span class="n">qualify</span><span class="w"> </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">tenant_id</span><span class="p">,</span><span class="w"> </span><span class="n">customer_id</span><span class="p">,</span><span class="w"> </span><span class="n">product_code</span><span class="p">,</span><span class="w"> </span><span class="n">usage_month</span>
+<span class="w">        </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">declared_at</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span><span class="w"> </span><span class="n">declaration_id</span><span class="w"> </span><span class="k">desc</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'USAGE'</span><span class="p">,</span><span class="w"> </span><span class="s1">'USAGE_DECLARATION'</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="s1">'tenant_id'</span><span class="p">,</span><span class="w"> </span><span class="s1">'declaration_id'</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">  </span><span class="k">as</span><span class="w"> </span><span class="n">usage_report_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'CLIENT'</span><span class="p">,</span><span class="w"> </span><span class="s1">'tenant_id'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">                                </span><span class="k">as</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'CUSTOMER'</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="s1">'tenant_id'</span><span class="p">,</span><span class="w"> </span><span class="s1">'customer_id'</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">             </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">business_key</span><span class="p">(</span><span class="s1">'DATABP'</span><span class="p">,</span><span class="w"> </span><span class="s1">'PRODUCT'</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="s1">'tenant_id'</span><span class="p">,</span><span class="w"> </span><span class="s1">'product_code'</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w">             </span><span class="k">as</span><span class="w"> </span><span class="n">product_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">declaration_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">usage_month</span><span class="p">,</span>
+<span class="w">    </span><span class="n">declared_units</span><span class="w">                                                                          </span><span class="k">as</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span>
+<span class="w">    </span><span class="n">declared_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">declared_units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">declared_at</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">))</span><span class="w">             </span><span class="k">as</span><span class="w"> </span><span class="n">change_hash</span><span class="p">,</span>
+<span class="w">    </span><span class="n">landed_at</span>
+<span class="k">from</span><span class="w"> </span><span class="n">report</span>
+</code></pre></div>
+<h3>Step 5. client_dim in place of dim_client (models/marts/client_dim.sql and .yml)</h3>
+<p>Renamed with git mv; the yml's model name changes, its semantic model, entity and metric client_count unchanged. Reads silver client instead of staging (D-18, D-21):</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Gold client_dim (D-21): the data providers, read from silver client (D-18)</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">client_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">client_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">landed_at</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="n">landed_at</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">landed_date</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'client'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<p>Each step states the exact file, object, pattern citation, design or profiling citation, literal first-pass code, expected movement, and any required target rebuild.</p>
+<h2>6. Tests</h2>
+<h3>Existing-test dispositions</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Layer</th>
+<th>Disposition: keep, rewrite, or delete</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>source not_null and unique on client.client_id</td>
+<td>1</td>
+<td>keep</td>
+<td>The source key is unchanged</td>
+</tr>
+<tr>
+<td>not_null and unique on stg_databp__client.client_bk and client_hk</td>
+<td>1</td>
+<td>delete</td>
+<td>The keys move to silver (D-20); silver client's not_null and unique on client_hk replace them</td>
+</tr>
+<tr>
+<td>not_null and unique on dim_client.client_hk</td>
+<td>1</td>
+<td>keep, renamed with the model</td>
+<td>client_dim keeps its key</td>
+</tr>
+</tbody>
+</table>
+<h3>New and changed tests</h3>
+<p>Unit tests, layer 3, in models/silver/_silver_unit_tests.yml, first instance in this repository, aligned with the reference architecture; each was run against a version of its model without the logic it proves and failed, 2026-11-19 22:27:07 UTC, then passed against the real model at 22:27:26 UTC. The first, in full:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">unit_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># LA-1, paths 1 to 3 (D-2): one report kept; the later of two kept; on equal declared_at, the higher declaration_id kept</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ut_usage_report_latest_wins</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">usage_report</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_databp__usage_usage_declaration')</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt">  product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">EQUITIES</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> is_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">23</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">OPTIONS</span><span class="p p-Indicator">,</span><span class="nt">  usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> is_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">23</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">OPTIONS</span><span class="p p-Indicator">,</span><span class="nt">  usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">15</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-20</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> is_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">4</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">43</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">EQUITIES</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> is_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">43</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">EQUITIES</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">13</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> is_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> reported_units</span><span class="p">:</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> reported_units</span><span class="p">:</span><span class="w"> </span><span class="nv">15</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="nt"> reported_units</span><span class="p">:</span><span class="w"> </span><span class="nv">13</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>The other five, by name and what they mock: ut_license_line_conformed_keys (one chain; expects subscriber_hk 6e7a1ee374a6187c721a8a2ea0017019, the md5 of DATABP|CUSTOMER|3|23); ut_license_line_chain (five line items, four with one piece missing; expects one row); ut_invoice_item_updated_at (three items, header later, item later, equal); ut_subscriber_deleted_excluded (one row deleted; expects the other); ut_product_change_hash (three rows; two equal hashes, one different).</p>
+<p>Key and relationship tests, layer 1, in models/silver/_silver.yml: not_null and unique on each table's own key (14); not_null and relationships on each foreign key, client_hk of subscriber and product to client, subscriber_hk and product_hk of license_line, entitlement, usage_report and invoice_item to subscriber and product (20). The pattern, one table:</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">license_line</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">license_line_hk</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">not_null</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">unique</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subscriber_hk</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_null</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">relationships</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('subscriber')</span>
+<span class="w">                </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subscriber_hk</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">product_hk</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_null</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">relationships</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('product')</span>
+<span class="w">                </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">product_hk</span>
+</code></pre></div>
+<p>Singular tests in tests/: assert_invoice_amount_equals_items, assert_contract_tenant_matches_account, assert_opportunity_tenant_matches_contract (layer 4) and assert_silver_counts_match_staging (layer 6). The first, in full:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Layer 4, profile column 11 (D-15): an invoice with items carries the sum of its items' amounts.</span>
+<span class="c1">-- Returns each invoice whose amount differs from its items' sum; passing returns no rows.</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="n">invoice</span><span class="p">.</span><span class="n">tenant_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">invoice</span><span class="p">.</span><span class="n">invoice_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">invoice</span><span class="p">.</span><span class="n">amount</span><span class="p">,</span>
+<span class="w">    </span><span class="k">sum</span><span class="p">(</span><span class="n">item</span><span class="p">.</span><span class="n">amount</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">items_amount</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__invoice'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">invoice</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__invoice_item'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">item</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">tenant_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">invoice</span><span class="p">.</span><span class="n">tenant_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">invoice_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">invoice</span><span class="p">.</span><span class="n">invoice_id</span>
+<span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">invoice</span><span class="p">.</span><span class="n">is_deleted</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">item</span><span class="p">.</span><span class="n">is_deleted</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">invoice</span><span class="p">.</span><span class="n">tenant_id</span><span class="p">,</span><span class="w"> </span><span class="n">invoice</span><span class="p">.</span><span class="n">invoice_id</span><span class="p">,</span><span class="w"> </span><span class="n">invoice</span><span class="p">.</span><span class="n">amount</span>
+<span class="k">having</span><span class="w"> </span><span class="n">invoice</span><span class="p">.</span><span class="n">amount</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">item</span><span class="p">.</span><span class="n">amount</span><span class="p">)</span>
+</code></pre></div>
+<h2>7. Build sequence and verification</h2>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Literal command</th>
+<th>Expected result</th>
+<th>Baseline reconciliation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>dbt build --select "+models/silver" --exclude "test_type:unit"</code> with each silver model's logic removed</td>
+<td>The red versions build</td>
+<td>None</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>dbt test --select "test_type:unit"</code></td>
+<td>All six unit tests fail on the logic each proves</td>
+<td>None</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>dbt build --select "+models/silver"</code> with the real models</td>
+<td>Everything up to silver builds, all tests pass</td>
+<td>None</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>dbt build</code></td>
+<td>The whole project builds, every test passes: 93 of 93, 2026-11-19 22:28 UTC</td>
+<td>B-1 is compared next</td>
+</tr>
+<tr>
+<td>5</td>
+<td>The B-1 query on DBT_CLAUDE_MARTS.CLIENT_DIM</td>
+<td>20 and e0a1ebaca27467791c2081f687724967</td>
+<td>Equal to B-1: pass, 22:28:46 UTC</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>python3 generator/reconcile_landing.py</code>, inside the Snowflake wrapper, with AWS credentials</td>
+<td>0 differences</td>
+<td>50 table and tenant pairs, 25,117 rows each side, 0 differences, 22:29:59 UTC</td>
+</tr>
+</tbody>
+</table>
+<h3>Verification queries</h3>
+<p>The conformed keys, read in development: subscriber 83's key from the platform, Salesforce's license, the entitlement and the usage report.</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="k">LEFT</span><span class="p">(</span><span class="n">hk</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">SELECT</span><span class="w"> </span><span class="s1">'platform'</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="n">hk</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">SUBSCRIBER</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">subscriber_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">83</span>
+<span class="w">  </span><span class="k">UNION</span><span class="w"> </span><span class="k">ALL</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="s1">'salesforce'</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">LICENSE_LINE</span>
+<span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">SUBSCRIBER</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">subscriber_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">83</span><span class="p">)</span>
+<span class="w">  </span><span class="k">UNION</span><span class="w"> </span><span class="k">ALL</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="s1">'entitlement'</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">ENTITLEMENT</span>
+<span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">SUBSCRIBER</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">subscriber_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">83</span><span class="p">)</span>
+<span class="w">  </span><span class="k">UNION</span><span class="w"> </span><span class="k">ALL</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="s1">'usage'</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">USAGE_REPORT</span>
+<span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">SELECT</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">SUBSCRIBER</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">subscriber_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">83</span><span class="p">));</span>
+</code></pre></div>
+<p>Result, 2026-11-19 22:28:46 UTC: the same key, 816e4e62..., from all four; and 13 of 13 license lines name a subscriber in silver subscriber.</p>
+<h2>8. Decisions recorded in this guide</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Weed-level choice</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G-1</td>
+<td>Staging names keep the exemplar stg_databp__client for the platform and add the source system for the others: stg_databp__sfdc_<table>, stg_databp__usage_<table></td>
+<td>Object Naming (section 2, row 5) names the source; the platform's tables already read as this project's own, and renaming the exemplar would touch a working model for no reader's gain</td>
+</tr>
+<tr>
+<td>G-2</td>
+<td>Silver carries landed_at, the connector's insert time</td>
+<td>The reference platform's integrators carry their load time; client_dim's metric needs a time dimension; written into the design's map, 6.1</td>
+</tr>
+<tr>
+<td>G-3</td>
+<td>license_line joins its chain inside: a line item missing its Opportunity, Contract, Account or Product2 is dropped</td>
+<td>A line item without its chain is no license (D-7); the count reconciliation would show the drop</td>
+</tr>
+<tr>
+<td>G-4</td>
+<td>change_hash is md5 of the non-key columns joined by a vertical bar</td>
+<td>The exemplar's form, widened to several columns</td>
+</tr>
+<tr>
+<td>G-5</td>
+<td>Two usage reports with the same declared_at: the higher declaration_id wins</td>
+<td>A choice for the case the design leaves open, so the result is the same on every run</td>
+</tr>
+<tr>
+<td>G-6</td>
+<td>Staging keeps the seven rejected columns; silver drops them</td>
+<td>Staging is one view per landed table, column for column (D-20); the profile's verdicts apply where columns are chosen, in silver</td>
+</tr>
+<tr>
+<td>G-7</td>
+<td>The landing reconciliation is a script in generator/, beside run.py, which it reuses</td>
+<td>It reads SQL Server through the agent function, which dbt cannot reach</td>
+</tr>
+<tr>
+<td>G-8</td>
+<td>The code was written and proven in development before this guide, on Ray's pre-authorization to write the guide and build to silver</td>
+<td>The guide shows the code that ran; nothing is merged before Ray reviews</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Rollback</h2>
+<p>Nothing is merged: the branch stays unmerged until all four increments are built (DIG-655). To undo increment 1 in development, reset the branch to main's 1b2aa4d and drop the schemas DBT_CLAUDE_SILVER and DBT_CLAUDE_STAGING's new views; Production is untouched until the merge.</p>
+<h2>10. What this guide does not cover</h2>
+<table>
+<thead>
+<tr>
+<th>Exclusion</th>
+<th>Canonical home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gold: the metric table, its dimensions, the five checks</td>
+<td>Increment 2 of this guide, after the silver-to-gold map (design 6.1)</td>
+</tr>
+<tr>
+<td>Semantic Layer metrics and their battery</td>
+<td>Increment 3</td>
+</tr>
+<tr>
+<td>The Hex app</td>
+<td>Increment 4</td>
+</tr>
+<tr>
+<td>D-16 in the generator's verify query</td>
+<td>The next commit on this branch</td>
+</tr>
+<tr>
+<td>Dropping Production's DATABP_MARTS.DIM_CLIENT after the merge</td>
+<td>The pull request's acts after merge</td>
+</tr>
+</tbody>
+</table>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-19 22:36 UTC on version 5. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Implementation Guide (knowledge 12 item 176): all 20 present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the Implementation Guide's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Header with Increment N of M, prerequisites and companions</td>
+<td>Title and field table: Increment 1 of 4; prerequisites and companions filled</td>
+</tr>
+<tr>
+<td>Purpose, grounding recap, the implementer preamble verbatim, the pattern declaration</td>
+<td>Section 1: nine decisions recapped; the preamble as the template carries it; patterns instantiated and introduced</td>
+</tr>
+<tr>
+<td>Every pattern citation resolves to code</td>
+<td>Source Staging, knowledge 14 item 37, exists; the issuer-qualified key has its complete instance in step 4, subscriber</td>
+</tr>
+<tr>
+<td>Scope, with identity recipes upfront</td>
+<td>Section 2: six deliverables, unchanged scope, exclusions, eight identity recipes</td>
+</tr>
+<tr>
+<td>Grounded in code, the consumer set by repository search, with the command</td>
+<td>Section 3: three objects, git grep at 22:30 UTC</td>
+</tr>
+<tr>
+<td>Baseline before the change</td>
+<td>Section 4: B-1 captured at 22:28:07 UTC, before client_dim was built</td>
+</tr>
+<tr>
+<td>Steps per object with file, pattern, exemplar and literal code</td>
+<td>Section 5, steps 1 to 5; step 4 a first instance aligned with the reference architecture; delta instances as pattern plus deltas</td>
+</tr>
+<tr>
+<td>Tests: dispositions and the new tests as literal code</td>
+<td>Section 6: three dispositions; one unit test, one key test block and one singular test in full, the rest named, their full text in the repository at 82fcc72. Partly met</td>
+</tr>
+<tr>
+<td>Build sequence with expected results and baseline reconciliation</td>
+<td>Section 7: six commands, B-1 reconciled equal at 22:28:46 UTC</td>
+</tr>
+<tr>
+<td>Decisions recorded, and a line for a shared macro with more than five consumers</td>
+<td>Section 8: G-1 to G-8; business_key has one consumer, so no separate line</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td>Section 9</td>
+</tr>
+<tr>
+<td>Exclusions with their homes</td>
+<td>Section 10</td>
+</tr>
+<tr>
+<td>Object Naming (knowledge 12 item 147)</td>
+<td>Silver objects name the thing, singular, no layer in the name; staging follows section 2, row 5 with this project's prefix, guide decision G-1</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried: D-6, D-7, D-11, D-16, D-17, D-18, D-19, D-20, D-21, each in section 1 and the steps that cite it.</p>
+<p>Verdict: compliant, with the new tests partly shown in full; G-8 discloses that the code ran before the guide was written.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

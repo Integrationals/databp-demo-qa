@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entitlement and billing reconciliation: design document · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Design document</div><h1>Entitlement and billing reconciliation: design document</h1><p class="lead">The decisions, D-1 to D-24, each with its reason and evidence.</p></div></section>
+<main class="doc">
+<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 806, version 50, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 806, version 50: Entitlement and billing reconciliation: design document --><h3>Design Document</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 3 — Design Document</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-650 — The DataBP demo: the north-star Hex product — branch <code>main</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Profiling: not yet done, and the next step. In this product-led demo the three source systems do not exist yet, so profiling decides which source data must be created to drive the app: tables, columns, rows and planted cases, generated to this design's specification (Ray, 2026-11-19 10:02 ET; as the DigestCards design states for a system with no source). After it: expand this design, write the implementation guide, then build in the development environment — related records: the design sketch (knowledge 111 item 805); the POC's notes on DataBP (knowledge 111 item 460); the lab design (knowledge 111 item 459); the demo build tutorial (knowledge 111 item 463); the DataBP project setup (knowledge 111 item 802); Linear DIG-650 and DIG-628</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — DRAFT</strong> — written 2026-11-19 17:59Z (compliance record not built; not presented for agreement)</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that writes the implementation guide and builds the sources, models and app</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-18</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>0. Target ERD</h2>
+<p>Not drawn yet. It is drawn as SVG, in crow's-foot notation, from the source-to-target map in section 6.1 once that map is agreed, since the standard writes the map first and draws the diagram from it.</p>
+<h2>1. Purpose</h2>
+<p>This design decides the end product of the DataBP demo and works backwards from it to the data it needs: entitlement and billing reconciliation, a Hex app named for its question with the London Stock Exchange's term for the same check on the customer's side (course log, knowledge 111 item 798, entry 321), for one of DataBP's clients, a data provider, that answers whether the provider's records about each subscriber agree, and what changed since the last month-end close. The problem it serves is DataBP's own headline: "Less than half of contracted market data revenue is ever realized", drained by leakage, errors and audits that recover only a fraction of what they cost (databp.com, "The Problem" and "Resolve Revenue Leaks", read 2026-11-19; DataBP calls the figure an estimate and names no source). Ray, 2026-11-19: "the whole point here ... we must hone in on it." Each of the app's five checks is aimed at one of those causes (D-10, R-5). It is written for Ray, who decides, and for the session that builds it; its audience in the demo is Bin Luo, DataBP's CTO.</p>
+<h2>2. Consumer questions</h2>
+<h3>2.1 Questions from consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked by</th>
+<th>Asked at</th>
+<th>Origin</th>
+<th>Question in the asker's words</th>
+<th>Answer</th>
+<th>Decision(s)</th>
+<th>Test probe</th>
+<th>State and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>Ray Serrano</td>
+<td>2026-11-18 17:00 ET</td>
+<td>DataBP session</td>
+<td>"come up with a solid hex real-life useful app that targets databp business context, and we will work our way backwards from there, expanding the source"</td>
+<td>A reconciliation app for a data provider's data business team: license, entitlement, usage report and invoice per subscriber, and what changed since the last close</td>
+<td>D-1, D-2, D-3</td>
+<td>P-1</td>
+<td>Answered in design; proven at testing</td>
+</tr>
+<tr>
+<td>Q-2</td>
+<td>Ray Serrano</td>
+<td>2026-11-18 17:56 ET</td>
+<td>DataBP session</td>
+<td>"determine the most effective way to present which data analysis will be compelling to Bin, DataBP's CTO" (wording edited for the site: Ray, 2026-11-20, answer 2y)</td>
+<td>Present one subscriber whose records disagree, widen to the total, then change a source row live and show the figure move, and the same figure through Claude</td>
+<td>D-2, D-9</td>
+<td>P-2</td>
+<td>Answered in design; the audience's own preference is unknown</td>
+</tr>
+</tbody>
+</table>
+<h3>2.2 Questions to consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C-1</td>
+<td>Bin Luo, CTO of DataBP</td>
+<td>Ray Serrano, 2026-11-18</td>
+<td>What would he most want to see: which of DataBP's own reports or pains the demo should speak to</td>
+<td>The order of the presentation steps</td>
+<td>The presentation of D-9</td>
+<td>Unknown; not measurable before the CTO round</td>
+<td>Open; to be asked in the CTO round if the moment allows</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 Questions to source owners</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>None: the sources are defined by this design</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Concept</h2>
+<p>The product is a reconciliation with memory. A data provider, such as an exchange, licenses its data to subscribers, firms that use the data and pay for it. Four records describe each subscriber: the license (the contract: what it bought and how many units), the entitlement (what the platform lets it receive), the usage report (what it reports it used each month) and the invoice (what it was billed). They should agree. The app names each place they do not, with its dollar amount, and shows what changed since the last month-end close, which only kept history can show.</p>
+<h2>4. Data reality</h2>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Measured fact</th>
+<th>Design consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-1, read 2026-11-18</td>
+<td>SQL Server DATABP_SRC holds client (20 rows), customer (5,000) and invoice (20,000), with Change Tracking on, current version 29</td>
+<td>The tenant and the subscriber exist; product, license, entitlement and usage do not</td>
+</tr>
+<tr>
+<td>R-2, read 2026-11-18</td>
+<td>invoice carries tenant_id, invoice_id, customer_id, amount, invoice_date, status, updated_at; no product</td>
+<td>Invoice items with a product are needed (D-6)</td>
+</tr>
+<tr>
+<td>R-3, read 2026-11-18</td>
+<td>Only client is landed in Snowflake (20 rows, level with the source)</td>
+<td>The connector's table list grows with each new table (D-4)</td>
+</tr>
+<tr>
+<td>R-4, read 2026-11-18</td>
+<td>Exchange policies define subscriber entitlement, unit of count and usage reporting; trade press reports audits finding under-reported usage</td>
+<td>The reconciliation is the industry's audit question (DD-2 for its terms)</td>
+</tr>
+<tr>
+<td>R-5, read 2026-11-19</td>
+<td>DataBP: less than half of contracted revenue realized, an unsourced estimate. Experts: 50 to 70% of exchange audits find some under-reporting (WatersTechnology, "Taking Control"); exchange executives: amounts not unusual (WatersTechnology, "Audits Are Last Resort"); Citigroup paid the LSE 6.4 million pounds for under-reporting (Risk.net)</td>
+<td>The app prices each disagreement in dollars and adds the under-reporting check (D-10); the demo cites DataBP's figure as DataBP's estimate, never as a measured fact</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Decisions</h2>
+<p>Decision ids are D-1, D-2, D-3, numbered in order within the document.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Decision</th>
+<th>Rationale</th>
+<th>Supporting evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td>The viewer is one data provider's data business team, seeing only its own subscribers</td>
+<td>DataBP's clients are data providers; each sees only its own rows</td>
+<td>DataBP's client types and named clients (DataBP's site, read 2026-11-18)</td>
+</tr>
+<tr>
+<td>D-2</td>
+<td>The question: do license, entitlement, usage report and invoice agree per subscriber and product, and what changed since the last close</td>
+<td>Arithmetic on the provider's own record types can be checked by the audience; a claim about the industry cannot</td>
+<td>Bin Luo's background (knowledge 111 item 460); DataBP's reporting page names usage and entitlement data</td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>Three source systems, each its own namespace: the DataBP platform (DATABP_SRC), Salesforce (DATABP_SFDC) and usage reporting (DATABP_USAGE)</td>
+<td>Data integration is shown where the three systems' keys meet</td>
+<td>Ray, 2026-11-18 20:55 ET</td>
+</tr>
+<tr>
+<td>D-4</td>
+<td>All three are SQL Server databases, landed by the one SQL Server CT connector already running</td>
+<td>No new connector at the Openflow level is needed to show data integration</td>
+<td>Ray, 2026-11-18 20:55 and 20:57 ET: "we don't have to demonstrate that we can use more connectors"</td>
+</tr>
+<tr>
+<td>D-5</td>
+<td>Salesforce tables use Salesforce's standard field names: Account, Product2, Opportunity, OpportunityLineItem, Contract, with the custom fields Tenant__c and Subscriber_Id__c</td>
+<td>The data looks like a real Salesforce extract</td>
+<td>Salesforce object reference, read 2026-11-18; DIG-650: Salesforce data loaded into SQL Server</td>
+</tr>
+<tr>
+<td>D-6</td>
+<td>The invoice is split into header and items, each item carrying its product</td>
+<td>The action happens at item level (the parent-item pattern)</td>
+<td>R-2</td>
+</tr>
+<tr>
+<td>D-7</td>
+<td>A license is a Contract with the line items of its won Opportunity; licensed units are the line item's Quantity</td>
+<td>The license is the contract, as the industry's license agreement</td>
+<td>Salesforce object reference; Opportunity.ContractId, Salesforce's standard field for the contract associated with an opportunity, joins the two (source profile, knowledge 111 item 813, P-2; Ray, 2026-11-19, answer 1y)</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>Disagreements are planted on purpose and written to an answer key; a dbt test requires the reconciliation to find exactly the answer key's rows</td>
+<td>The figure is proven before it is shown</td>
+<td>The design sketch (knowledge 111 item 805), section 8.5</td>
+</tr>
+<tr>
+<td>D-9</td>
+<td>The presentation runs one case, the total, who and where, since the last close, then live and through Claude</td>
+<td>One figure the audience can trace to rows is worth more than many charts</td>
+<td>Bin Luo's background (knowledge 111 item 460)</td>
+</tr>
+<tr>
+<td>D-10</td>
+<td>A fifth classification, entitled beyond reported: a usage report counting fewer units than the entitlement allows</td>
+<td>Under-reporting is the leakage exchange audits most often find; the four other checks never compare usage report with entitlement</td>
+<td>DataBP's homepage, "The Problem" (read 2026-11-19); WatersTechnology, "Taking Control": experts estimate 50 to 70% of exchange audits find some under-reporting; Ray, 2026-11-19 09:42 ET</td>
+</tr>
+<tr>
+<td>D-11</td>
+<td>The platform's product carries product_code, the code Salesforce's Product2.ProductCode and the usage report carry</td>
+<td>Without a shared code no column joins Salesforce's products, or the usage report's, to the platform's, so a license or a usage report cannot be compared with an entitlement or an invoice item by product</td>
+<td>Source profile, knowledge 111 item 813, P-1; Ray, 2026-11-19, answer 2a</td>
+</tr>
+<tr>
+<td>D-12</td>
+<td>An absent document counts as zero units in every check: no license is zero licensed units, no entitlement zero entitled units, no usage report zero reported units</td>
+<td>Each check counts units beyond the other document; a missing usage report is the furthest case of under-reporting, the leakage exchange audits find most (R-5); without it 12 of the reconciliation's 30 outcomes are undecided</td>
+<td>Source profile, knowledge 111 item 813, P-6; Ray, 2026-11-19, answer 1y</td>
+</tr>
+<tr>
+<td>D-13</td>
+<td>The source data is generated in phases; phase one holds the source profile's 14 round-one paths for one data provider and one month, and each later phase adds one round of the method; the product build starts once phase one is measured, and later phases expand the source alongside it, not ahead of it (Ray, 2026-11-19 15:24 ET: "I think the decision to populate the source in phases paid off. Now, while we start working on the dashboard, we can expand [the] source, instead of waiting to be completely done with the source to start with the product"; answer 1y)</td>
+<td>The data comes first and is queryable, so the design is checked against it while it is written; a small first phase starts the process</td>
+<td>Ray, 2026-11-19 12:56 ET and answer 3y; Profiling standard, section 1, two paths</td>
+</tr>
+<tr>
+<td>D-14</td>
+<td>The generator and its answer key live in Integrationals/databp-dbt, on DIG-654's branch</td>
+<td>The answer key is the expected result of the dbt test that D-8 requires, so it sits beside the models</td>
+<td>Ray, 2026-11-19, answer 4a</td>
+</tr>
+<tr>
+<td>D-15</td>
+<td>Today's 20,000 invoices are kept; each phase adds its own invoices, each amount the sum of its items</td>
+<td>Phase one stays small and leaves the existing rows untouched</td>
+<td>Ray, 2026-11-19, answer 5a</td>
+</tr>
+<tr>
+<td>D-16</td>
+<td>Billing counts only the items of invoices whose status is not void; an invoice with no items is not billing</td>
+<td>A voided invoice cancels its charge, so counting it would hide entitled without billing, the leakage the app shows; an invoice with no items names no product, so no check can use it</td>
+<td>Source profile, knowledge 111 item 813, P-15; Ray, 2026-11-19, answer 1y</td>
+</tr>
+<tr>
+<td>D-17</td>
+<td>What changed since the last close is read from each source table's updated_at, the time the source system last changed the row</td>
+<td>The source states when it changed a row, in every source system the same way, and the design reads it as the source's own fact rather than the pipeline's</td>
+<td>Source profile, knowledge 111 item 813, P-16; Ray, 2026-11-19, answer 3b</td>
+</tr>
+<tr>
+<td>D-18</td>
+<td>The demo integrates by medallion layers: bronze, the connector's copies as they land; silver, one cleaned table per source document with its keys conformed across the three systems; gold, the mart. The UDM is the integration layer of a production data platform, and the presentation names it so</td>
+<td>Ten or more UDM tables would show one answer the mart gives in four, and a demo must read easily; saying where the UDM belongs shows the choice is deliberate</td>
+<td>Silver and gold as Databricks defines them (medallion architecture, read 2026-11-19); Ray, 2026-11-19 15:44 and 15:46 ET: "we can say for demo we decided not to go with UDM but that it is the real integration for a production data platform"; answer 3y</td>
+</tr>
+<tr>
+<td>D-19</td>
+<td>Silver holds client, subscriber, product, license_line, entitlement, usage_report and invoice_item; each row's key is its business key qualified by the namespace of the party that issued it, hashed with md5, and each row carries a change hash</td>
+<td>Salesforce's Subscriber_Id__c and the usage report's product_code are the platform's identifiers, so hashed in the platform's namespace they give the same keys as the platform: the integration, visible in one key; client is the data provider every other silver table belongs to</td>
+<td>Candidate pattern: qualify a business key by its namespace (knowledge 34 item 268); the reference platform's integrators (knowledge 38 item 374); Ray, 2026-11-19 15:55 ET and answers 1y, and 1y at 16:06 ET adding client</td>
+</tr>
+<tr>
+<td>D-20</td>
+<td>Key hashing moves from staging to silver: staging keeps renames, casts and the deleted flag, and the business_key macro gains a form for keys of several parts</td>
+<td>Staging stays one view per source table; the keys are made where the systems meet</td>
+<td>Ray, 2026-11-19 15:55 ET and answer 2y</td>
+</tr>
+<tr>
+<td>D-21</td>
+<td>Mart tables are named by suffix: [grain]_metric for a table at a grain, [subject]_dim for a table of qualifiers; dim_client becomes client_dim</td>
+<td>The standard is the suffix</td>
+<td>The metric-era mart (knowledge 36 item 309); Ray, 2026-11-19, answer 4a: "the standard is the suffix for _metric and _dim"</td>
+</tr>
+<tr>
+<td>D-22</td>
+<td>subscriber_product_month_metric holds one row per subscriber, product and month with a license, an entitlement, a usage report or a billed invoice item, each row carrying its own result for the five checks and the two dollar figures (increment 2 guide, knowledge 111 item 816); MetricFlow sums each as a separate total</td>
+<td>A difference taken after summing lets shortfalls cancel excesses: October 2026 read 2 units, against 24 reported beyond licensed and 22 licensed but not reported (dbt sl query, 2026-11-20 00:56 and 01:15 UTC); per Data Mart Design Principles (knowledge 12 item 104), a per-row reduction feeding a cross-row total is the registered nested-aggregation exception, single-sourced in this table, unit-tested by ut_subscriber_product_month_two_sides, reconciled at layer 6 by assert_subscriber_product_month_reconciles, and retired when MetricFlow can sum a difference taken per subscriber, product and month across those groups in one metric</td>
+<td>Data Mart Design Principles (knowledge 12 item 104), the exception charter; Ray, 2026-11-19 20:08 ET: "Those are two separate totals", and 20:12 ET: "build the correct atomic table and let mf aggregate"; answers 1y and 2y</td>
+</tr>
+<tr>
+<td>D-23</td>
+<td>Phase one is amended outside the coverage method's rounds (generator/phase_one_b.py): path PA3, subscriber 43, takes distinct October units, entitled 14, reported 17 and billed 9, with its checks unchanged; four October paths, PA15 to PA18, give the five checks different counts, 8, 7, 3, 6 and 9; and the 18 paths' subscribers get usage reports and invoices for November 2026 through September 2027, the term of their licenses and entitlements, with units drawn from a fixed seed and a report or an invoice sometimes missing. The answer key covers all twelve months, and the generator's verify derives the five checks month by month</td>
+<td>The dashboard showed subscriber 43's units as 12 four times and three checks at 6 disagreements each, and after October every month failed only on usage reports and invoices never generated, so a month picker would show months no data provider would see. A round of the method adds paths for behaviors, not variety in values, so this is an amendment, not a round; the 200-subscriber phase two stays a later phase (D-13). Billed units enter no check, so they vary freely</td>
+<td>The Hex app DataBP Reconciliation read live in the browser pane, 2026-11-20 about 05:15 UTC; November 2026 through dbt's MCP, about 05:24 UTC: 6,020 dollars at risk and 12 entitled without billing; Ray, 2026-11-20 00:18 ET: "we need more variability in the numbers", answers 1y2y3b4y at 00:32 ET and 1y at 06:32 ET</td>
+</tr>
+<tr>
+<td>D-24</td>
+<td>Phase one is amended a second time (generator/phase_one_c.py), October unchanged: in every month from November 2026 through September 2027, subscriber 43's four unit counts differ (it always has a usage report and an invoice, reported units other than 0 and 14, billed units other than 0, 14 and the reported units), and the five checks' counts of disagreements differ; where two counts are equal, one path's reported units are redrawn, or, when only invoices move the two equal checks, one invoice the first amendment left absent is supplied. Draws come from their own fixed seed; documents already loaded change by UPDATE, absent ones are inserted, none is removed; the answer key and the generator's verify follow</td>
+<td>The first amendment removed October's repeated figures only: after October it billed subscriber 43 its reported units, so the two matched every month, and the checks' counts were 7 and 7 in November, 2 and 2 in June, 9 and 9 in August. A constraint checked by the generator fixes every month at once, where another one-month amendment would not</td>
+<td>The Hex app, published 2026-11-20 about 15:05 UTC, November: subscriber 43 at 10 reported and 10 billed, two checks at 7; Ray, 2026-11-20 10:24 ET: "november is showing equal values like 10 twice in the one case, seven twice in the totals", answer 2y at 10:27 ET; proved in scratch at about 15:30 to 15:40 UTC, 216 of 216 rows, 0 mismatches</td>
+</tr>
+</tbody>
+</table>
+<h2>6. Domain specification</h2>
+<h3>6.1 source-to-target map</h3>
+<p>Two hops, as decision D-18 sets: bronze to silver here, and silver to gold, the mart of decision D-21, below it once agreed. Bronze is the connector's copy of each source table in <code>DATABP_LAB</code>, read through one staging view per table that renames, casts and carries the deleted flag (D-20). Silver is seven tables in schema <code>SILVER</code>, one per source document, each named for the thing it holds (Object Naming, knowledge 12 item 147, rules 1 to 3), each keyed by an md5 hash of its business key qualified by its issuer's namespace (D-19).</p>
+<p>The keys, defined once and used in the map by name. A business key is the issuer's code, the table's code and the key's parts, joined by a vertical bar; its hash is md5 of that text.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Business key</th>
+<th>Issuer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>client_hk</td>
+<td>DATABP, CLIENT, client_id</td>
+<td>The DataBP platform</td>
+</tr>
+<tr>
+<td>subscriber_hk</td>
+<td>DATABP, CUSTOMER, tenant_id, customer_id</td>
+<td>The DataBP platform</td>
+</tr>
+<tr>
+<td>product_hk</td>
+<td>DATABP, PRODUCT, tenant_id, product_code</td>
+<td>The DataBP platform</td>
+</tr>
+<tr>
+<td>license_line_hk</td>
+<td>SFDC, OPPORTUNITYLINEITEM, Id</td>
+<td>Salesforce</td>
+</tr>
+<tr>
+<td>entitlement_hk</td>
+<td>DATABP, ENTITLEMENT, tenant_id, entitlement_id</td>
+<td>The DataBP platform</td>
+</tr>
+<tr>
+<td>usage_report_hk</td>
+<td>USAGE, USAGE_DECLARATION, tenant_id, declaration_id</td>
+<td>Usage reporting</td>
+</tr>
+<tr>
+<td>invoice_hk</td>
+<td>DATABP, INVOICE, tenant_id, invoice_id</td>
+<td>The DataBP platform</td>
+</tr>
+<tr>
+<td>invoice_item_hk</td>
+<td>DATABP, INVOICE_ITEM, tenant_id, invoice_id, item_id</td>
+<td>The DataBP platform</td>
+</tr>
+</tbody>
+</table>
+<p>Salesforce's Account.Tenant__c and Subscriber_Id__c, and the usage report's tenant_id and customer_id, are the platform's identifiers, so their subscriber_hk is built in the platform's namespace and equals the platform's own; product_hk likewise from Product2.Tenant__c and ProductCode, and from the usage report's product_code. An entitlement or invoice item names its product by product_id, so its product_hk is built from the product's code, looked up through product. Each silver row also carries change_hash, md5 of its non-key columns, and landed_at, the connector's insert time (its _SNOWFLAKE_INSERTED_AT), as the reference platform's integrators carry their load time; a deleted row at the source is not in silver.</p>
+<p>One row per column of the source profile (knowledge 111 item 813, appendix, whose numbers are in the first column): the 63 Integrate columns, then the 7 Reject columns named as absent.</p>
+<table>
+<thead>
+<tr>
+<th>Profile verdict</th>
+<th>Source concept and column</th>
+<th>Target area</th>
+<th>Destination table and column</th>
+<th>Identity recipe</th>
+<th>Pattern</th>
+<th>Additive?</th>
+<th>Decision</th>
+<th>Deliberate collapse, omission, or deferral</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Integrate, 1</td>
+<td>Data provider: client.client_id</td>
+<td>Silver client</td>
+<td>client.client_id; client.client_hk</td>
+<td>client_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 2</td>
+<td>Data provider: client.client_name</td>
+<td>Silver client</td>
+<td>client.client_name</td>
+<td>client_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 3</td>
+<td>Subscriber: customer.tenant_id</td>
+<td>Silver subscriber</td>
+<td>subscriber.client_hk; part of subscriber.subscriber_hk</td>
+<td>subscriber_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 4</td>
+<td>Subscriber: customer.customer_id</td>
+<td>Silver subscriber</td>
+<td>subscriber.subscriber_id; part of subscriber.subscriber_hk</td>
+<td>subscriber_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>Renamed: subscriber is the industry's word</td>
+</tr>
+<tr>
+<td>Integrate, 5</td>
+<td>Subscriber: customer.customer_name</td>
+<td>Silver subscriber</td>
+<td>subscriber.subscriber_name</td>
+<td>subscriber_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 7</td>
+<td>Subscriber: customer.updated_at</td>
+<td>Silver subscriber</td>
+<td>subscriber.updated_at</td>
+<td>subscriber_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-17</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 8</td>
+<td>Invoice: invoice.tenant_id</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.client_hk; part of invoice_item.invoice_hk</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-6, D-19</td>
+<td>Header columns carried on each item</td>
+</tr>
+<tr>
+<td>Integrate, 9</td>
+<td>Invoice: invoice.invoice_id</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.invoice_id; part of invoice_item.invoice_hk</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-6</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 10</td>
+<td>Invoice: invoice.customer_id</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.subscriber_hk</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 11</td>
+<td>Invoice: invoice.amount</td>
+<td>Check</td>
+<td>Equals the sum of its items' amounts, a silver test</td>
+<td>None</td>
+<td>Check</td>
+<td>No</td>
+<td>D-15</td>
+<td>Not carried: invoice_item.billed_amount carries the money</td>
+</tr>
+<tr>
+<td>Integrate, 12</td>
+<td>Invoice: invoice.invoice_date</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.invoice_date</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-6</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 13</td>
+<td>Invoice: invoice.status</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.invoice_status</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-16</td>
+<td>Not filtered here: gold excludes void</td>
+</tr>
+<tr>
+<td>Integrate, 14</td>
+<td>Invoice: invoice.updated_at</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.updated_at, the later of the invoice's and the item's</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-17</td>
+<td>Collapsed: the later wins</td>
+</tr>
+<tr>
+<td>Integrate, 15</td>
+<td>Product: product.tenant_id</td>
+<td>Silver product</td>
+<td>product.client_hk; part of product.product_hk</td>
+<td>product_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 16</td>
+<td>Product: product.product_id</td>
+<td>Silver product</td>
+<td>product.product_id</td>
+<td>product_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-11</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 17</td>
+<td>Product: product.product_code</td>
+<td>Silver product</td>
+<td>product.product_code; part of product.product_hk</td>
+<td>product_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-11, D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 18</td>
+<td>Product: product.product_name</td>
+<td>Silver product</td>
+<td>product.product_name</td>
+<td>product_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-11</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 19</td>
+<td>Product: product.unit_price</td>
+<td>Silver product</td>
+<td>product.unit_price</td>
+<td>product_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-10</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 20</td>
+<td>Product: product.updated_at</td>
+<td>Silver product</td>
+<td>product.updated_at</td>
+<td>product_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-17</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 21</td>
+<td>Entitlement: entitlement.tenant_id</td>
+<td>Silver entitlement</td>
+<td>entitlement.client_hk; part of entitlement.entitlement_hk</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 22</td>
+<td>Entitlement: entitlement.entitlement_id</td>
+<td>Silver entitlement</td>
+<td>entitlement.entitlement_id; part of entitlement.entitlement_hk</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 23</td>
+<td>Entitlement: entitlement.customer_id</td>
+<td>Silver entitlement</td>
+<td>entitlement.subscriber_hk</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 24</td>
+<td>Entitlement: entitlement.product_id</td>
+<td>Silver entitlement</td>
+<td>entitlement.product_hk, through product's code</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-11, D-19</td>
+<td>Collapsed into product_hk</td>
+</tr>
+<tr>
+<td>Integrate, 25</td>
+<td>Entitlement: entitlement.units</td>
+<td>Silver entitlement</td>
+<td>entitlement.entitled_units</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>Yes</td>
+<td>D-12</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 26</td>
+<td>Entitlement: entitlement.start_date</td>
+<td>Silver entitlement</td>
+<td>entitlement.start_date</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-2</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 27</td>
+<td>Entitlement: entitlement.end_date</td>
+<td>Silver entitlement</td>
+<td>entitlement.end_date</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-2</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 28</td>
+<td>Entitlement: entitlement.updated_at</td>
+<td>Silver entitlement</td>
+<td>entitlement.updated_at</td>
+<td>entitlement_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-17</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 29</td>
+<td>Invoice item: invoice_item.tenant_id</td>
+<td>Silver invoice_item</td>
+<td>Part of invoice_item.invoice_item_hk; equals the invoice's tenant_id</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 30</td>
+<td>Invoice item: invoice_item.invoice_id</td>
+<td>Silver invoice_item</td>
+<td>Joins the item to its invoice; part of invoice_item.invoice_item_hk</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-6</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 31</td>
+<td>Invoice item: invoice_item.item_id</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.item_id; part of invoice_item.invoice_item_hk</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-6</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 32</td>
+<td>Invoice item: invoice_item.product_id</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.product_hk, through product's code</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-11, D-19</td>
+<td>Collapsed into product_hk</td>
+</tr>
+<tr>
+<td>Integrate, 33</td>
+<td>Invoice item: invoice_item.units</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.billed_units</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>Yes</td>
+<td>D-16</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 34</td>
+<td>Invoice item: invoice_item.unit_price</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.billed_unit_price</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-6</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 35</td>
+<td>Invoice item: invoice_item.amount</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.billed_amount</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>Yes</td>
+<td>D-6</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 36</td>
+<td>Invoice item: invoice_item.updated_at</td>
+<td>Silver invoice_item</td>
+<td>invoice_item.updated_at, the later of the invoice's and the item's</td>
+<td>invoice_item_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-17</td>
+<td>Collapsed: the later wins</td>
+</tr>
+<tr>
+<td>Integrate, 37</td>
+<td>License: Account.Id</td>
+<td>Join</td>
+<td>Joins Contract.AccountId to the Account</td>
+<td>None</td>
+<td>Join</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 40</td>
+<td>License: Account.Tenant__c</td>
+<td>Silver license_line</td>
+<td>license_line.client_hk; part of license_line.subscriber_hk</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 41</td>
+<td>License: Account.Subscriber_Id__c</td>
+<td>Silver license_line</td>
+<td>Part of license_line.subscriber_hk, in the platform's namespace</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 42</td>
+<td>License: Product2.Id</td>
+<td>Join</td>
+<td>Joins OpportunityLineItem.Product2Id to Product2</td>
+<td>None</td>
+<td>Join</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 44</td>
+<td>License: Product2.ProductCode</td>
+<td>Silver license_line</td>
+<td>Part of license_line.product_hk, in the platform's namespace</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-11, D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 45</td>
+<td>License: Product2.Tenant__c</td>
+<td>Silver license_line</td>
+<td>Part of license_line.product_hk</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 46</td>
+<td>License: Contract.Id</td>
+<td>Silver license_line</td>
+<td>license_line.contract_id</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-7</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 47</td>
+<td>License: Contract.AccountId</td>
+<td>Join</td>
+<td>Joins the Contract to its Account</td>
+<td>None</td>
+<td>Join</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 48</td>
+<td>License: Contract.StartDate</td>
+<td>Silver license_line</td>
+<td>license_line.contract_start_date</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-7</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 49</td>
+<td>License: Contract.EndDate</td>
+<td>Silver license_line</td>
+<td>license_line.contract_end_date</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-7</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 51</td>
+<td>License: Contract.Status</td>
+<td>Silver license_line</td>
+<td>license_line.contract_status</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not filtered here: gold keeps Activated</td>
+</tr>
+<tr>
+<td>Integrate, 52</td>
+<td>License: Contract.Tenant__c</td>
+<td>Check</td>
+<td>Equals its Account's Tenant__c, a silver test</td>
+<td>None</td>
+<td>Check</td>
+<td>No</td>
+<td>D-1</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 53</td>
+<td>License: Opportunity.Id</td>
+<td>Silver license_line</td>
+<td>license_line.opportunity_id</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-7</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 55</td>
+<td>License: Opportunity.ContractId</td>
+<td>Join</td>
+<td>Joins the Opportunity to its Contract</td>
+<td>None</td>
+<td>Join</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 56</td>
+<td>License: Opportunity.StageName</td>
+<td>Silver license_line</td>
+<td>license_line.opportunity_stage</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not filtered here: gold keeps Closed Won</td>
+</tr>
+<tr>
+<td>Integrate, 58</td>
+<td>License: Opportunity.Tenant__c</td>
+<td>Check</td>
+<td>Equals its Contract's Tenant__c, a silver test</td>
+<td>None</td>
+<td>Check</td>
+<td>No</td>
+<td>D-1</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 59</td>
+<td>License: OpportunityLineItem.Id</td>
+<td>Silver license_line</td>
+<td>Part of license_line.license_line_hk</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 60</td>
+<td>License: OpportunityLineItem.OpportunityId</td>
+<td>Join</td>
+<td>Joins the line item to its Opportunity</td>
+<td>None</td>
+<td>Join</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 61</td>
+<td>License: OpportunityLineItem.Product2Id</td>
+<td>Join</td>
+<td>Joins the line item to Product2</td>
+<td>None</td>
+<td>Join</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not carried</td>
+</tr>
+<tr>
+<td>Integrate, 62</td>
+<td>License: OpportunityLineItem.Quantity</td>
+<td>Silver license_line</td>
+<td>license_line.licensed_units</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>Yes</td>
+<td>D-7</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 63</td>
+<td>License: OpportunityLineItem.UnitPrice</td>
+<td>Silver license_line</td>
+<td>license_line.licensed_unit_price</td>
+<td>license_line_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-7</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 64</td>
+<td>Usage report: usage_declaration.tenant_id</td>
+<td>Silver usage_report</td>
+<td>usage_report.client_hk; part of usage_report.usage_report_hk</td>
+<td>usage_report_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 65</td>
+<td>Usage report: usage_declaration.declaration_id</td>
+<td>Silver usage_report</td>
+<td>usage_report.declaration_id; part of usage_report.usage_report_hk</td>
+<td>usage_report_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>Collapsed: the latest report per subscriber, product and month is kept</td>
+</tr>
+<tr>
+<td>Integrate, 66</td>
+<td>Usage report: usage_declaration.customer_id</td>
+<td>Silver usage_report</td>
+<td>usage_report.subscriber_hk</td>
+<td>usage_report_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 67</td>
+<td>Usage report: usage_declaration.product_code</td>
+<td>Silver usage_report</td>
+<td>usage_report.product_hk</td>
+<td>usage_report_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-11, D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 68</td>
+<td>Usage report: usage_declaration.usage_month</td>
+<td>Silver usage_report</td>
+<td>usage_report.usage_month</td>
+<td>usage_report_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-2</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 69</td>
+<td>Usage report: usage_declaration.declared_units</td>
+<td>Silver usage_report</td>
+<td>usage_report.reported_units</td>
+<td>usage_report_hk</td>
+<td>Silver table</td>
+<td>Yes</td>
+<td>D-10</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate, 70</td>
+<td>Usage report: usage_declaration.declared_at</td>
+<td>Silver usage_report</td>
+<td>usage_report.declared_at; orders restated reports</td>
+<td>usage_report_hk</td>
+<td>Silver table</td>
+<td>No</td>
+<td>D-2</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Reject, 6</td>
+<td>customer.email</td>
+<td>None</td>
+<td>Absent</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>None</td>
+<td>Omitted: not used by the app</td>
+</tr>
+<tr>
+<td>Reject, 38</td>
+<td>Account.Name</td>
+<td>None</td>
+<td>Absent</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>None</td>
+<td>Omitted: duplicate of customer.customer_name</td>
+</tr>
+<tr>
+<td>Reject, 39</td>
+<td>Account.OwnerId</td>
+<td>None</td>
+<td>Absent</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>None</td>
+<td>Omitted: not used by the app</td>
+</tr>
+<tr>
+<td>Reject, 43</td>
+<td>Product2.Name</td>
+<td>None</td>
+<td>Absent</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>None</td>
+<td>Omitted: duplicate of product.product_name</td>
+</tr>
+<tr>
+<td>Reject, 50</td>
+<td>Contract.ContractTerm</td>
+<td>None</td>
+<td>Absent</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>None</td>
+<td>Omitted: the period is StartDate to EndDate</td>
+</tr>
+<tr>
+<td>Reject, 54</td>
+<td>Opportunity.AccountId</td>
+<td>None</td>
+<td>Absent</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>None</td>
+<td>Omitted: duplicate of its Contract's AccountId</td>
+</tr>
+<tr>
+<td>Reject, 57</td>
+<td>Opportunity.CloseDate</td>
+<td>None</td>
+<td>Absent</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>None</td>
+<td>Omitted: not used by the reconciliation</td>
+</tr>
+</tbody>
+</table>
+<p>Completion check, bronze to silver: 63 Integrate rows, each landing in a silver column or naming the join or check it serves; 7 Reject rows named as absent; 0 Defer; every silver column traces to a source column above, to a key defined above, to change_hash, or to landed_at.</p>
+<p>The silver-to-gold map: eight gold tables in schema <code>MARTS</code>, named by suffix (D-21), read from the seven silver tables above. A <code>_metric</code> table holds row-grain measures and keys at one declared grain; a <code>_dim</code> table holds qualifiers; MetricFlow computes every population total (Data Mart Design Principles, knowledge 12 item 104). A month row is one month a document covers, from the time spine <code>metricflow_time_spine</code>, so every covered month gets a row and an absent month reads 0.</p>
+<table>
+<thead>
+<tr>
+<th>Profile verdict</th>
+<th>Source concept and column</th>
+<th>Target area</th>
+<th>Destination table and column</th>
+<th>Identity recipe</th>
+<th>Pattern</th>
+<th>Additive?</th>
+<th>Decision</th>
+<th>Deliberate collapse, omission, or deferral</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Integrate</td>
+<td>Data provider: client.client_hk</td>
+<td>Gold client_dim</td>
+<td>client_dim.client_hk</td>
+<td>client_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-21</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Data provider: client.client_id</td>
+<td>Gold client_dim</td>
+<td>client_dim.client_id</td>
+<td>client_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-21</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Data provider: client.client_name</td>
+<td>Gold client_dim</td>
+<td>client_dim.client_name</td>
+<td>client_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-21</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Data provider: client.landed_at</td>
+<td>Gold client_dim</td>
+<td>client_dim.landed_at; client_dim.landed_date, its date</td>
+<td>client_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-21</td>
+<td>Kept: Production's dim_client carries it (baseline B-1)</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Subscriber: subscriber.subscriber_hk</td>
+<td>Gold subscriber_dim</td>
+<td>subscriber_dim.subscriber_hk</td>
+<td>subscriber_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Subscriber: subscriber.client_hk</td>
+<td>Gold subscriber_dim</td>
+<td>subscriber_dim.client_hk</td>
+<td>subscriber_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-1</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Subscriber: subscriber.subscriber_id</td>
+<td>Gold subscriber_dim</td>
+<td>subscriber_dim.subscriber_id</td>
+<td>subscriber_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Subscriber: subscriber.subscriber_name</td>
+<td>Gold subscriber_dim</td>
+<td>subscriber_dim.subscriber_name</td>
+<td>subscriber_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Subscriber: subscriber.updated_at</td>
+<td>Gold subscriber_dim</td>
+<td>subscriber_dim.updated_at</td>
+<td>subscriber_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-17</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product.product_hk</td>
+<td>Gold product_dim</td>
+<td>product_dim.product_hk</td>
+<td>product_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product.client_hk</td>
+<td>Gold product_dim</td>
+<td>product_dim.client_hk</td>
+<td>product_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-1</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product.product_id</td>
+<td>Gold product_dim</td>
+<td>product_dim.product_id</td>
+<td>product_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-11</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product.product_code</td>
+<td>Gold product_dim</td>
+<td>product_dim.product_code</td>
+<td>product_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-11</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product.product_name</td>
+<td>Gold product_dim</td>
+<td>product_dim.product_name</td>
+<td>product_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-11</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product.unit_price</td>
+<td>Gold product_dim</td>
+<td>product_dim.unit_price</td>
+<td>product_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-10</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product.updated_at</td>
+<td>Gold product_dim</td>
+<td>product_dim.updated_at</td>
+<td>product_hk</td>
+<td>Dimension</td>
+<td>No</td>
+<td>D-17</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line.license_line_hk</td>
+<td>Gold license_line_month_metric</td>
+<td>license_line_month_metric.license_line_hk; with the month, its key license_line_month_hk</td>
+<td>license_line_hk and usage_month</td>
+<td>Atomic fact, one row per license line and covered month</td>
+<td>No</td>
+<td>D-7, D-21</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line.client_hk</td>
+<td>Gold license_line_month_metric</td>
+<td>license_line_month_metric.client_hk</td>
+<td>license_line_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-1</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line.subscriber_hk</td>
+<td>Gold license_line_month_metric</td>
+<td>license_line_month_metric.subscriber_hk</td>
+<td>license_line_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line.product_hk</td>
+<td>Gold license_line_month_metric</td>
+<td>license_line_month_metric.product_hk</td>
+<td>license_line_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line.contract_start_date and contract_end_date</td>
+<td>Gold license_line_month_metric</td>
+<td>license_line_month_metric.usage_month, each month from start to end</td>
+<td>license_line_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-7</td>
+<td>Collapsed: the period becomes its months</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line.licensed_units</td>
+<td>Gold license_line_month_metric</td>
+<td>license_line_month_metric.licensed_units; metric licensed_units</td>
+<td>license_line_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>Yes</td>
+<td>D-7, D-12</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line.contract_status and opportunity_stage</td>
+<td>Gold license_line_month_metric</td>
+<td>Filter: only Activated Contracts of Closed Won Opportunities</td>
+<td>None</td>
+<td>Filter</td>
+<td>No</td>
+<td>D-7</td>
+<td>Not carried: used as the filter</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Entitlement: entitlement.entitlement_hk</td>
+<td>Gold entitlement_month_metric</td>
+<td>entitlement_month_metric.entitlement_hk; with the month, its key entitlement_month_hk</td>
+<td>entitlement_hk and usage_month</td>
+<td>Atomic fact, one row per entitlement and covered month</td>
+<td>No</td>
+<td>D-21</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Entitlement: entitlement.client_hk</td>
+<td>Gold entitlement_month_metric</td>
+<td>entitlement_month_metric.client_hk</td>
+<td>entitlement_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-1</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Entitlement: entitlement.subscriber_hk</td>
+<td>Gold entitlement_month_metric</td>
+<td>entitlement_month_metric.subscriber_hk</td>
+<td>entitlement_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Entitlement: entitlement.product_hk</td>
+<td>Gold entitlement_month_metric</td>
+<td>entitlement_month_metric.product_hk</td>
+<td>entitlement_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Entitlement: entitlement.start_date and end_date</td>
+<td>Gold entitlement_month_metric</td>
+<td>entitlement_month_metric.usage_month, each month from start to end</td>
+<td>entitlement_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-2</td>
+<td>Collapsed: the period becomes its months</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Entitlement: entitlement.entitled_units</td>
+<td>Gold entitlement_month_metric</td>
+<td>entitlement_month_metric.entitled_units; metric entitled_units</td>
+<td>entitlement_hk and usage_month</td>
+<td>Atomic fact</td>
+<td>Yes</td>
+<td>D-12</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Usage report: usage_report.usage_report_hk</td>
+<td>Gold usage_report_metric</td>
+<td>usage_report_metric.usage_report_hk</td>
+<td>usage_report_hk</td>
+<td>Atomic fact, one row per usage report, the latest for its month</td>
+<td>No</td>
+<td>D-2, D-21</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Usage report: usage_report.client_hk</td>
+<td>Gold usage_report_metric</td>
+<td>usage_report_metric.client_hk</td>
+<td>usage_report_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-1</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Usage report: usage_report.subscriber_hk</td>
+<td>Gold usage_report_metric</td>
+<td>usage_report_metric.subscriber_hk</td>
+<td>usage_report_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Usage report: usage_report.product_hk</td>
+<td>Gold usage_report_metric</td>
+<td>usage_report_metric.product_hk</td>
+<td>usage_report_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Usage report: usage_report.usage_month</td>
+<td>Gold usage_report_metric</td>
+<td>usage_report_metric.usage_month</td>
+<td>usage_report_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-2</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Usage report: usage_report.reported_units</td>
+<td>Gold usage_report_metric</td>
+<td>usage_report_metric.reported_units; metric reported_units</td>
+<td>usage_report_hk</td>
+<td>Atomic fact</td>
+<td>Yes</td>
+<td>D-10, D-12</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.invoice_item_hk</td>
+<td>Gold invoice_item_metric</td>
+<td>invoice_item_metric.invoice_item_hk</td>
+<td>invoice_item_hk</td>
+<td>Atomic fact, one row per invoice item that bills</td>
+<td>No</td>
+<td>D-6, D-21</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.client_hk</td>
+<td>Gold invoice_item_metric</td>
+<td>invoice_item_metric.client_hk</td>
+<td>invoice_item_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-1</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.subscriber_hk</td>
+<td>Gold invoice_item_metric</td>
+<td>invoice_item_metric.subscriber_hk</td>
+<td>invoice_item_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.product_hk</td>
+<td>Gold invoice_item_metric</td>
+<td>invoice_item_metric.product_hk</td>
+<td>invoice_item_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-19</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.invoice_date</td>
+<td>Gold invoice_item_metric</td>
+<td>invoice_item_metric.usage_month, the invoice date's month</td>
+<td>invoice_item_hk</td>
+<td>Atomic fact</td>
+<td>No</td>
+<td>D-2</td>
+<td>Collapsed: the date becomes its month</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.billed_units</td>
+<td>Gold invoice_item_metric</td>
+<td>invoice_item_metric.billed_units; metric billed_units</td>
+<td>invoice_item_hk</td>
+<td>Atomic fact</td>
+<td>Yes</td>
+<td>D-16</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.billed_amount</td>
+<td>Gold invoice_item_metric</td>
+<td>invoice_item_metric.billed_amount; metric billed_amount</td>
+<td>invoice_item_hk</td>
+<td>Atomic fact</td>
+<td>Yes</td>
+<td>D-16</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item.invoice_status</td>
+<td>Gold invoice_item_metric</td>
+<td>Filter: void invoices are not billing</td>
+<td>None</td>
+<td>Filter</td>
+<td>No</td>
+<td>D-16</td>
+<td>Not carried: used as the filter</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License and usage report: license_line_month_metric and usage_report_metric, keys and month</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>subscriber_product_month_metric.client_hk, subscriber_hk, product_hk, usage_month; key subscriber_product_month_hk</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact, nested aggregation</td>
+<td>No</td>
+<td>D-22</td>
+<td>Collapsed: license lines and reports summed per subscriber, product and month</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>License: license_line_month_metric.licensed_units</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>subscriber_product_month_metric.licensed_units, 0 when absent</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>Yes</td>
+<td>D-12, D-22</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Usage report: usage_report_metric.reported_units</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>subscriber_product_month_metric.reported_units, 0 when absent</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>Yes</td>
+<td>D-12, D-22</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Entitlement: entitlement_month_metric.entitled_units</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>subscriber_product_month_metric.entitled_units, 0 when absent</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>Yes</td>
+<td>D-12, D-22</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Invoice item: invoice_item_metric.billed_units and billed_amount</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>subscriber_product_month_metric.billed_units and billed_amount, 0 when absent</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>Yes</td>
+<td>D-12, D-16, D-22</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Each document table's row for the subscriber, product and month</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>has_license, has_entitlement, has_report, has_billing</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>No</td>
+<td>D-2, D-22</td>
+<td>The presence the two presence checks test (guide G-10)</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product: product_dim.unit_price</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>subscriber_product_month_metric.unit_price</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>No</td>
+<td>D-10</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Derived from the units above</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>units_reported_beyond_licensed, units_licensed_not_reported, units_entitled_beyond_licensed, units_entitled_beyond_reported; a metric each</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>Yes</td>
+<td>D-2, D-10, D-22</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Derived from the units and presence above</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>is_reported_beyond_licensed, is_entitled_beyond_licensed, is_billed_without_entitlement, is_entitled_without_billing, is_entitled_beyond_reported, 1 or 0; a count of disagreements each</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>Yes</td>
+<td>D-2, D-8, D-10</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Derived from the units and unit_price above</td>
+<td>Gold subscriber_product_month_metric</td>
+<td>unbilled_amount and at_risk_amount; metrics unbilled_revenue and revenue_at_risk</td>
+<td>subscriber_hk, product_hk and usage_month</td>
+<td>Exception fact</td>
+<td>Yes</td>
+<td>D-10, D-22</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p>Completion check, silver to gold: 53 rows, all 70 columns of the eight gold tables in development (counted 2026-11-20 01:47 UTC) traced to a silver column, a key, the time spine, a document's presence or a derivation above. Not carried to gold, on purpose: each silver table's change_hash and landed_at (client's landed_at excepted), license_line's contract_id, opportunity_id and licensed_unit_price, entitlement's entitlement_id, usage_report's declaration_id and declared_at, invoice_item's invoice_id, item_id and billed_unit_price; no check reads them.</p>
+<h3>6.2 Dictionary</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Business meaning</th>
+<th>source-to-target mapping</th>
+<th>Mapping state</th>
+<th>Decision</th>
+<th>Verified example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Market data</td>
+<td>The prices and trades that financial markets produce, sold by exchanges and data vendors to investment firms; not marketing data, which is about the customers a product is sold to (course log, knowledge 111 item 798, entry 317, from TRG Screen and Law Insider)</td>
+<td>None: the industry of DataBP's clients, not a column</td>
+<td>Not applicable</td>
+<td>D-1</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>Subscriber</td>
+<td>The party a vendor permits to receive market data through a subscriber entitlement (course log, entry 312, from an NYSE filing of 2010-05-12)</td>
+<td>DATABP_SRC.dbo.customer to the subscriber role</td>
+<td>PROPOSED</td>
+<td>D-1</td>
+<td>None yet: no rows generated</td>
+</tr>
+<tr>
+<td>Vendor</td>
+<td>Market data vendors, broker-dealers, private network providers and other entities that control subscribers' access to data through subscriber entitlement controls (course log, entry 313, from the same NYSE filing)</td>
+<td>None: not in this version's sources</td>
+<td>Not mapped</td>
+<td>DD-2</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>License</td>
+<td>The right an exchange grants a data recipient in its market data agreement: limited, non-exclusive, non-transferable, revocable, for the agreement's term, to use the exchange's data and distribute it to subscribers who hold a subscriber agreement (course log, entry 318, from the MEMX Market Data Agreement, section 4)</td>
+<td>Salesforce Contract with its won Opportunity's line items</td>
+<td>PROPOSED</td>
+<td>D-7</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>Entitlement</td>
+<td>A vendor's permitting a subscriber to receive access to data through an exchange-approved subscriber entitlement control (course log, entry 314, from the NYSE filing)</td>
+<td>DATABP_SRC.dbo.entitlement</td>
+<td>PROPOSED</td>
+<td>D-3</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>Unit of count</td>
+<td>The unit used to measure the level of use of market data to be invoiced, distinguishing display from non-display use; CME Group's default for display terminals is the device (course log, entry 315, from Nasdaq European Data Policies and CME Group)</td>
+<td>OpportunityLineItem.Quantity, entitlement.units, usage_declaration.declared_units and invoice_item.units, all counted in one unit of count</td>
+<td>PROPOSED</td>
+<td>D-7, DD-2</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>Usage report</td>
+<td>The monthly count of reportable units per information product, per location or subscriber, sent to the exchange (course log, entry 316, from Euronext Reporting Guidelines v1.6, section 2.3)</td>
+<td>DATABP_USAGE.usage_declaration</td>
+<td>PROPOSED</td>
+<td>D-3, DD-2</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>Declaration</td>
+<td>A data recipient's statement of how it uses an exchange's data, such as ICE's annual Non-Display Use Declaration; not a usage report (course log, entry 319, from the ICE Market Data Vendor Guide, section 2.4.1)</td>
+<td>None: not in this version's sources; the table name usage_declaration holds usage reports, not declarations</td>
+<td>Not mapped</td>
+<td>DD-2</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>Invoice item</td>
+<td>One billed line: product, units, unit price, amount</td>
+<td>DATABP_SRC.dbo.invoice_item</td>
+<td>PROPOSED</td>
+<td>D-6</td>
+<td>None yet</td>
+</tr>
+</tbody>
+</table>
+<h3>6.3 Domain content</h3>
+<p>The source design, presentation steps, metrics and planted disagreements are in the design sketch (knowledge 111 item 805), sections 3, 5 and 8, and move here section by section as each is agreed. Metrics for the Semantic Layer, by their names in the project (increment 2 guide, knowledge 111 item 816): on the document tables, licensed_units, entitled_units, reported_units, billed_units and billed_amount (billed revenue), and client_count on client_dim; on subscriber_product_month_metric (D-22), units_reported_beyond_licensed (units beyond license), units_licensed_not_reported, units_entitled_beyond_licensed, units_entitled_beyond_reported, unbilled_revenue (units reported beyond licensed times the product's unit price), revenue_at_risk (units entitled beyond reported times the product's unit price: the amount an exchange's audit of under-reporting would test, not proven use), and one count of disagreements per check: disagreements_reported_beyond_licensed, disagreements_entitled_beyond_licensed, disagreements_billed_without_entitlement, disagreements_entitled_without_billing and disagreements_entitled_beyond_reported (the under-reporting check of D-10). Dollars exist for the two checks the answer key prices; the other three are counted.</p>
+<h3>6.4 Instance models</h3>
+<p>None yet: no source rows exist. An instance model is added for one real subscriber once the generator has loaded the three source systems and the build has run.</p>
+<h3>6.5 Worked examples</h3>
+<p>Acme Capital subscribes to a data provider's equities feed. Its license says 10 units. The platform entitles it to 12. Its usage report for October says 14. Its October invoice bills 10. The app shows three facts for Acme Capital: usage beyond the license by 4 units, entitlement beyond the license by 2, and billing that matches the license but not the usage. At the feed's unit price of 50 dollars, 4 units beyond license is 200 dollars unbilled for October.</p>
+<p>Acme Capital also subscribes to the provider's options feed. Its license says 8 units and the platform entitles it to 8. Its usage report for October says 5, and its October invoice bills 5. The app shows one fact for this product: entitlement beyond the usage report by 3 units, the under-reporting check of D-10. At the feed's unit price of 40 dollars, that is 120 dollars at risk for October. Across its two products Acme Capital shows three of the five checks; the planted one case carries all five (design sketch, knowledge 111 item 805, section 8.5).</p>
+<h2>7. Deferred decisions</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Deferred decision</th>
+<th>Reason</th>
+<th>Unblocking condition</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DD-1</td>
+<td>The UDM destinations of entitlement, usage report and invoice item</td>
+<td>The UDM model for these three is not yet chosen</td>
+<td>Withdrawn 2026-11-19: the demo does not integrate into the UDM (D-18)</td>
+<td>Ray</td>
+</tr>
+<tr>
+<td>DD-2</td>
+<td>Whether to rename the design's terms to the industry's (unit of count, usage report) and add the vendor between provider and subscriber</td>
+<td>On hold (Ray, 2026-11-19); until then the dictionary carries the industry's terms and the sources keep their table names</td>
+<td>Ray lifts the hold</td>
+<td>Ray</td>
+</tr>
+</tbody>
+</table>
+<h2>8. Testing plan</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Required proof or artifact</th>
+<th>Applicability and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1: built-in dbt tests</td>
+<td>not_null and unique on every key of the new staging and integration models; relationships from items to their headers</td>
+<td>Applies: every new model has keys</td>
+</tr>
+<tr>
+<td>2: dbt-expectations</td>
+<td>Not planned in this version</td>
+<td>NA: no distributional expectation is known before the rows are generated</td>
+</tr>
+<tr>
+<td>3: PCM unit tests</td>
+<td>Unit tests of the reconciliation's five classifications, one mocked case each</td>
+<td>Applies: the classifications are the app's logic</td>
+</tr>
+<tr>
+<td>4: logic assertions</td>
+<td>The reconciliation finds exactly the answer key's rows (D-8)</td>
+<td>Applies: the answer key is the expected result</td>
+</tr>
+<tr>
+<td>5: detectors</td>
+<td>Not planned in this version</td>
+<td>NA: the demo does not run detectors</td>
+</tr>
+<tr>
+<td>6: reconciliation</td>
+<td>Row counts per source table against Snowflake landing, per tenant</td>
+<td>Applies: three source systems land through one connector</td>
+</tr>
+<tr>
+<td>7: semantic surface</td>
+<td>The disagreement metrics return the same value through the Semantic Layer, Hex and Claude over dbt's MCP</td>
+<td>Applies: the app's figure is a Semantic Layer metric</td>
+</tr>
+<tr>
+<td>Full-build guardrails, not a methodology layer</td>
+<td>dbt build passes on the full project before the app is refreshed</td>
+<td>Applies to every build</td>
+</tr>
+</tbody>
+</table>
+<h3>Consumer-question probes</h3>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Runnable probe</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>The app shows each planted disagreement for the one-case subscriber</td>
+<td>The answer key's rows for that subscriber, and no others</td>
+</tr>
+<tr>
+<td>Q-2</td>
+<td>A source row changed in SQL Server reaches the app's figure after the connector and the build</td>
+<td>The figure moves by the changed amount</td>
+</tr>
+</tbody>
+</table>
+<h3>Checks from the profile</h3>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Check</th>
+<th>Layer</th>
+<th>Planned artifact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None: no profile</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Handoff boundary</h2>
+<p>The implementation guide covers: the generator and its answer key; the DDL of the new tables in DATABP_SRC, DATABP_SFDC and DATABP_USAGE, with Change Tracking; the connector's table list; the dbt models from staging to the reconciliation; the Semantic Layer metrics; and the Hex app. This design decides what and why; the guide decides how, citing these decision ids. This design stays at the conceptual level; the mart design and the metric-era mart (knowledge 36 item 309, where [grain]_metric is the settled table naming) come after it, at the implementation level, and never replace it (Ray, 2026-11-19: each document type has its own purpose).</p>
+<h3>Finance workbook and initial UAT</h3>
+<p>For finance reporting branches, state the workbook's consumer, scope, business questions, expected behavior, preliminary-review conditions and final acceptance criteria under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: this is not a finance reporting branch.</p>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>NOT BUILT.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

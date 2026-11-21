@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DIG-655 Implementation Guide, Increment 2 of 4: gold and the five checks · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Implementation guide, 2 of 4</div><h1>DIG-655 Implementation Guide, Increment 2 of 4: gold and the five checks</h1><p class="lead">Gold and the five checks, step by step.</p></div></section>
+<main class="doc">
+<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 816, version 8, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 816, version 8: DIG-655 Implementation Guide, Increment 2 of 4: gold and the five checks --><h3>Implementation Guide (Increment 2 of 4)</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Implementation Guide</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>DIG-655 — Reconciliation dashboard build, four increments to the Hex app — branch <code>rayserrano2735/dig-655-reconciliation-dashboard-build</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Entitlement and billing reconciliation: design document, knowledge 111 item 806 v41 — profiling: Entitlement and billing reconciliation: source profile, knowledge 111 item 813 v51 — test plan: DIG-655 Test Plan, knowledge 111 item 814</td>
+</tr>
+<tr>
+<td><strong>Prerequisites</strong></td>
+<td>Increment 1 built (DIG-655 Implementation Guide, Increment 1 of 4, knowledge 111 item 815; commits 0eafef5 and 82fcc72); the gold tables and the exception of D-22 committed in 4e6cb23; the design's silver-to-gold map, item 806 v41</td>
+</tr>
+<tr>
+<td><strong>Companions</strong></td>
+<td>Increment 1, staging and silver (knowledge 111 item 815); increments 3 and 4, the Semantic Layer battery and the Hex app, written as their own parts</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — COMPLIANT, NOT PRESENTED FOR AGREEMENT</strong> — written 2026-11-20 01:45Z (Ray's pre-authorization of 2026-11-19 16:06 ET: a guide that meets its template's standard needs no stop for agreement; the workflow approved 20:39 ET, answer 1y)</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>The session that builds DIG-655; Ray Serrano, who reviews</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-19</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Purpose and grounding recap</h2>
+<p>This guide implements Entitlement and billing reconciliation: design document, knowledge 111 item 806 v41 and does not relitigate its decisions.</p>
+<table>
+<thead>
+<tr>
+<th>Design decision</th>
+<th>Settled rule used by the implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-2</td>
+<td>The checks compare license, entitlement, usage report and invoice per subscriber, product and month</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>The answer key is the expected result: a test requires the table to find exactly its rows</td>
+</tr>
+<tr>
+<td>D-10</td>
+<td>The fifth check, entitled beyond reported, prices at risk the units an under-reporting audit would test</td>
+</tr>
+<tr>
+<td>D-12</td>
+<td>An absent document counts as zero units</td>
+</tr>
+<tr>
+<td>D-16</td>
+<td>Void invoices are not billing; invoice_item_metric already excludes them</td>
+</tr>
+<tr>
+<td>D-21</td>
+<td>Gold tables are named by suffix</td>
+</tr>
+<tr>
+<td>D-22</td>
+<td>subscriber_product_month_metric is the nested-aggregation exception: each row keeps its own result for each check, and MetricFlow sums the rows</td>
+</tr>
+</tbody>
+</table>
+<p>Code in this guide is an illustrative pattern: more than pseudocode, less than shipping code. Do not copy it into the repo; implement it against the branch. Development is done when the output is shown correct against real data, per K#12 I#26.</p>
+<h3>Pattern declaration</h3>
+<ul>
+<li>Patterns instantiated: The nested-aggregation exception of Data Mart Design Principles (knowledge 12 item 104), first instance subscriber_product_month_metric at commit 4e6cb23, extended here from two documents to four</li>
+<li>Patterns introduced: None</li>
+</ul>
+<h2>2. Scope</h2>
+<h3>Deliverables</h3>
+<ol>
+<li>subscriber_product_month_metric reads all four document tables and product_dim, and gains the presence flags, entitled, billed and price columns, the five checks and the two dollar figures</li>
+<li>Eleven metrics on it: the two of 4e6cb23 and nine new ones, two by units, two in dollars and five counts of disagreements</li>
+<li>Five unit tests, one per check, the two-sides unit test given the new inputs, and three filter unit tests on the document tables (LA-10)</li>
+<li>tests/assert_checks_match_answer_key.sql, layer 4</li>
+<li>tests/assert_subscriber_product_month_reconciles.sql widened to entitled units, billed units and billed amount</li>
+</ol>
+<h3>Finance workbook delivery</h3>
+<p>For finance reporting branches, name the repository generation script, shared mart-level report query and parameters, reproducible generation/refresh steps, workbook metadata and sheets, and preservation of consumer observations under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h3>What stays the same</h3>
+<p>The four document tables and the two dimensions of 4e6cb23; silver and staging; the metrics licensed_units, entitled_units, reported_units, billed_units, billed_amount and client_count; the answer key and the generator.</p>
+<h3>Intentionally not done</h3>
+<p>The Semantic Layer battery (increment 3); the Hex app (increment 4); "since the last close" and the live change (Ray, 2026-11-19 20:37 ET, answer 2y); the generator's verify query carrying D-16.</p>
+<h3>Identity recipes</h3>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Natural code</th>
+<th>Surrogate-key composition</th>
+<th>Minting location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Subscriber, product and month</td>
+<td>subscriber_hk, product_hk, usage_month</td>
+<td>md5 of subscriber_hk, product_hk and usage_month joined by a vertical bar</td>
+<td>gold subscriber_product_month_metric</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Grounded in code and complete consumer set</h2>
+<p>Every edit below names a file and object read from the stated branch.</p>
+<table>
+<thead>
+<tr>
+<th>Touched object</th>
+<th>Exact file</th>
+<th>Consumers found</th>
+<th>Verification command and clock</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>subscriber_product_month_metric</td>
+<td>models/marts/subscriber_product_month_metric.sql and .yml</td>
+<td>Its unit tests in models/marts/_marts_unit_tests.yml and tests/assert_subscriber_product_month_reconciles.sql; nothing else</td>
+<td><code>git grep -l subscriber_product_month_metric HEAD -- .</code>, 2026-11-20 01:39 UTC</td>
+</tr>
+<tr>
+<td>entitlement_month_metric and invoice_item_metric</td>
+<td>models/marts/entitlement_month_metric.sql, invoice_item_metric.sql and their yml</td>
+<td>Their own yml only; this increment adds the exception as a reader</td>
+<td>The same grep for each name, 01:39 UTC</td>
+</tr>
+<tr>
+<td>seed_reconciliation_answer_key</td>
+<td>seeds/seed_reconciliation_answer_key.csv</td>
+<td>generator/phase_one.py writes it; no model or test reads it before this increment</td>
+<td>The same grep, 01:39 UTC</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Baseline</h2>
+<table>
+<thead>
+<tr>
+<th>Baseline ID</th>
+<th>Behavior or value</th>
+<th>Capture command or query</th>
+<th>Captured result and clock</th>
+<th>Reconciliation condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B-2</td>
+<td>The exception's rows and its two columns, development</td>
+<td><code>SELECT COUNT(*), COUNT_IF(usage_month='2026-10-01'), SUM(IFF(usage_month='2026-10-01', units_reported_beyond_licensed, 0)), SUM(IFF(usage_month='2026-10-01', units_licensed_not_reported, 0)), MD5(LISTAGG(subscriber_product_month_hk||'|'||units_reported_beyond_licensed||'|'||units_licensed_not_reported, ',') WITHIN GROUP (ORDER BY subscriber_product_month_hk)) FROM DATABP_LAB.DBT_CLAUDE_MARTS.SUBSCRIBER_PRODUCT_MONTH_METRIC</code></td>
+<td>157, 14, 24, 22 and f9a569ae977cfe5a4e93ac89521b6dc8, 2026-11-20 01:39:57 UTC</td>
+<td>The same query, restricted to rows with has_license or has_report, returns the same five values</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Ordered implementation steps</h2>
+<h3>Step 1. The exception reads four documents (models/marts/subscriber_product_month_metric.sql)</h3>
+<p>Extends the nested-aggregation exception of D-22 (Data Mart Design Principles, knowledge 12 item 104). Each document table is summed to the subscriber, product and month; the grain is the union of their keys; each document joins to it, absent counting as zero (D-12); the product's unit price comes from product_dim. The five checks follow the answer key's definitions (D-8): three by units, two by the presence of a document. Expected movement: rows with only an entitlement or only a billed item are added; every row present before keeps its licensed and reported units and its two columns (B-2). Exemplar: the file at 4e6cb23. The model as built:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Gold subscriber_product_month_metric: one row per subscriber, product and month that has a license,</span>
+<span class="c1">-- an entitlement, a usage report or a billed invoice item. Absent counts as zero units (D-12).</span>
+<span class="c1">-- Registered exception under Data Mart Design Principles (k12ki104): nested aggregation.</span>
+<span class="c1">-- Each row's check columns are a per-row reduction that MetricFlow then sums across rows (D-22).</span>
+<span class="c1">-- Unit tests: ut_subscriber_product_month_two_sides and ut_check_*. Layer 6: assert_subscriber_product_month_reconciles.</span>
+<span class="c1">-- Layer 4: assert_checks_match_answer_key.</span>
+<span class="c1">-- Retires when MetricFlow can sum a difference taken per subscriber, product and month across those</span>
+<span class="c1">-- groups in one metric; the metrics then read the four document tables directly.</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">(</span><span class="s1">'license'</span><span class="p">,</span><span class="w">     </span><span class="s1">'license_line_month_metric'</span><span class="p">,</span><span class="w"> </span><span class="s1">'licensed_units'</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="s1">'entitlement'</span><span class="p">,</span><span class="w"> </span><span class="s1">'entitlement_month_metric'</span><span class="p">,</span><span class="w">  </span><span class="s1">'entitled_units'</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="s1">'report'</span><span class="p">,</span><span class="w">      </span><span class="s1">'usage_report_metric'</span><span class="p">,</span><span class="w">       </span><span class="s1">'reported_units'</span><span class="p">),</span>
+<span class="w">    </span><span class="p">(</span><span class="s1">'billing'</span><span class="p">,</span><span class="w">     </span><span class="s1">'invoice_item_metric'</span><span class="p">,</span><span class="w">       </span><span class="s1">'billed_units'</span><span class="p">),</span>
+<span class="p">]</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="k">with</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">units</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="err">{{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">product_hk</span><span class="p">,</span><span class="w"> </span><span class="n">usage_month</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">units</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">units</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">'billing'</span><span class="w"> </span><span class="o">%</span><span class="err">}</span><span class="p">,</span><span class="w"> </span><span class="k">sum</span><span class="p">(</span><span class="n">billed_amount</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">billed_amount</span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">product_hk</span><span class="p">,</span><span class="w"> </span><span class="n">usage_month</span>
+<span class="p">),</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endfor</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="n">grain</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">units</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">product_hk</span><span class="p">,</span><span class="w"> </span><span class="n">usage_month</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">loop</span><span class="p">.</span><span class="k">last</span><span class="w"> </span><span class="o">%</span><span class="err">}</span><span class="k">union</span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endfor</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="p">),</span>
+<span class="n">joined</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">grain</span><span class="p">.</span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">        </span><span class="n">grain</span><span class="p">.</span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">        </span><span class="n">grain</span><span class="p">.</span><span class="n">product_hk</span><span class="p">,</span>
+<span class="w">        </span><span class="n">grain</span><span class="p">.</span><span class="n">usage_month</span><span class="p">,</span>
+<span class="w">        </span><span class="n">license</span><span class="p">.</span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w">       </span><span class="k">as</span><span class="w"> </span><span class="n">has_license</span><span class="p">,</span>
+<span class="w">        </span><span class="n">entitlement</span><span class="p">.</span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">has_entitlement</span><span class="p">,</span>
+<span class="w">        </span><span class="n">report</span><span class="p">.</span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w">        </span><span class="k">as</span><span class="w"> </span><span class="n">has_report</span><span class="p">,</span>
+<span class="w">        </span><span class="n">billing</span><span class="p">.</span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w">       </span><span class="k">as</span><span class="w"> </span><span class="n">has_billing</span><span class="p">,</span>
+<span class="w">        </span><span class="k">coalesce</span><span class="p">(</span><span class="n">license</span><span class="p">.</span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">     </span><span class="k">as</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span>
+<span class="w">        </span><span class="k">coalesce</span><span class="p">(</span><span class="n">entitlement</span><span class="p">.</span><span class="n">entitled_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entitled_units</span><span class="p">,</span>
+<span class="w">        </span><span class="k">coalesce</span><span class="p">(</span><span class="n">report</span><span class="p">.</span><span class="n">reported_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span>
+<span class="w">        </span><span class="k">coalesce</span><span class="p">(</span><span class="n">billing</span><span class="p">.</span><span class="n">billed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">       </span><span class="k">as</span><span class="w"> </span><span class="n">billed_units</span><span class="p">,</span>
+<span class="w">        </span><span class="k">coalesce</span><span class="p">(</span><span class="n">billing</span><span class="p">.</span><span class="n">billed_amount</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">billed_amount</span><span class="p">,</span>
+<span class="w">        </span><span class="n">product</span><span class="p">.</span><span class="n">unit_price</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="n">grain</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">units</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">    </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">on</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="err">}}</span><span class="p">.</span><span class="n">subscriber_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grain</span><span class="p">.</span><span class="n">subscriber_hk</span>
+<span class="w">       </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="err">}}</span><span class="p">.</span><span class="n">product_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grain</span><span class="p">.</span><span class="n">product_hk</span>
+<span class="w">       </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="err">}}</span><span class="p">.</span><span class="n">usage_month</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grain</span><span class="p">.</span><span class="n">usage_month</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endfor</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">    </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'product_dim'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">product</span>
+<span class="w">        </span><span class="k">on</span><span class="w"> </span><span class="n">product</span><span class="p">.</span><span class="n">product_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grain</span><span class="p">.</span><span class="n">product_hk</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="n">subscriber_hk</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">product_hk</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'|'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">usage_month</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">varchar</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_product_month_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">product_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">usage_month</span><span class="p">,</span>
+<span class="w">    </span><span class="n">has_license</span><span class="p">,</span>
+<span class="w">    </span><span class="n">has_entitlement</span><span class="p">,</span>
+<span class="w">    </span><span class="n">has_report</span><span class="p">,</span>
+<span class="w">    </span><span class="n">has_billing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">licensed_units</span><span class="p">,</span>
+<span class="w">    </span><span class="n">entitled_units</span><span class="p">,</span>
+<span class="w">    </span><span class="n">reported_units</span><span class="p">,</span>
+<span class="w">    </span><span class="n">billed_units</span><span class="p">,</span>
+<span class="w">    </span><span class="n">billed_amount</span><span class="p">,</span>
+<span class="w">    </span><span class="n">unit_price</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">-- The five checks of D-2 and D-10: three by units, two by presence (the answer key, D-8)</span>
+<span class="w">    </span><span class="n">greatest</span><span class="p">(</span><span class="n">reported_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                    </span><span class="k">as</span><span class="w"> </span><span class="n">units_reported_beyond_licensed</span><span class="p">,</span>
+<span class="w">    </span><span class="n">greatest</span><span class="p">(</span><span class="n">licensed_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                    </span><span class="k">as</span><span class="w"> </span><span class="n">units_licensed_not_reported</span><span class="p">,</span>
+<span class="w">    </span><span class="n">greatest</span><span class="p">(</span><span class="n">entitled_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                    </span><span class="k">as</span><span class="w"> </span><span class="n">units_entitled_beyond_licensed</span><span class="p">,</span>
+<span class="w">    </span><span class="n">greatest</span><span class="p">(</span><span class="n">entitled_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                    </span><span class="k">as</span><span class="w"> </span><span class="n">units_entitled_beyond_reported</span><span class="p">,</span>
+<span class="w">    </span><span class="n">iff</span><span class="p">(</span><span class="n">reported_units</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                      </span><span class="k">as</span><span class="w"> </span><span class="n">is_reported_beyond_licensed</span><span class="p">,</span>
+<span class="w">    </span><span class="n">iff</span><span class="p">(</span><span class="n">entitled_units</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                      </span><span class="k">as</span><span class="w"> </span><span class="n">is_entitled_beyond_licensed</span><span class="p">,</span>
+<span class="w">    </span><span class="n">iff</span><span class="p">(</span><span class="n">has_billing</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">has_entitlement</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                  </span><span class="k">as</span><span class="w"> </span><span class="n">is_billed_without_entitlement</span><span class="p">,</span>
+<span class="w">    </span><span class="n">iff</span><span class="p">(</span><span class="n">has_entitlement</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">has_billing</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                  </span><span class="k">as</span><span class="w"> </span><span class="n">is_entitled_without_billing</span><span class="p">,</span>
+<span class="w">    </span><span class="n">iff</span><span class="p">(</span><span class="n">entitled_units</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                      </span><span class="k">as</span><span class="w"> </span><span class="n">is_entitled_beyond_reported</span><span class="p">,</span>
+<span class="w">    </span><span class="c1">-- The two dollar figures, at the product's unit price (design 6.3; the answer key)</span>
+<span class="w">    </span><span class="n">greatest</span><span class="p">(</span><span class="n">reported_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">unit_price</span><span class="w">       </span><span class="k">as</span><span class="w"> </span><span class="n">unbilled_amount</span><span class="p">,</span>
+<span class="w">    </span><span class="n">greatest</span><span class="p">(</span><span class="n">entitled_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">unit_price</span><span class="w">       </span><span class="k">as</span><span class="w"> </span><span class="n">at_risk_amount</span>
+<span class="k">from</span><span class="w"> </span><span class="n">joined</span>
+</code></pre></div>
+<h3>Step 2. The metrics (models/marts/subscriber_product_month_metric.yml)</h3>
+<p>Each metric is a simple sum of one row-grain column (Data Mart Design Principles: a fact carries row-grain measures, MetricFlow computes the totals); its description says what it counts, what to pair it with and the decision that defined it. One in full; the other ten have the same shape with their own column: units_reported_beyond_licensed, units_licensed_not_reported, units_entitled_beyond_licensed, units_entitled_beyond_reported, unbilled_revenue, revenue_at_risk, and the five disagreements_ counts.</p>
+<div class="highlight"><pre><span></span><code><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">revenue_at_risk</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Units</span><span class="nv"> </span><span class="s">entitled</span><span class="nv"> </span><span class="s">beyond</span><span class="nv"> </span><span class="s">reported</span><span class="nv"> </span><span class="s">times</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">product's</span><span class="nv"> </span><span class="s">unit</span><span class="nv"> </span><span class="s">price:</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">amount</span><span class="nv"> </span><span class="s">an</span><span class="nv"> </span><span class="s">under-reporting</span><span class="nv"> </span><span class="s">audit</span><span class="nv"> </span><span class="s">would</span><span class="nv"> </span><span class="s">test,</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">proven</span><span class="nv"> </span><span class="s">use</span><span class="nv"> </span><span class="s">(D-10)"</span>
+<span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Revenue at risk</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">simple</span>
+<span class="w">        </span><span class="nt">agg</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="w">        </span><span class="nt">expr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">at_risk_amount</span>
+<span class="w">        </span><span class="nt">fill_nulls_with</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+</code></pre></div>
+<p>Each step states the exact file, object, pattern citation, design or profiling citation, literal first-pass code, expected movement, and any required target rebuild.</p>
+<h2>6. Tests</h2>
+<h3>Existing-test dispositions</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Layer</th>
+<th>Disposition: keep, rewrite, or delete</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ut_subscriber_product_month_two_sides</td>
+<td>3</td>
+<td>rewrite</td>
+<td>The model reads three more inputs; they are given, empty except product_dim</td>
+</tr>
+<tr>
+<td>assert_subscriber_product_month_reconciles</td>
+<td>6</td>
+<td>rewrite</td>
+<td>Widened to entitled units, billed units and billed amount, and to the two new unit columns</td>
+</tr>
+<tr>
+<td>not_null and unique on subscriber_product_month_hk</td>
+<td>1</td>
+<td>keep</td>
+<td>The key is unchanged</td>
+</tr>
+</tbody>
+</table>
+<h3>New and changed tests</h3>
+<p>Three filter unit tests, layer 3, in the same file, for the test plan's LA-10: ut_license_line_month_filters (passing, Contract not Activated, Opportunity not won, a month the license does not cover), ut_entitlement_month_coverage (two coverage periods) and ut_invoice_item_month_filters (a paid and a void invoice). The five check tests failed against the model of 4e6cb23 at 2026-11-20 01:45:10 UTC, before the new model was built; the filter tests prove logic already committed in 4e6cb23. Five unit tests, layer 3, in models/marts/_marts_unit_tests.yml, one per check, each with a row that meets it and rows that do not: ut_check_reported_beyond_licensed (above, equal, below; dollars 100 at 50), ut_check_entitled_beyond_licensed (above, equal, entitled with no license), ut_check_billed_without_entitlement and ut_check_entitled_without_billing (one document present, both present), ut_check_entitled_beyond_reported (above, equal, entitled with no report; dollars 120 and 80 at 40). The first, in full:</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ut_check_reported_beyond_licensed</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subscriber_product_month_metric</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('license_line_month_metric')</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">client_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">C</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">A</span><span class="p p-Indicator">,</span><span class="nt"> product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">P</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> licensed_units</span><span class="p">:</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">client_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">C</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">B</span><span class="p p-Indicator">,</span><span class="nt"> product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">P</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> licensed_units</span><span class="p">:</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">client_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">C</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">D</span><span class="p p-Indicator">,</span><span class="nt"> product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">P</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> licensed_units</span><span class="p">:</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('usage_report_metric')</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">client_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">C</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">A</span><span class="p p-Indicator">,</span><span class="nt"> product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">P</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> reported_units</span><span class="p">:</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">client_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">C</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">B</span><span class="p p-Indicator">,</span><span class="nt"> product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">P</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> reported_units</span><span class="p">:</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">client_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">C</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">D</span><span class="p p-Indicator">,</span><span class="nt"> product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">P</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> reported_units</span><span class="p">:</span><span class="w"> </span><span class="nv">8</span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('entitlement_month_metric')</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('invoice_item_metric')</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('product_dim')</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">P</span><span class="p p-Indicator">,</span><span class="nt"> unit_price</span><span class="p">:</span><span class="w"> </span><span class="nv">50</span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">A</span><span class="p p-Indicator">,</span><span class="nt"> is_reported_beyond_licensed</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> units_reported_beyond_licensed</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nt"> unbilled_amount</span><span class="p">:</span><span class="w"> </span><span class="nv">100</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">B</span><span class="p p-Indicator">,</span><span class="nt"> is_reported_beyond_licensed</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> units_reported_beyond_licensed</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> unbilled_amount</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">D</span><span class="p p-Indicator">,</span><span class="nt"> is_reported_beyond_licensed</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> units_reported_beyond_licensed</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> unbilled_amount</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>The answer-key test, layer 4, tests/assert_checks_match_answer_key.sql, in full:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- D-8, layer 4: the reconciliation finds exactly the answer key's rows. Every answer-key row's five</span>
+<span class="c1">-- checks and two dollar figures equal subscriber_product_month_metric's, and the table has no row in</span>
+<span class="c1">-- the answer key's months that the answer key does not name. Returns each row that disagrees.</span>
+<span class="k">with</span><span class="w"> </span><span class="n">answer_key</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">tenant_id</span><span class="p">,</span><span class="w"> </span><span class="n">customer_id</span><span class="p">,</span><span class="w"> </span><span class="n">product_code</span><span class="p">,</span><span class="w"> </span><span class="n">usage_month</span><span class="p">,</span>
+<span class="w">        </span><span class="n">iff</span><span class="p">(</span><span class="n">reported_beyond_licensed</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">is_reported_beyond_licensed</span><span class="p">,</span>
+<span class="w">        </span><span class="n">iff</span><span class="p">(</span><span class="n">entitled_beyond_licensed</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">is_entitled_beyond_licensed</span><span class="p">,</span>
+<span class="w">        </span><span class="n">iff</span><span class="p">(</span><span class="n">billed_without_entitlement</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_billed_without_entitlement</span><span class="p">,</span>
+<span class="w">        </span><span class="n">iff</span><span class="p">(</span><span class="n">entitled_without_billing</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">is_entitled_without_billing</span><span class="p">,</span>
+<span class="w">        </span><span class="n">iff</span><span class="p">(</span><span class="n">entitled_beyond_reported</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">   </span><span class="k">as</span><span class="w"> </span><span class="n">is_entitled_beyond_reported</span><span class="p">,</span>
+<span class="w">        </span><span class="n">unbilled_dollars</span><span class="p">,</span><span class="w"> </span><span class="n">at_risk_dollars</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'seed_reconciliation_answer_key'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="p">),</span>
+<span class="k">found</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">client</span><span class="p">.</span><span class="n">client_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tenant_id</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber</span><span class="p">.</span><span class="n">subscriber_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">customer_id</span><span class="p">,</span><span class="w"> </span><span class="n">product</span><span class="p">.</span><span class="n">product_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">spm</span><span class="p">.</span><span class="n">usage_month</span><span class="p">,</span>
+<span class="w">        </span><span class="n">spm</span><span class="p">.</span><span class="n">is_reported_beyond_licensed</span><span class="p">,</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">is_entitled_beyond_licensed</span><span class="p">,</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">is_billed_without_entitlement</span><span class="p">,</span>
+<span class="w">        </span><span class="n">spm</span><span class="p">.</span><span class="n">is_entitled_without_billing</span><span class="p">,</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">is_entitled_beyond_reported</span><span class="p">,</span>
+<span class="w">        </span><span class="n">spm</span><span class="p">.</span><span class="n">unbilled_amount</span><span class="p">,</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">at_risk_amount</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'subscriber_product_month_metric'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">spm</span>
+<span class="w">    </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'subscriber_dim'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">subscriber</span><span class="p">.</span><span class="n">subscriber_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">subscriber_hk</span>
+<span class="w">    </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'client_dim'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">client</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">client</span><span class="p">.</span><span class="n">client_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">client_hk</span>
+<span class="w">    </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'product_dim'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">product</span><span class="p">.</span><span class="n">product_hk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">product_hk</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">spm</span><span class="p">.</span><span class="n">usage_month</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">usage_month</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">answer_key</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">answer_key</span><span class="p">.</span><span class="n">customer_id</span><span class="p">,</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">customer_id</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">customer_id</span><span class="p">,</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">answer_key</span><span class="p">.</span><span class="n">product_code</span><span class="p">,</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">product_code</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">product_code</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">customer_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'found, not in the answer key'</span>
+<span class="w">         </span><span class="k">when</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">customer_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'in the answer key, not found'</span>
+<span class="w">         </span><span class="k">else</span><span class="w"> </span><span class="s1">'values differ'</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">finding</span>
+<span class="k">from</span><span class="w"> </span><span class="n">answer_key</span>
+<span class="k">full</span><span class="w"> </span><span class="k">outer</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">found</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">tenant_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">tenant_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">customer_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">customer_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">product_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">product_code</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">usage_month</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">usage_month</span>
+<span class="k">where</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">customer_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">customer_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">is_reported_beyond_licensed</span><span class="w">   </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">is_reported_beyond_licensed</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">is_entitled_beyond_licensed</span><span class="w">   </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">is_entitled_beyond_licensed</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">is_billed_without_entitlement</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">is_billed_without_entitlement</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">is_entitled_without_billing</span><span class="w">   </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">is_entitled_without_billing</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">is_entitled_beyond_reported</span><span class="w">   </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">is_entitled_beyond_reported</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">unbilled_amount</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">unbilled_dollars</span>
+<span class="w">    </span><span class="k">or</span><span class="w"> </span><span class="k">found</span><span class="p">.</span><span class="n">at_risk_amount</span><span class="w">  </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">answer_key</span><span class="p">.</span><span class="n">at_risk_dollars</span>
+</code></pre></div>
+<h2>7. Build sequence and verification</h2>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Literal command</th>
+<th>Expected result</th>
+<th>Baseline reconciliation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>dbt build --select +subscriber_product_month_metric assert_checks_match_answer_key assert_subscriber_product_month_reconciles</code></td>
+<td>The model builds; nine unit tests, the answer-key test and the reconciliation pass</td>
+<td>B-2 is compared next</td>
+</tr>
+<tr>
+<td>2</td>
+<td>The B-2 query, restricted to rows with has_license or has_report</td>
+<td>157, 14, 24, 22 and the same hash</td>
+<td>Equal to B-2</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>dbt build</code></td>
+<td>The whole project builds, every test passes</td>
+<td>None</td>
+</tr>
+<tr>
+<td>4</td>
+<td>The verification query below</td>
+<td>October's totals equal the answer key's</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h3>Verification queries</h3>
+<p>October 2026's totals in development, against the answer key's (14 rows, data provider 3):</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="k">SUM</span><span class="p">(</span><span class="n">is_reported_beyond_licensed</span><span class="p">),</span><span class="w"> </span><span class="k">SUM</span><span class="p">(</span><span class="n">is_entitled_beyond_licensed</span><span class="p">),</span><span class="w"> </span><span class="k">SUM</span><span class="p">(</span><span class="n">is_billed_without_entitlement</span><span class="p">),</span>
+<span class="w">       </span><span class="k">SUM</span><span class="p">(</span><span class="n">is_entitled_without_billing</span><span class="p">),</span><span class="w"> </span><span class="k">SUM</span><span class="p">(</span><span class="n">is_entitled_beyond_reported</span><span class="p">),</span><span class="w"> </span><span class="k">SUM</span><span class="p">(</span><span class="n">unbilled_amount</span><span class="p">),</span><span class="w"> </span><span class="k">SUM</span><span class="p">(</span><span class="n">at_risk_amount</span><span class="p">)</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_MARTS</span><span class="p">.</span><span class="n">SUBSCRIBER_PRODUCT_MONTH_METRIC</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">usage_month</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'2026-10-01'</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: 7, 6, 2, 6 and 6 disagreements; 1,120 dollars unbilled; 1,440 dollars at risk.</p>
+<h2>8. Decisions recorded in this guide</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Weed-level choice</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G-9</td>
+<td>The grain is the union of the four document tables' subscriber, product and month keys</td>
+<td>A row exists where any document does, so a presence check can see a missing one</td>
+</tr>
+<tr>
+<td>G-10</td>
+<td>A document is present when its table has a row for the subscriber, product and month, whatever its units</td>
+<td>The answer key's presence checks test a document's existence (generator/phase_one.py, expected())</td>
+</tr>
+<tr>
+<td>G-11</td>
+<td>The dollar figures use product_dim's unit_price</td>
+<td>The answer key prices at the product's price</td>
+</tr>
+<tr>
+<td>G-12</td>
+<td>The code was written and compiled, not built, before this guide</td>
+<td>The guide quotes the code that will run; the build follows in phase 2 of the approved workflow</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Rollback</h2>
+<p>Revert the branch to 4e6cb23 and rebuild subscriber_product_month_metric in development; Production is untouched until the merge.</p>
+<h2>10. What this guide does not cover</h2>
+<table>
+<thead>
+<tr>
+<th>Exclusion</th>
+<th>Canonical home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The Semantic Layer battery</td>
+<td>Increment 3 of this guide</td>
+</tr>
+<tr>
+<td>The Hex app</td>
+<td>Increment 4</td>
+</tr>
+<tr>
+<td>Since the last close and the live change</td>
+<td>A later workflow (Ray, 2026-11-19 20:37 ET, answer 2y)</td>
+</tr>
+<tr>
+<td>D-16 in the generator's verify query</td>
+<td>A follow-up on this branch</td>
+</tr>
+</tbody>
+</table>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-20 01:44 UTC on version 4. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Implementation Guide (knowledge 12 item 176): all present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the Implementation Guide's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Header with Increment N of M, prerequisites and companions</td>
+<td>Title and field table: Increment 2 of 4; prerequisites and companions filled</td>
+</tr>
+<tr>
+<td>Purpose, grounding recap, the implementer preamble verbatim, the pattern declaration</td>
+<td>Section 1: seven decisions recapped; the preamble as the template carries it; the pattern instantiated named, none introduced</td>
+</tr>
+<tr>
+<td>Every pattern citation resolves to code</td>
+<td>The nested-aggregation exception, Data Mart Design Principles (knowledge 12 item 104), exists; its instance is step 1's code in full</td>
+</tr>
+<tr>
+<td>Scope, with identity recipes upfront</td>
+<td>Section 2: five deliverables, unchanged scope, exclusions, one identity recipe</td>
+</tr>
+<tr>
+<td>Grounded in code, the consumer set by repository search, with the command</td>
+<td>Section 3: three objects, git grep at 01:39 UTC</td>
+</tr>
+<tr>
+<td>Baseline before the change</td>
+<td>Section 4: B-2 captured at 01:39:57 UTC, before the model changed in development</td>
+</tr>
+<tr>
+<td>Steps per object with file, pattern, exemplar and literal code</td>
+<td>Section 5: steps 1 and 2; step 1's model in full, step 2 one metric in full and the other ten named</td>
+</tr>
+<tr>
+<td>Tests: dispositions and the new tests as literal code</td>
+<td>Section 6: three dispositions; one unit test and the answer-key test in full, the other four unit tests named, their full text in the repository. Partly met</td>
+</tr>
+<tr>
+<td>Build sequence with expected results and baseline reconciliation</td>
+<td>Section 7: four commands; B-2 reconciled in order 2</td>
+</tr>
+<tr>
+<td>Decisions recorded, and a line for a shared macro with more than five consumers</td>
+<td>Section 8: G-9 to G-12; no shared macro changes</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td>Section 9</td>
+</tr>
+<tr>
+<td>Exclusions with their homes</td>
+<td>Section 10</td>
+</tr>
+<tr>
+<td>Data Mart Design Principles (knowledge 12 item 104)</td>
+<td>Facts carry row-grain measures; every total is a MetricFlow metric; the exception is single-sourced, unit-tested, reconciled at layer 6, with its retirement condition in the model's header</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried: D-2, D-8, D-10, D-12, D-16, D-21, D-22, each in section 1 and the steps that cite it.</p>
+<p>Verdict: compliant, with the new tests partly shown in full; G-12 discloses that the code was written and compiled before this guide.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>
