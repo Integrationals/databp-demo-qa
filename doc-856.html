@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silver merged entities: Design · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Design document</div><h1>Silver merged entities: Design</h1><p class="lead">The subscriber and the product merged across the three systems.</p></div></section>
+<main class="doc">
+<p class="note">Silver merged entities (WE-2289). Built from Pilot knowledge 111 item 856, version of 2026-11-23, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 856, version of 2026-11-23: Silver merged entities: Design --><h3>Design Document</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 3 — Design Document</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>Manager work effort 62, the DataBP demo — Silver merged entities (work effort 2289) — branch <code>rayserrano2735-claude-ws/we-2289-silver-merged-entities</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Profiling: the source profile, knowledge 111 item 813, sections 2.1.4 (Salesforce's customer object), 2.1.5 (Product2), 2.1.9 (usage_declaration), 2.1.10 and 2.1.11 (client, customer); with reads of the landed tables, 2026-11-23 01:51 UTC (section 4) — related records: the reference architecture, Integrationals/data-platform-reference-architecture at d514d7c, its resolution view models/integration/skool/skool_person_resolution.sql (DAMA-33 D-7); DIG-661's design, knowledge 111 item 837, whose decisions this carries onto the reference's mechanics; 2290's design, item 848, whose staging codes this reads; the CTO dbt guide, task 798, which waits on this; databp-dbt main 3a04599</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — APPROVED</strong> — written 2026-11-23 01:53Z; rewritten 05:45Z to Ray's CTE proposal; approved by Ray, 2026-11-23 00:47 ET, answer 1y</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that builds it</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-23</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>0. Target ERD</h2>
+<p>NA: no new entity and no new table; silver's subscriber and product gain columns from Salesforce and the usage system, and the resolution runs as CTEs inside them (section 6.1).</p>
+<h2>1. Purpose</h2>
+<p>Silver should be what the industry calls silver: data matched, merged, conformed and cleansed into one view of the key business entities. Ours conforms keys but merges nothing, so the page task 798 writes for Bin Luo, DataBP's CTO, could not show integration where the industry expects it. This change merges the two entities all three systems name, the subscriber and the product, by the steps of the reference architecture's resolution, on the codes staging now creates (task 2290), and leaves the transaction tables, the license line, entitlement, usage report and invoice item, as source-aligned tables. It is written for Ray, who decides, and for the session that builds it.</p>
+<h2>2. Consumer questions</h2>
+<h3>2.1 Questions from consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked by</th>
+<th>Asked at</th>
+<th>Origin</th>
+<th>Question in the asker's words</th>
+<th>Answer</th>
+<th>Decision(s)</th>
+<th>Test probe</th>
+<th>State and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>Ray Serrano</td>
+<td>2026-11-21 14:13 ET</td>
+<td>DataBP session</td>
+<td>"Isn't there integration in silver"</td>
+<td>Silver now matches and merges the subscriber and the product across the three systems</td>
+<td>D-1 to D-4</td>
+<td>P-1</td>
+<td>Answered in design</td>
+</tr>
+<tr>
+<td>Q-2</td>
+<td>Ray Serrano</td>
+<td>2026-11-21 14:45 ET</td>
+<td>DataBP session</td>
+<td>"Just want to make sure we're calling silver what the industry also calls silver."</td>
+<td>Silver matched, merged, conformed and cleansed, as Databricks defines it, for the entities all systems name</td>
+<td>D-1 to D-4</td>
+<td>P-1</td>
+<td>Answered in design</td>
+</tr>
+<tr>
+<td>Q-3</td>
+<td>Ray Serrano</td>
+<td>2026-11-21 19:41 ET</td>
+<td>DataBP session</td>
+<td>"You're not using the reference architecture for the code, especially the hash. You made it all up yourself, why??"</td>
+<td>The merge follows the reference's resolution steps: match to the anchor, count, create the unmatched, surface multiple matches</td>
+<td>D-1, D-2, D-6</td>
+<td>P-2</td>
+<td>Answered in design</td>
+</tr>
+</tbody>
+</table>
+<h3>2.2 Questions to consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C-1</td>
+<td>Ray Serrano</td>
+<td>Claude, 2026-11-23</td>
+<td>Where the resolution lives and what it is named: (a) tables, subscriber_resolution and product_resolution; (b) tables named _xref; (c) tables named _mdm; then, from Ray's own proposal, CTEs inside subscriber and product, with no table</td>
+<td>D-1, D-2</td>
+<td>(a)</td>
+<td>Names on Bin's page and in the code he reads</td>
+<td>Answered by Ray, 2026-11-23 00:42 ET, answer 1y: CTEs inside subscriber and product, no table</td>
+</tr>
+<tr>
+<td>C-2</td>
+<td>Ray Serrano</td>
+<td>Claude, 2026-11-23</td>
+<td>Where the transaction tables take their subscriber and product keys: (a) from the resolution, as the reference's integrators take the resolved party id; (b) from the code each transaction table carries, as after 2290</td>
+<td>D-5</td>
+<td>(a)</td>
+<td>No figure moves today, since every row matches</td>
+<td>Answered (a) by Ray, 2026-11-23 00:26 ET; met by (b)'s mechanics once every key, matched or created, is made from the carried DataBP code (D-1, answer 1y at 00:42 ET): the two give the same key</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 Questions to source owners</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>None: no question to a source owner</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Concept</h2>
+<p>Today silver's subscriber and product come from DataBP alone; Salesforce's customer and product appear only as DataBP keys inside the license line. After task 2290 every staging row carries the codes of the entities it names: Salesforce's customer carries DataBP's subscriber code, Product2 and the usage report carry DataBP's product code. This change resolves each system's subscriber and product onto DataBP's, the anchor, by the steps of the reference architecture's resolution view: each system's source row is matched to the anchor by the code it carries, the matches are counted, a source row that matches nothing is created and counted, and a source row that matches more than once is surfaced. The reference keys a created source row by its own code because its systems carry no anchor identifier; ours all carry DataBP's, so every key, matched or created, is generate_surrogate_key of the carried DataBP code. That makes the resolution's key the same value the transaction tables already make from their own carried codes, so the resolution needs no table: it runs as CTEs inside subscriber and product, and its result is one row per key, DataBP's values leading and every other system's kept beside them. History is not kept here: the reference architecture keeps it in its storage layer (Ray, 2026-11-23 00:44 ET), outside the POC.</p>
+<h2>4. Data reality</h2>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Measured fact</th>
+<th>Design consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Landed tables, 2026-11-23 01:51 UTC</td>
+<td>18 Salesforce customers, each naming a DataBP customer by Tenant__c and Subscriber_Id__c; 18 of 18 match; at most 1 per DataBP customer</td>
+<td>Every Salesforce source row matches exactly; none is created; no multiple source row (D-1, D-6)</td>
+</tr>
+<tr>
+<td>Same read</td>
+<td>18 subscribers named by usage reports, 18 of 18 DataBP customers</td>
+<td>The same (D-1)</td>
+</tr>
+<tr>
+<td>Same read</td>
+<td>2 Product2 rows and 2 products named by usage reports, each matching one of DataBP's 2 products by tenant and product code</td>
+<td>The same for the product (D-2)</td>
+</tr>
+<tr>
+<td>Same read</td>
+<td>Of the 18 Salesforce customers, 0 carry a name other than DataBP's</td>
+<td>The name warning reads 0 today (D-6)</td>
+</tr>
+<tr>
+<td>Same read</td>
+<td>DataBP holds 5,000 customers; 18 appear in Salesforce and the usage system</td>
+<td>The merged subscriber has 5,000 rows, with each system's source-row count (D-3)</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Decisions</h2>
+<p>Decision ids are D-1, D-2, D-3, numbered in order within the document.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Decision</th>
+<th>Rationale</th>
+<th>Supporting evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td>The subscriber's resolution runs as CTEs inside silver's subscriber model: a union of source rows, DataBP's customers, Salesforce's customers and the usage system's subscribers, each with the DataBP subscriber_code it carries; a match of each source row to DataBP's customers on that code; a count of each system's source rows per code. Every key is generate_surrogate_key of the carried subscriber_code; a source row with no DataBP customer is created under that code and flagged</td>
+<td>The reference's resolution steps, with the exact identifier every system carries in place of its email match; no table, since the key is the carried code's (Ray, 00:42 ET)</td>
+<td>skool_person_resolution; section 4</td>
+</tr>
+<tr>
+<td>D-2</td>
+<td>The product's resolution runs the same way inside silver's product model: DataBP's products, Product2 and the usage system's products, on the carried product_key_code</td>
+<td>The same principle for the second entity all systems name</td>
+<td>Section 4</td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>Silver's subscriber becomes the merged subscriber: one row per key, DataBP's name and email, the Salesforce customer's id and name, the first and last months reported, the count of each system's source rows, a created flag, and a flag where Salesforce's name differs</td>
+<td>One view of the subscriber, its anchor's values leading</td>
+<td>Databricks' silver; DIG-661 D-1, D-5</td>
+</tr>
+<tr>
+<td>D-4</td>
+<td>Silver's product becomes the merged product the same way, with Product2's id and name</td>
+<td>The same</td>
+<td>DIG-661 D-2</td>
+</tr>
+<tr>
+<td>D-5</td>
+<td>The transaction tables, license_line, entitlement, usage_report and invoice_item, keep their keys as 2290 made them, from the codes each row carries: the same value the resolution gives, so a row naming a created subscriber points to it</td>
+<td>C-2 answered (a), met by D-1's keys</td>
+<td>C-2</td>
+</tr>
+<tr>
+<td>D-6</td>
+<td>Three warnings, read from subscriber's and product's columns: created rows, a system with more than one source row on one key, and names that differ</td>
+<td>The reference surfaces multiple matches by a detector, never silently</td>
+<td>skool_person_resolution's multi-match detector</td>
+</tr>
+<tr>
+<td>D-7</td>
+<td>gold's subscriber_dim and product_dim add the Salesforce name and the system flags; no existing column changes</td>
+<td>The app and Morgan can show where a subscriber appears</td>
+<td>DIG-661 D-7</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>The source data stays as it is; the unit tests prove the created, multiple and differing paths with their own rows</td>
+<td>Planting differences needs Openflow restarted (DIG-661 C-1, answer 1b)</td>
+<td>DIG-661 C-1</td>
+</tr>
+<tr>
+<td>D-9</td>
+<td>To Production by a reviewed pull request into main, Production's silver and marts cloned before the job runs by hand; October's unbilled revenue stays $1,410</td>
+<td>The promotion 2290 used</td>
+<td>Ray, 2026-11-22 20:23 ET</td>
+</tr>
+</tbody>
+</table>
+<h2>6. Domain specification</h2>
+<h3>6.1 source-to-target map</h3>
+<table>
+<thead>
+<tr>
+<th>Profile verdict</th>
+<th>Source concept and column</th>
+<th>Target area</th>
+<th>Destination table and column</th>
+<th>Identity recipe</th>
+<th>Pattern</th>
+<th>Additive?</th>
+<th>Decision</th>
+<th>Deliberate collapse, omission, or deferral</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Integrate</td>
+<td>DataBP's customer: tenant_id, customer_id, customer_name, email, subscriber_code</td>
+<td>Silver</td>
+<td>subscriber: key, id, name, email; its source row in the resolution CTEs</td>
+<td>generate_surrogate_key of subscriber_code, as after 2290</td>
+<td>Resolution onto the anchor, in CTEs</td>
+<td>Yes</td>
+<td>D-1, D-3</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Salesforce's customer: its id, name, and the DataBP subscriber_code it carries</td>
+<td>Silver</td>
+<td>subscriber: Salesforce's id and name, its source-row count</td>
+<td>generate_surrogate_key of the carried subscriber_code</td>
+<td>Resolution onto the anchor, in CTEs</td>
+<td>Yes</td>
+<td>D-1, D-3</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>The usage report: subscriber_code, usage_month</td>
+<td>Silver</td>
+<td>subscriber: months reported, its source-row count</td>
+<td>generate_surrogate_key of the carried subscriber_code</td>
+<td>Resolution onto the anchor, in CTEs</td>
+<td>Yes</td>
+<td>D-1, D-3</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>DataBP's product: product_key_code, product_name, unit_price</td>
+<td>Silver</td>
+<td>product: key, code, name, unit price</td>
+<td>generate_surrogate_key of product_key_code</td>
+<td>Resolution onto the anchor, in CTEs</td>
+<td>Yes</td>
+<td>D-2, D-4</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>Product2: its id, name and the product_key_code it carries</td>
+<td>Silver</td>
+<td>product: Product2's id and name, its source-row count</td>
+<td>generate_surrogate_key of the carried product_key_code</td>
+<td>Resolution onto the anchor, in CTEs</td>
+<td>Yes</td>
+<td>D-2, D-4</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Integrate</td>
+<td>The usage report: product_key_code</td>
+<td>Silver</td>
+<td>product: its source-row count</td>
+<td>generate_surrogate_key of the carried product_key_code</td>
+<td>Resolution onto the anchor, in CTEs</td>
+<td>Yes</td>
+<td>D-2, D-4</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p>Completion check: every profiling Integrate row has a destination; every Defer and Reject is named as absent; every written target column traces to a source column or stated derivation.</p>
+<h3>6.2 Dictionary</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Business meaning</th>
+<th>source-to-target mapping</th>
+<th>Mapping state</th>
+<th>Decision</th>
+<th>Verified example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Resolution</td>
+<td>The steps that map each system's identifier onto the merged entity: source rows, match to the anchor, counts</td>
+<td>CTEs inside subscriber and product</td>
+<td>Not mapped</td>
+<td>D-1, D-2</td>
+<td>Salesforce ACC6B81D61FB95A66D onto Customer 23</td>
+</tr>
+<tr>
+<td>Anchor</td>
+<td>The system whose identifier the others carry, and whose values lead</td>
+<td>None</td>
+<td>Not mapped</td>
+<td>D-1, D-3</td>
+<td>DataBP</td>
+</tr>
+<tr>
+<td>Created row</td>
+<td>A system's entity that matches no anchor, kept under the DataBP code it carries and flagged</td>
+<td>subscriber, product</td>
+<td>Not mapped</td>
+<td>D-1, D-6</td>
+<td>None today</td>
+</tr>
+</tbody>
+</table>
+<h3>6.3 Domain content</h3>
+<p>The subscriber model's first CTE unions three sets of source rows, each a system's identifier with the DataBP subscriber_code it carries: DataBP's customers, whose code is their own; Salesforce's customers; and the usage system's distinct subscribers. The next joins each source row to DataBP's customers on that code and counts each system's source rows per code. The last builds one row per code: DataBP's attributes where the anchor exists, a created flag where it does not, Salesforce's and the usage system's columns and counts, and the key, generate_surrogate_key of the code. The product model works the same way.</p>
+<h3>6.4 Instance models</h3>
+<p>The source rows inside the subscriber model's CTEs for Customer 23, from the rows read at 01:51 UTC:</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Its identifier</th>
+<th>Code it carries</th>
+<th>Matches</th>
+<th>Created</th>
+<th>Subscriber key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DataBP</td>
+<td>DATABP|CUSTOMER|3|23</td>
+<td>DATABP|CUSTOMER|3|23</td>
+<td>1</td>
+<td>No</td>
+<td>6e7a1ee374a6187c721a8a2ea0017019</td>
+</tr>
+<tr>
+<td>Salesforce</td>
+<td>ACC6B81D61FB95A66D</td>
+<td>DATABP|CUSTOMER|3|23</td>
+<td>1</td>
+<td>No</td>
+<td>6e7a1ee374a6187c721a8a2ea0017019</td>
+</tr>
+<tr>
+<td>Usage</td>
+<td>DATABP|CUSTOMER|3|23</td>
+<td>DATABP|CUSTOMER|3|23</td>
+<td>1</td>
+<td>No</td>
+<td>6e7a1ee374a6187c721a8a2ea0017019</td>
+</tr>
+</tbody>
+</table>
+<h3>6.5 Worked examples</h3>
+<p>Customer 23 after the change: one subscriber row, key 6e7a1ee374a6187c721a8a2ea0017019, DataBP's name Customer 23 and email c23@example.com, Salesforce's customer ACC6B81D61FB95A66D named Customer 23, one source row from each system, usage reported from October 2026, not created, no name difference; its license line and usage report already carry the same key from their codes, so gold joins them as today.</p>
+<h2>7. Deferred decisions</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Deferred decision</th>
+<th>Reason</th>
+<th>Unblocking condition</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DD-1</td>
+<td>Fuzzy matching for a system that carries no DataBP identifier</td>
+<td>Every system carries it today</td>
+<td>A source without the identifier</td>
+<td>Ray</td>
+</tr>
+<tr>
+<td>DD-2</td>
+<td>Integrating the transaction tables as agreements and their items, the UDM way</td>
+<td>A premium feature, not in the POC (Ray, 2026-11-22 15:13 ET)</td>
+<td>A paid engagement</td>
+<td>Ray</td>
+</tr>
+<tr>
+<td>DD-3</td>
+<td>History of the subscriber's and product's values</td>
+<td>The reference architecture keeps history in its storage layer, a premium feature, not in the POC (Ray, 2026-11-22 15:13 ET and 2026-11-23 00:44 ET)</td>
+<td>A paid engagement</td>
+<td>Ray</td>
+</tr>
+</tbody>
+</table>
+<h2>8. Testing plan</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Required proof or artifact</th>
+<th>Applicability and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1: built-in dbt tests</td>
+<td>Merged keys not null and unique; every transaction table's keys related to the merged tables, kept</td>
+<td>Applies: the merged tables are what every transaction table's keys point to</td>
+</tr>
+<tr>
+<td>2: dbt-expectations</td>
+<td>NA</td>
+<td>NA: the built-in tests cover the keys</td>
+</tr>
+<tr>
+<td>3: PCM unit tests</td>
+<td>Unit tests of the merge: a source row matched, a source row matching nothing and created, a system with two source rows on one key; a subscriber in all three systems, in DataBP only, with a differing name; the same for the product</td>
+<td>Applies: the resolution and the merge are new logic</td>
+</tr>
+<tr>
+<td>4: logic assertions</td>
+<td>The answer-key test, unchanged</td>
+<td>Applies: no figure may move (D-9)</td>
+</tr>
+<tr>
+<td>5: detectors</td>
+<td>The three warnings of D-6, each 0 today</td>
+<td>Applies: D-6</td>
+</tr>
+<tr>
+<td>6: reconciliation</td>
+<td>Merged subscribers equal DataBP's customers plus created rows; each system's distinct identifiers equal the sum of its source-row counts; every mart table equal to the clone before the run</td>
+<td>Applies: nothing gained or lost</td>
+</tr>
+<tr>
+<td>7: semantic surface</td>
+<td>October's unbilled revenue through the Semantic Layer and Morgan: $1,410</td>
+<td>Applies: D-9</td>
+</tr>
+<tr>
+<td>Full-build guardrails, not a methodology layer</td>
+<td>dbt build in Development; Development's marts against Production's, every column</td>
+<td>Applies</td>
+</tr>
+</tbody>
+</table>
+<h3>Consumer-question probes</h3>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Runnable probe</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1, Q-2</td>
+<td>Customer 23 read in silver subscriber in Development</td>
+<td>One merged row; one source row from each system; not created</td>
+</tr>
+<tr>
+<td>Q-3</td>
+<td>subscriber's compiled SQL read against the reference's skool_person_resolution</td>
+<td>The same steps as CTEs: source rows, match to the anchor, counts, key from the code</td>
+</tr>
+</tbody>
+</table>
+<h3>Checks from the profile</h3>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Check</th>
+<th>Layer</th>
+<th>Planned artifact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Salesforce customers and usage subscribers match DataBP, 18 of 18</td>
+<td>Created rows counted</td>
+<td>5</td>
+<td>The created-rows warning of D-6</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Handoff boundary</h2>
+<p>The implementation guide decides how: the models' SQL, the unit tests' rows, the warnings' queries, the order of the changes. This design decides what and why.</p>
+<h3>Finance workbook and initial UAT</h3>
+<p>For finance reporting branches, state the workbook's consumer, scope, business questions, expected behavior, preliminary-review conditions and final acceptance criteria under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-23 01:53 UTC on version 2; rebuilt 2026-11-23 05:45 UTC after Ray's answers. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Design Document (knowledge 12 item 175): all present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the design's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The official header, Status with version, state and write time</td>
+<td>The field table: v1 DRAFT, written 2026-11-23 01:53Z</td>
+</tr>
+<tr>
+<td>Section 0, the target ERD</td>
+<td>NA with its reason: no new entity or table; two tables gain columns</td>
+</tr>
+<tr>
+<td>Purpose; consumer questions with ids, askers, words, answers and probes; questions to the consumer with interim choice and stakes</td>
+<td>Sections 1 and 2: Q-1 to Q-3 with their decisions and probes; C-1 and C-2 answered by Ray</td>
+</tr>
+<tr>
+<td>Concept before modeling</td>
+<td>Section 3</td>
+</tr>
+<tr>
+<td>Data reality cited by profile result</td>
+<td>Section 4: reads of the landed tables at 01:51 UTC, beside the profile, item 813</td>
+</tr>
+<tr>
+<td>Decisions numbered, each with rationale and evidence</td>
+<td>Section 5: D-1 to D-9</td>
+</tr>
+<tr>
+<td>Domain specification: the map first, dictionary, domain content, instance models, worked examples</td>
+<td>Section 6: six map rows; 2 terms and the anchor; the resolution's CTEs in prose; Customer 23's source rows; Customer 23 after the change</td>
+</tr>
+<tr>
+<td>Deferred decisions with what unblocks each</td>
+<td>Section 7: DD-1 to DD-3</td>
+</tr>
+<tr>
+<td>Testing plan: seven layers, NA with reason; a probe per question</td>
+<td>Section 8: layers 1 and 3 to 7 apply, layer 2 NA; probes for Q-1 to Q-3; one check from the profile</td>
+</tr>
+<tr>
+<td>Handoff boundary</td>
+<td>Section 9</td>
+</tr>
+<tr>
+<td>Authoring passes: Digest, struck words, cross-references; the reference read first</td>
+<td>Struck words checked from a here-document before the write; the reference's skool_person_resolution read at d514d7c before writing</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried, each with its proof: D-1 and D-2, layers 1, 3 and 6 and the probes; D-3 and D-4, layers 1, 3 and 6; D-5, C-2; D-6, layers 3 and 5; D-7, layer 1; D-8, layer 3; D-9, layers 4, 6 and 7.</p>
+<p>Verdict: compliant.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

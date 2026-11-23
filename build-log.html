@@ -101,7 +101,7 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 <!-- brand-header:end -->
 <section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / The build log</div><h1>The build log</h1><p class="lead">How the reconciliation POC was built, step by step with its commands, and how it is proven.</p></div></section>
 <main class="doc dressed">
-<nav class="sect pillrow" aria-label="On this page"><div class="in"><ul class="pills"><li><a href="#1-the-question-and-what-the-app-shows">1. The question, and what the app shows</a></li><li><a href="#2-the-platform-layer-by-layer">2. The platform, layer by layer</a></li><li><a href="#3-the-build-step-by-step">3. The build, step by step</a></li><li><a href="#4-source-data-designed-backwards-from-the-app">4. Source data, designed backwards from the app</a></li><li><a href="#5-decisions-that-shaped-it">5. Decisions that shaped it</a></li><li><a href="#6-how-it-is-proven">6. How it is proven</a></li><li><a href="#7-how-we-deliver">7. How we deliver</a></li><li><a href="#8-what-comes-next">8. What comes next</a></li></ul></div></nav><section class="sect"><div class="in"><!-- Pilot knowledge 111 item 820, version 14: The build log: how the DataBP reconciliation POC was built --><p>This POC answers one question for a data provider on DataBP: do my records about each subscriber agree, and what do the disagreements cost? It runs end to end on a production-shaped platform: three source systems in SQL Server, change data capture into Snowflake, dbt models and governed metrics, a Hex app and an analyst agent, Morgan, that answers in plain words. Every figure on the site comes from one place, the dbt Semantic Layer, and every figure is checked against an answer key computed independently of the platform.</p>
+<nav class="sect pillrow" aria-label="On this page"><div class="in"><ul class="pills"><li><a href="#1-the-question-and-what-the-app-shows">1. The question, and what the app shows</a></li><li><a href="#2-the-platform-layer-by-layer">2. The platform, layer by layer</a></li><li><a href="#3-the-build-step-by-step">3. The build, step by step</a></li><li><a href="#4-source-data-designed-backwards-from-the-app">4. Source data, designed backwards from the app</a></li><li><a href="#5-decisions-that-shaped-it">5. Decisions that shaped it</a></li><li><a href="#6-how-it-is-proven">6. How it is proven</a></li><li><a href="#7-how-we-deliver">7. How we deliver</a></li><li><a href="#8-what-comes-next">8. What comes next</a></li></ul></div></nav><section class="sect"><div class="in"><!-- Pilot knowledge 111 item 820, version 14, amended 2026-11-23: The build log: how the DataBP reconciliation POC was built --><p>This POC answers one question for a data provider on DataBP: do my records about each subscriber agree, and what do the disagreements cost? It runs end to end on a production-shaped platform: three source systems in SQL Server, change data capture into Snowflake, dbt models and governed metrics, a Hex app and an analyst agent, Morgan, that answers in plain words. Every figure on the site comes from one place, the dbt Semantic Layer, and every figure is checked against an answer key computed independently of the platform.</p>
 <table>
 <thead>
 <tr>
@@ -124,7 +124,7 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 <tr>
 <td>3</td>
 <td>dbt project, development and Production</td>
-<td>137 of 137 models, seeds and tests pass</td>
+<td>169 of 169 models, seeds and tests pass</td>
 </tr>
 <tr>
 <td>4</td>
@@ -203,8 +203,8 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 <tr>
 <td>3</td>
 <td>Bronze to silver</td>
-<td>dbt: 12 staging views; 7 silver tables keyed by hashed business keys</td>
-<td>Unit tests; silver counts reconcile with staging</td>
+<td>dbt: 12 staging models, which create each row's keys; 7 silver tables, the subscriber and the product merged across the three systems</td>
+<td>Unit tests; silver counts reconcile with staging; every source row resolved</td>
 </tr>
 <tr>
 <td>4</td>
@@ -228,7 +228,7 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 </table>
 <p><strong>Sources.</strong> The three systems live in one SQL Server instance on AWS RDS, as three databases, so the integration problem is real: Salesforce knows subscribers and products by its own identifiers, the platform by its own, and usage reports by product codes. Every table has SQL Server Change Tracking on, which is what the ingestion reads.</p>
 <p><strong>Ingestion.</strong> Snowflake Openflow runs in bring-your-own-cloud mode: Snowflake keeps the control screens, while the machines that move data run in our AWS network, in two private subnets with no inbound path from the internet and outbound traffic through a NAT gateway. Openflow's agent builds its own Kubernetes cluster there; the runtime reads SQL Server from inside the network, so SQL Server is never exposed to Snowflake's addresses. The connector carries inserts, updates and deletes into DATABP_LAB in Snowflake, one schema per source database. A landing reconciliation compares every table's rows per tenant on both sides.</p>
-<p><strong>Transformation.</strong> The dbt project follows a medallion design. Bronze is the connector's copies, read through staging views that only rename, cast and carry the deleted flag. Silver holds one cleaned table per source document, each keyed by an md5 hash of its business key qualified by its issuer's namespace, so Salesforce's subscriber and the platform's subscriber land on the same key. Gold is the mart: dimensions for subscriber and product, atomic facts for licenses, entitlements, usage reports and invoice items, and one table per subscriber, product and month that carries each check's result. A full Universal Data Model integration is the production path; for a POC we chose the medallion layers and said so in the design.</p>
+<p><strong>Transformation.</strong> The dbt project follows a medallion design. Bronze is the connector's copies, read through staging, which renames, casts and carries the deleted flag, and creates each row's keys after our reference architecture's Source Staging: its code, the business key qualified by its issuer's namespace; a hash of its identity; and a hash of its attributes, to find a changed row. Silver merges the subscriber and the product across the three systems into one row each, keyed by a hash of DataBP's code, which every system's row carries; the license, the entitlement, the usage report and the invoice item stay one table per source, keyed by the same hashes, so Salesforce's license and the usage report land on the same subscriber. Gold is the mart: dimensions for subscriber and product, atomic facts for licenses, entitlements, usage reports and invoice items, and one table per subscriber, product and month that carries each check's result. A full Universal Data Model integration is the production path; for a POC we chose the medallion layers and said so in the design.</p>
 <p><strong>Metrics.</strong> The dbt Semantic Layer defines the metrics once: units on each side, units beyond, the two dollar figures and the count of disagreements per check. The Hex app, Morgan and any other consumer ask the Semantic Layer, never the tables, so a number means the same thing everywhere.</p>
 <p><strong>App.</strong> The Hex app was built by Hex's own agent from SQL cells we wrote on the Semantic Layer; we kept the cells and checked every figure the agent placed. It is embedded on this site and re-queries the Semantic Layer when the month changes.</p>
 <p><strong>Any BI tool.</strong> We used Hex for convenience and quick access. Because every figure comes from the Semantic Layer, the dashboard is the only part tied to a BI tool. dbt's Semantic Layer connector for Tableau, published on Tableau Exchange, connects Tableau Desktop, Tableau Server and Tableau Cloud live to the same metrics, with the dbt host, the environment and a service token; a Tableau dashboard would show the same 17 metrics with the same definitions, Morgan would agree with it, and the aggregation stays the Semantic Layer's, not the workbook's. Sources, ingestion, models, metrics and Morgan stay exactly as they are.</p>
@@ -329,7 +329,7 @@ Included Table Names        DATABP_SRC.dbo.client,DATABP_SRC.dbo.customer,DATABP
 <div class="highlight"><pre><span></span><code>dbt build
 dbt sl query --metrics unbilled_revenue,revenue_at_risk --group-by metric_time__month
 </code></pre></div>
-<p>In Production the job "DataBP build" runs <code>dbt build</code> after every merge.</p>
+<p>In Production the job "DataBP build" is run by hand after each merge into main. How each layer was built, with its code, its tests and one subscriber's rows, has its own page: <a href="dbt-implementation.html">How the reconciliation was implemented in dbt</a>.</p>
 </li>
 <li>
 <p><strong>The source data.</strong> The generator writes the paths into SQL Server, writes the answer key, and verifies the loaded rows month by month; the landing reconciliation then compares SQL Server with Snowflake:</p>
@@ -383,7 +383,7 @@ python3 generator/reconcile_landing.py  # SQL Server against Snowflake
 </tr>
 <tr>
 <td>3</td>
-<td>Keys hashed in silver, by issuer namespace</td>
+<td>Keys created in staging by issuer namespace; subscriber and product merged in silver</td>
 <td>Three systems join on one subscriber and product</td>
 </tr>
 <tr>
@@ -418,7 +418,7 @@ python3 generator/reconcile_landing.py  # SQL Server against Snowflake
 <tr>
 <td>2</td>
 <td>Unit tests</td>
-<td>15, each seen failing before its logic existed</td>
+<td>31, on staging's keys, silver's logic and gold's checks</td>
 </tr>
 <tr>
 <td>3</td>

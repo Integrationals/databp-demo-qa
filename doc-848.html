@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staging keys to reference: Design · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Design document</div><h1>Staging keys to reference: Design</h1><p class="lead">Each staging row&#x27;s code, hkey and hdiff, after the reference architecture.</p></div></section>
+<main class="doc">
+<p class="note">Staging keys to reference (WE-2290). Built from Pilot knowledge 111 item 848, version 30, amended 2026-11-22, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 848, version 30, amended 2026-11-22: Staging keys to reference: Design --><h3>Design Document</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 3 — Design Document</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>Manager work effort 62, the DataBP demo — Staging keys to reference (work effort 2290) — branch <code>rayserrano2735-claude-ws/we-2290-staging-keys-to-reference</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Profiling: none: the change reads no source data; its facts are read from databp-dbt main 311ecf4, the reference architecture at d514d7c and Snowflake (section 4) — related items: the reference architecture (Integrationals/data-platform-reference-architecture), staging models such as models/staging/hubspot/stg_harbor__hubspot_contacts.sql and the macro macros/pipeline/get_business_key_source.sql; Source Staging, Pilot knowledge 14 item 37; History-fed Integrator, item 39, for how ids are made from codes; the reconciliation's design, knowledge 111 item 806, decisions D-19 and D-20, which this replaces in part; the comparison harbor-vs-databp-comparison.md</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v2 — APPROVED</strong> — approved by Ray 2026-11-22 15:32 ET (answers 1y2y3b4a5y)</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that builds it</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-22</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>0. Target ERD</h2>
+<p>NA: no table is added or removed; staging gains its keys and silver takes them, every key value unchanged (section 4).</p>
+<h2>1. Purpose</h2>
+<p>databp-dbt is the POC Bin Luo, DataBP's CTO, judges our craft by, and its keys are built its own way: md5 of a home-made macro, created in silver, with names of our own. The reference architecture creates them in staging with dbt_utils.generate_surrogate_key and its business key macro, and every guide that builds on it follows that shape. This change brings databp-dbt's staging and keys to the reference architecture's form, on the medallion as it is, without its storage layer or UDM, which stay premium features outside the free POC. It is written for Ray, who decides, and for the session that builds it.</p>
+<h2>2. Consumer questions</h2>
+<h3>2.1 Questions from consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked by</th>
+<th>Asked at</th>
+<th>Origin</th>
+<th>Question in the asker's words</th>
+<th>Answer</th>
+<th>Decision(s)</th>
+<th>Test probe</th>
+<th>State and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>Ray Serrano</td>
+<td>2026-11-21 19:41 ET</td>
+<td>DataBP session</td>
+<td>"You're not using the reference architecture for the code, especially the hash. You made it all up yourself, why??"</td>
+<td>Staging creates the keys as the reference architecture's does, with its macro and dbt_utils</td>
+<td>D-1 to D-4</td>
+<td>P-1</td>
+<td>Answered in design</td>
+</tr>
+</tbody>
+</table>
+<h3>2.2 Questions to consumers</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C-1</td>
+<td>Ray Serrano</td>
+<td>Claude, 2026-11-22</td>
+<td>The silver and gold key names: (a) the reference architecture's, the key named for its entity with _id, which means renaming the natural ids that hold those names today, subscriber_id among them, a Semantic Layer dimension Hex and Morgan may query; (b) keep the _hk names in silver and gold, staging taking the reference architecture's _hkey, _hdiff and _code</td>
+<td>D-5</td>
+<td>(b), the names kept</td>
+<td>Renames reach the Semantic Layer and every consumer of a dimension</td>
+<td>Answered (b): the _hk names kept (Ray, 2026-11-22 15:32 ET)</td>
+</tr>
+<tr>
+<td>C-2</td>
+<td>Ray Serrano</td>
+<td>Claude, 2026-11-22</td>
+<td>Staging's materialization: (a) ephemeral, as the reference architecture's, with silver's unit tests mocking staging in SQL form; (b) views, as today</td>
+<td>D-6</td>
+<td>(a), proven in dev before the guide is written</td>
+<td>Silver's 6 unit tests read staging, through 16 mocked inputs (corrected 2026-11-22 from 15, which counted gold's 9)</td>
+<td>Answered (a): ephemeral, proven in dev (Ray, 2026-11-22 15:32 ET)</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 Questions to source owners</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Asked of</th>
+<th>Raised by and when</th>
+<th>Question</th>
+<th>Decision blocked</th>
+<th>Interim rule</th>
+<th>Measured stakes and clock</th>
+<th>State or answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td>None: no source system</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Concept</h2>
+<p>Today each of databp-dbt's 12 staging views renames a landed table's columns and turns the connector's delete marker into a flag, and creates no key. Silver then makes every key: md5 of the project's macro business_key, issuer, table and natural id joined by bars, named for its entity with _hk, beside a change_hash of a few columns. The reference architecture does it in staging: each staging model creates a code, the issuer, table and natural id, with its macro get_business_key_source; an hkey, identifying the row, and an hdiff, detecting its change, both with dbt_utils.generate_surrogate_key; and stamps record_source and load_ts_utc. The next layer makes its id from the code, again with generate_surrogate_key. This change gives databp-dbt that shape. The code is the same string business_key makes today, and generate_surrogate_key of one string that is not null is the md5 of that string, so every key value stays as it is.</p>
+<h2>4. Data reality</h2>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Measured fact</th>
+<th>Design consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>databp-dbt main 311ecf4, read 2026-11-22 before 20:24 UTC</td>
+<td>12 staging models, materialized as views, none creating a key; no packages.yml, so dbt_utils is not installed</td>
+<td>Staging gains its keys, and dbt_utils is added (D-1, D-3)</td>
+</tr>
+<tr>
+<td>Same read</td>
+<td>The macro business_key gives ISSUER</td>
+<td>TABLE</td>
+</tr>
+<tr>
+<td>Snowflake, 2026-11-22 before 20:24 UTC</td>
+<td>md5('DATABP</td>
+<td>CUSTOMER</td>
+</tr>
+<tr>
+<td>Same read of databp-dbt</td>
+<td>change_hash is made in 7 silver models and read by none of them nor by gold; only silver's unit tests name it</td>
+<td>The hdiff replaces it with no consumer to move (D-7)</td>
+</tr>
+<tr>
+<td>Same read</td>
+<td>The Semantic Layer declares its entities on the _hk columns by entity name, subscriber, product, client; subscriber_id and product_code are dimensions</td>
+<td>Entity names are unchanged whatever the columns are called; a dimension rename would reach Hex and Morgan (C-1)</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Decisions</h2>
+<p>Decision ids are D-1, D-2, D-3, numbered in order within the document.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Decision</th>
+<th>Rationale</th>
+<th>Supporting evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td>Each of the 12 staging models follows Source Staging (knowledge 14 item 37): it creates its row's code with get_business_key_source, its hkey with generate_surrogate_key over the natural id, and its hdiff with generate_surrogate_key over every attribute whose change matters, the deletion flag included and the load time left out; and it stamps record_source, the issuer, and load_ts_utc, the run's start</td>
+<td>The reference architecture's staging shape, which every guide built on it follows</td>
+<td>The reference architecture's stg_harbor__hubspot_contacts; knowledge 14 item 37</td>
+</tr>
+<tr>
+<td>D-2</td>
+<td>The reference architecture's macro get_business_key_source is copied into databp-dbt unchanged, and the project's business_key is removed; a natural id of several parts is passed as one expression joining them by bars, so each code is the string business_key makes today</td>
+<td>One macro, the reference's, for every code</td>
+<td>macros/pipeline/get_business_key_source.sql in the reference architecture</td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>dbt_utils is added in packages.yml, in the reference architecture's version range</td>
+<td>generate_surrogate_key comes from it</td>
+<td>The reference architecture's packages.yml</td>
+</tr>
+<tr>
+<td>D-4</td>
+<td>Silver makes each key from its code with generate_surrogate_key, as the reference architecture's integrators make their ids; key values do not move, so gold, the metrics and the answer key change nothing</td>
+<td>The same value, by the reference's function</td>
+<td>Section 4, the Snowflake read</td>
+</tr>
+<tr>
+<td>D-5</td>
+<td>The key names in silver and gold stay as they are, ending in _hk; staging's columns take the reference architecture's _hkey, _hdiff and _code</td>
+<td>No rename reaches the Semantic Layer</td>
+<td>C-1, answered (b)</td>
+</tr>
+<tr>
+<td>D-6</td>
+<td>Staging is ephemeral; silver's unit tests mock staging in SQL form, proven in dev before the guide is written</td>
+<td>The reference architecture's staging is ephemeral</td>
+<td>C-2, answered (a)</td>
+</tr>
+<tr>
+<td>D-7</td>
+<td>change_hash is replaced by the staging hdiff, carried into silver</td>
+<td>The reference architecture's change key; no reader moves</td>
+<td>Section 4</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>The change reaches Production through a reviewed pull request into main, databp-dbt having no qa branch yet, and the Production job run by hand; October's unbilled revenue stays $1,410 and the answer-key test passes</td>
+<td>No figure moves</td>
+<td>The CTO dbt guide's design, D-5</td>
+</tr>
+</tbody>
+</table>
+<h2>6. Domain specification</h2>
+<h3>6.1 source-to-target map</h3>
+<table>
+<thead>
+<tr>
+<th>Profile verdict</th>
+<th>Source concept and column</th>
+<th>Target area</th>
+<th>Destination table and column</th>
+<th>Identity recipe</th>
+<th>Pattern</th>
+<th>Additive?</th>
+<th>Decision</th>
+<th>Deliberate collapse, omission, or deferral</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NA</td>
+<td>None: the change maps no source column</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>No</td>
+<td>D-1</td>
+<td>No data moves</td>
+</tr>
+</tbody>
+</table>
+<p>Completion check: every profiling Integrate row has a destination; every Defer and Reject is named as absent; every written target column traces to a source column or stated derivation.</p>
+<h3>6.2 Dictionary</h3>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Business meaning</th>
+<th>source-to-target mapping</th>
+<th>Mapping state</th>
+<th>Decision</th>
+<th>Verified example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Code</td>
+<td>A row's business key inside its issuer's namespace: issuer, table and natural id joined by bars, such as DATABP</td>
+<td>CUSTOMER</td>
+<td>3</td>
+<td>23</td>
+<td>Staging, every model</td>
+</tr>
+<tr>
+<td>hkey</td>
+<td>The row's identity: generate_surrogate_key over its natural id</td>
+<td>Staging, every model</td>
+<td>Not mapped</td>
+<td>D-1</td>
+<td>None yet</td>
+</tr>
+<tr>
+<td>hdiff</td>
+<td>The row's change key: generate_surrogate_key over every attribute that matters</td>
+<td>Staging, every model</td>
+<td>Not mapped</td>
+<td>D-1, D-7</td>
+<td>None yet</td>
+</tr>
+</tbody>
+</table>
+<h3>6.3 Domain content</h3>
+<p>A staging model reads its landed table, renames its columns, turns the connector's delete marker into is_deleted, and ends with a hashed step that adds the code, the hkey, the hdiff, record_source and load_ts_utc, as the reference architecture's staging models end. Silver reads the code and makes the row's key with generate_surrogate_key; a key to another entity, such as a usage report's subscriber, is made the same way from the code that entity would carry.</p>
+<h3>6.4 Instance models</h3>
+<p>Customer 23 in staging after the change: code DATABP|CUSTOMER|3|23; hkey the surrogate key of 3 and 23; hdiff over the attributes that matter. In silver: the key generate_surrogate_key of the code, 6e7a1ee374a6187c721a8a2ea0017019, as today.</p>
+<h3>6.5 Worked examples</h3>
+<p>Customer 23's usage report for October: staging gives its own code, USAGE|USAGE_DECLARATION|3|2, and the subscriber's code it carries, DATABP|CUSTOMER|3|23; silver keys the report by the first and points to the subscriber by the second, the same subscriber key as DataBP's own row and as the Salesforce license's, so gold joins them as it does today.</p>
+<h2>7. Deferred decisions</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Deferred decision</th>
+<th>Reason</th>
+<th>Unblocking condition</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DD-1</td>
+<td>The reference architecture's storage layer, history by save_history</td>
+<td>A premium feature, not in the free POC (Ray, 2026-11-22 15:13 ET)</td>
+<td>A paid engagement</td>
+<td>Ray</td>
+</tr>
+<tr>
+<td>DD-2</td>
+<td>The reference architecture's UDM integration with merge_into</td>
+<td>The same</td>
+<td>The same</td>
+<td>Ray</td>
+</tr>
+</tbody>
+</table>
+<h2>8. Testing plan</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Required proof or artifact</th>
+<th>Applicability and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1: built-in dbt tests</td>
+<td>Each staging code and hkey not null; silver keys not null and unique, kept</td>
+<td>Applies: the keys are new in staging</td>
+</tr>
+<tr>
+<td>2: dbt-expectations</td>
+<td>NA</td>
+<td>NA: the built-in tests cover the keys</td>
+</tr>
+<tr>
+<td>3: PCM unit tests</td>
+<td>One unit test per staging model: a known row gives its code and hkey; its hdiff changes when an attribute that matters changes, and not when the load time does</td>
+<td>Applies: every staging model gains the logic</td>
+</tr>
+<tr>
+<td>4: logic assertions</td>
+<td>The answer-key test, unchanged</td>
+<td>Applies: no figure may move</td>
+</tr>
+<tr>
+<td>5: detectors</td>
+<td>NA</td>
+<td>NA: no new finding</td>
+</tr>
+<tr>
+<td>6: reconciliation</td>
+<td>Every key in silver and gold equals its value before the change, by table and count</td>
+<td>Applies: D-4 says no value moves</td>
+</tr>
+<tr>
+<td>7: semantic surface</td>
+<td>October's unbilled revenue through the Semantic Layer and Morgan: $1,410</td>
+<td>Applies</td>
+</tr>
+<tr>
+<td>Full-build guardrails, not a methodology layer</td>
+<td>dbt build in Development, every model and test; the Production job, run by hand after the merge</td>
+<td>Applies</td>
+</tr>
+</tbody>
+</table>
+<h3>Consumer-question probes</h3>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Runnable probe</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1</td>
+<td>Each staging model's compiled SQL read against the reference architecture's stg_harbor__hubspot_contacts; Customer 23's key in silver</td>
+<td>The same macro and functions; the key 6e7a1ee374a6187c721a8a2ea0017019</td>
+</tr>
+</tbody>
+</table>
+<h3>Checks from the profile</h3>
+<table>
+<thead>
+<tr>
+<th>Profile result</th>
+<th>Check</th>
+<th>Layer</th>
+<th>Planned artifact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None: no profile</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Handoff boundary</h2>
+<p>The implementation guide decides how: each staging model's hdiff columns, the expression for each code, the order of the changes, the unit tests' rows, and the key reconciliation's query. This design decides what and why.</p>
+<h3>Finance workbook and initial UAT</h3>
+<p>For finance reporting branches, state the workbook's consumer, scope, business questions, expected behavior, preliminary-review conditions and final acceptance criteria under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-22 20:25 UTC on version 2; the name change and Ray's answers applied 2026-11-22 20:34 UTC. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Design Document (knowledge 12 item 175): all present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the design's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The official header, Status with version, state and write time</td>
+<td>The field table: v2 APPROVED, approved 2026-11-22 15:32 ET</td>
+</tr>
+<tr>
+<td>Section 0, the target ERD</td>
+<td>NA with its reason: no table added or removed</td>
+</tr>
+<tr>
+<td>Purpose; consumer questions with ids, askers, words, answers and probes; questions to the consumer with interim choice and stakes</td>
+<td>Sections 1 and 2: Q-1 with its decisions and probe; C-1 and C-2 answered by Ray, 2026-11-22 15:32 ET</td>
+</tr>
+<tr>
+<td>Concept before modeling</td>
+<td>Section 3</td>
+</tr>
+<tr>
+<td>Data reality cited by profile result</td>
+<td>Section 4: no profile exists, so each fact carries its read and commit instead; met with that reason</td>
+</tr>
+<tr>
+<td>Decisions numbered, each with rationale and evidence</td>
+<td>Section 5: D-1 to D-8, each citing the reference architecture or a read</td>
+</tr>
+<tr>
+<td>Domain specification: the map first, dictionary, domain content, instance models, worked examples</td>
+<td>Section 6: map NA, 3 terms, a staging model's shape, Customer 23 in staging and silver, the usage report's keys</td>
+</tr>
+<tr>
+<td>Deferred decisions with what unblocks each</td>
+<td>Section 7: DD-1, DD-2, the premium features</td>
+</tr>
+<tr>
+<td>Testing plan: seven layers, NA with reason; a probe per question</td>
+<td>Section 8: layers 1, 3, 4, 6 and 7 apply; 2 and 5 NA; the probe for Q-1</td>
+</tr>
+<tr>
+<td>Handoff boundary</td>
+<td>Section 9</td>
+</tr>
+<tr>
+<td>Authoring passes: Digest, struck words, cross-references; the reference read first</td>
+<td>Struck words checked from a here-document before the write; the reference architecture's staging, macro and packages read at d514d7c before writing</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried, each with its proof: D-1 to D-3, layers 1 and 3 and the probe; D-4, layer 6 and the probe; D-5 and D-6, C-1 and C-2; D-7, layer 3; D-8, layers 4 and 7.</p>
+<p>Verdict: compliant, with section 4 met by dated reads in place of a profile.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

@@ -101,7 +101,7 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 <!-- brand-header:end -->
 <section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Design document</div><h1>Entitlement and billing reconciliation: design document</h1><p class="lead">The decisions, D-1 to D-24, each with its reason and evidence.</p></div></section>
 <main class="doc">
-<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 806, version 50, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 806, version 50: Entitlement and billing reconciliation: design document --><h3>Design Document</h3>
+<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 806, version 50, amended 2026-11-23, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 806, version 50, amended 2026-11-23: Entitlement and billing reconciliation: design document --><h3>Design Document</h3>
 <p><em>Branch Delivery Document</em> — <strong>Level 3 — Design Document</strong></p>
 <table>
 <thead>
@@ -145,6 +145,9 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>Amended 2026-11-23.</strong> Two later changes reached the decisions on keys and silver, D-18 to D-20. Staging keys to reference (design item 848) moved the keys into staging, after the reference architecture's Source Staging: each staging row creates its code with get_business_key_source, its hkey and its hdiff; staging is ephemeral; and silver makes each key with generate_surrogate_key over the code, the same md5 value as before. Silver merged entities (design item 856) merged the subscriber and the product across the three systems in silver; the transaction tables stay one per source. The decisions below are kept as they were decided, each marked where it changed.</p>
+</blockquote>
 <hr />
 <h2>0. Target ERD</h2>
 <p>Not drawn yet. It is drawn as SVG, in crow's-foot notation, from the source-to-target map in section 6.1 once that map is agreed, since the standard writes the map first and draws the diagram from it.</p>
@@ -400,19 +403,19 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 </tr>
 <tr>
 <td>D-18</td>
-<td>The demo integrates by medallion layers: bronze, the connector's copies as they land; silver, one cleaned table per source document with its keys conformed across the three systems; gold, the mart. The UDM is the integration layer of a production data platform, and the presentation names it so</td>
+<td>The demo integrates by medallion layers: bronze, the connector's copies as they land; silver, one cleaned table per source document with its keys conformed across the three systems; gold, the mart. The UDM is the integration layer of a production data platform, and the presentation names it so. Amended 2026-11-23: silver now also merges the subscriber and the product across the three systems (item 856, D-1 to D-4); the transaction tables stay one per source.</td>
 <td>Ten or more UDM tables would show one answer the mart gives in four, and a demo must read easily; saying where the UDM belongs shows the choice is deliberate</td>
 <td>Silver and gold as Databricks defines them (medallion architecture, read 2026-11-19); Ray, 2026-11-19 15:44 and 15:46 ET: "we can say for demo we decided not to go with UDM but that it is the real integration for a production data platform"; answer 3y</td>
 </tr>
 <tr>
 <td>D-19</td>
-<td>Silver holds client, subscriber, product, license_line, entitlement, usage_report and invoice_item; each row's key is its business key qualified by the namespace of the party that issued it, hashed with md5, and each row carries a change hash</td>
+<td>Silver holds client, subscriber, product, license_line, entitlement, usage_report and invoice_item; each row's key is its business key qualified by the namespace of the party that issued it, hashed with md5, and each row carries a change hash. Amended 2026-11-23: each key is generate_surrogate_key over the row's code, the same md5 value, and the change hash is the staging hdiff (item 848, D-4, D-7).</td>
 <td>Salesforce's Subscriber_Id__c and the usage report's product_code are the platform's identifiers, so hashed in the platform's namespace they give the same keys as the platform: the integration, visible in one key; client is the data provider every other silver table belongs to</td>
 <td>Candidate pattern: qualify a business key by its namespace (knowledge 34 item 268); the reference platform's integrators (knowledge 38 item 374); Ray, 2026-11-19 15:55 ET and answers 1y, and 1y at 16:06 ET adding client</td>
 </tr>
 <tr>
 <td>D-20</td>
-<td>Key hashing moves from staging to silver: staging keeps renames, casts and the deleted flag, and the business_key macro gains a form for keys of several parts</td>
+<td>Key hashing moves from staging to silver: staging keeps renames, casts and the deleted flag, and the business_key macro gains a form for keys of several parts. Superseded 2026-11-23: staging creates each row's code, hkey and hdiff after the reference architecture's Source Staging, with its macro get_business_key_source, and staging is ephemeral (item 848, D-1, D-2, D-6).</td>
 <td>Staging stays one view per source table; the keys are made where the systems meet</td>
 <td>Ray, 2026-11-19 15:55 ET and answer 2y</td>
 </tr>

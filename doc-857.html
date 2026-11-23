@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silver merged entities: Test Plan · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Test plan</div><h1>Silver merged entities: Test Plan</h1><p class="lead">The resolution&#x27;s paths and the test that proves each.</p></div></section>
+<main class="doc">
+<p class="note">Silver merged entities (WE-2289). Built from Pilot knowledge 111 item 857, version of 2026-11-23, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 857, version of 2026-11-23: Silver merged entities: Test Plan --><h3>Test Plan</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Test Plan</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>Manager work effort 62, the DataBP demo — Silver merged entities (work effort 2289) — branch <code>rayserrano2735-claude-ws/we-2289-silver-merged-entities</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Silver merged entities: Design, knowledge 111 item 856 v1 approved — implementation guide: Silver merged entities: Implementation Guide, written after this plan — QA standard: K#2 I#167</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — APPROVED</strong> — written 2026-11-23 05:50Z; approved by Ray, 2026-11-23 00:52 ET, answer 1y</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that builds and tests the change</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-23</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Executive summary</h2>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Logic areas</th>
+<th>Brute-force paths</th>
+<th>Unique paths after collapse</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>models/silver/subscriber.sql</td>
+<td>LA-1 source rows and match, LA-2 source rows per key, LA-3 the name</td>
+<td>6 + 6 + 3</td>
+<td>5 + 2 + 3</td>
+</tr>
+<tr>
+<td>models/silver/product.sql</td>
+<td>LA-4 source rows and match, LA-5 source rows per key, LA-6 the name</td>
+<td>6 + 6 + 3</td>
+<td>5 + 2 + 3</td>
+</tr>
+</tbody>
+</table>
+<h2>2. Logic areas</h2>
+<h3>LA-1 The subscriber's source rows and match (silver subscriber)</h3>
+<p>Dimensions: the source system, DataBP, Salesforce or the usage system, and whether its carried code names a DataBP customer (yes or no). Brute force 6. Collapse: DataBP's own source row always names itself, so DataBP unmatched cannot occur: 5 paths. Design D-1, D-3, D-5.</p>
+<h3>LA-2 Source rows per key (silver subscriber)</h3>
+<p>Dimensions: the system and whether it has one source row or two on one key. Brute force 6. Collapse: DataBP's source row is its own customer and the usage system's source rows are distinct by code, so only Salesforce can name a key twice: 2 paths. Design D-1, D-6.</p>
+<h3>LA-3 The subscriber's name (silver subscriber)</h3>
+<p>Dimension: the Salesforce customer's name against DataBP's: equal, different, or no Salesforce source row. Brute force 3; no collapse. Design D-3.</p>
+<h3>LA-4 The product's source rows and match (silver product)</h3>
+<p>The dimensions of LA-1 for products: DataBP's product, Product2 or the usage system, matched or not. Brute force 6; collapse to 5 for the same reason. Design D-2, D-4.</p>
+<h3>LA-5 Source rows per key (silver product)</h3>
+<p>The dimensions of LA-2 for products; only Product2 can name a key twice: 2 paths. Design D-2, D-6.</p>
+<h3>LA-6 The product's name (silver product)</h3>
+<p>Product2's name against DataBP's: equal, different, or no Product2 source row. Brute force 3; no collapse. Design D-4.</p>
+<p>Each logic area states its dimensions, brute-force count, collapse and reason, then provides this table:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Scenario</th>
+<th>Expected result</th>
+<th>Unit-test name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>DataBP's customer, also named by Salesforce and the usage system</td>
+<td>One row, key from its code; one source row from each system; not created</td>
+<td>ut_subscriber_resolution</td>
+</tr>
+<tr>
+<td>2</td>
+<td>A Salesforce customer naming a DataBP customer</td>
+<td>Counted on that customer's row; its id and name carried</td>
+<td>ut_subscriber_resolution</td>
+</tr>
+<tr>
+<td>3</td>
+<td>A Salesforce customer naming no DataBP customer</td>
+<td>A created row under the code it carries, key from that code; flagged created</td>
+<td>ut_subscriber_resolution</td>
+</tr>
+<tr>
+<td>4</td>
+<td>A usage subscriber naming a DataBP customer</td>
+<td>Counted on that row; first and last months reported</td>
+<td>ut_subscriber_resolution</td>
+</tr>
+<tr>
+<td>5</td>
+<td>A usage subscriber naming no DataBP customer</td>
+<td>A created row under its code; flagged created</td>
+<td>ut_subscriber_resolution</td>
+</tr>
+<tr>
+<td>6</td>
+<td>One Salesforce source row on a key</td>
+<td>Salesforce's source-row count 1</td>
+<td>ut_subscriber_resolution</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Two Salesforce source rows on one key</td>
+<td>Salesforce's source-row count 2; still one row</td>
+<td>ut_subscriber_resolution</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Salesforce's name equals DataBP's</td>
+<td>DataBP's name; no difference flagged</td>
+<td>ut_subscriber_name</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Salesforce's name differs</td>
+<td>DataBP's name; Salesforce's kept; difference flagged</td>
+<td>ut_subscriber_name</td>
+</tr>
+<tr>
+<td>10</td>
+<td>No Salesforce source row</td>
+<td>DataBP's name; no difference flagged</td>
+<td>ut_subscriber_name</td>
+</tr>
+<tr>
+<td>11–15</td>
+<td>The paths of 1 to 5 for products: DataBP's product, Product2, the usage system</td>
+<td>The same outcomes on product</td>
+<td>ut_product_resolution</td>
+</tr>
+<tr>
+<td>16–17</td>
+<td>One and two Product2 source rows on one key</td>
+<td>Source-row count 1 and 2; one row</td>
+<td>ut_product_resolution</td>
+</tr>
+<tr>
+<td>18–20</td>
+<td>Product2's name equal, different, absent</td>
+<td>As 8 to 10</td>
+<td>ut_product_name</td>
+</tr>
+</tbody>
+</table>
+<h3>2.1 Coverage by changed file, all seven layers</h3>
+<p>Every code file the branch changes or adds, from <code>git diff --name-only</code> against its base at a stated clock, one row per file: every layer filled with its named artifacts, or "n/a: reason" (COVERAGE: EVERY FILE, EVERY LAYER, K#2 I#226). The row count equals the diff's; existing tests on a changed file are kept and named beside the new.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+<th>1 Built-ins</th>
+<th>2 Expectations</th>
+<th>3 Unit tests</th>
+<th>4 Logic assertions</th>
+<th>5 Detectors</th>
+<th>6 Reconciliations</th>
+<th>7 Semantic surface</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>models/silver/subscriber.sql</td>
+<td>Changed: the resolution CTEs and the merge (D-1, D-3)</td>
+<td>subscriber_hk not null and unique, kept</td>
+<td>n/a: built-ins cover the key</td>
+<td>LA-1 to LA-3: ut_subscriber_resolution, ut_subscriber_name; ut_subscriber_deleted_excluded, kept and given the new inputs</td>
+<td>The answer-key test, unchanged</td>
+<td>Created rows, multiple source rows, differing names: three warnings</td>
+<td>assert_silver_counts_match_staging, changed: subscribers equal DataBP's customers plus created rows</td>
+<td>October's unbilled revenue unchanged</td>
+</tr>
+<tr>
+<td>models/silver/product.sql</td>
+<td>Changed: the same (D-2, D-4)</td>
+<td>product_hk not null and unique, kept</td>
+<td>n/a</td>
+<td>LA-4 to LA-6: ut_product_resolution, ut_product_name; ut_product_hdiff, kept and given the new inputs</td>
+<td>Same</td>
+<td>The same three warnings</td>
+<td>The same, for products</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>models/silver/_silver.yml, _silver_unit_tests.yml</td>
+<td>Changed: the new columns' descriptions and the four new unit tests</td>
+<td>The tests themselves; every transaction table's relationships to subscriber and product, kept</td>
+<td>n/a</td>
+<td>The four new tests and the two kept</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>models/marts/subscriber_dim.sql, product_dim.sql</td>
+<td>Changed: the Salesforce name and the system flags (D-7)</td>
+<td>Keys kept</td>
+<td>n/a</td>
+<td>n/a: a column pass-through</td>
+<td>The answer-key test</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>Morgan answers from the same metrics</td>
+</tr>
+<tr>
+<td>tests/warn_resolution_created.sql, warn_resolution_multiple_source_rows.sql, warn_resolution_names_differ.sql</td>
+<td>Added: layer 5 (D-6)</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>The three warnings, severity warn</td>
+<td>n/a</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>tests/assert_silver_counts_match_staging.sql, tests/assert_resolution_source_rows_reconcile.sql</td>
+<td>Changed and added: layer 6</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>n/a</td>
+<td>Counts against staging; each system's distinct identifiers against its source-row counts</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>Planned before code against databp-dbt main 3a04599, 2026-11-23 05:49 UTC; brought to <code>git diff --name-only</code> once the code exists.</p>
+<h2>3. Seven-layer proof plan</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Named artifacts</th>
+<th>Expected result</th>
+<th>Applicability and reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 — Built-ins</td>
+<td>Kept: not_null and unique on subscriber_hk and product_hk, and every transaction table's relationship to them</td>
+<td>All pass</td>
+<td>Applies: the merged tables are what every transaction table's keys point to</td>
+</tr>
+<tr>
+<td>2 — Expectations</td>
+<td>None</td>
+<td>None</td>
+<td>NA: the built-in tests cover the keys</td>
+</tr>
+<tr>
+<td>3 — Unit tests</td>
+<td>The four unit tests of LA-1 to LA-6, 20 paths, written before the code and seen failing first; ut_subscriber_deleted_excluded and ut_product_hdiff, kept, given the Salesforce and usage inputs the models now read</td>
+<td>All pass</td>
+<td>Applies: the resolution and the merge are new logic</td>
+</tr>
+<tr>
+<td>4 — Logic assertions</td>
+<td>assert_checks_match_answer_key, unchanged</td>
+<td>Passes: the reconciliation still finds exactly the answer key's rows</td>
+<td>Applies: no figure may move (D-9)</td>
+</tr>
+<tr>
+<td>5 — Detectors</td>
+<td>warn_resolution_created, warn_resolution_multiple_source_rows and warn_resolution_names_differ, each with severity warn, over subscriber and product</td>
+<td>Each 0 on today's data; a warning, never a failure, when one appears</td>
+<td>Applies: D-6</td>
+</tr>
+<tr>
+<td>6 — Reconciliations</td>
+<td>assert_silver_counts_match_staging, changed: subscribers equal DataBP's customers not deleted plus created rows, products likewise; assert_resolution_source_rows_reconcile, added: each system's distinct identifiers equal the sum of its source-row counts</td>
+<td>Each returns no row</td>
+<td>Applies: nothing gained or lost in the merge</td>
+</tr>
+<tr>
+<td>7 — Semantic surface</td>
+<td>October's unbilled revenue through the Semantic Layer and through Morgan</td>
+<td>$1,410, as before</td>
+<td>Applies: D-9</td>
+</tr>
+</tbody>
+</table>
+<h3>3.1 Full-build guardrails</h3>
+<table>
+<thead>
+<tr>
+<th>Artifacts</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dbt build in Development on the branch, every model and test; Development's marts against Production's, every column the dims had before; then, after the merge, the clones, the Production job by hand and the same comparison against the clones</td>
+<td>Every model and test passes; the warnings at 0; no mart difference</td>
+</tr>
+<tr>
+<td>The structure comparison: each committed DDL file, one per data model the branch maintains, compared with the structure the build left in that environment, after every build in dev, QA and production (Ray, 2026-11-01)</td>
+<td>Identical, keys and descriptions included; a difference fails the cycle</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Consumer-question probes</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Runnable probe</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-1, Q-2</td>
+<td>Customer 23 read in silver subscriber in Development</td>
+<td>One row: Salesforce's id ACC6B81D61FB95A66D, one source row from each system, not created, no name difference</td>
+</tr>
+<tr>
+<td>Q-3</td>
+<td>subscriber's compiled SQL in Development read against the reference's skool_person_resolution</td>
+<td>The same steps as CTEs: source rows, match to the anchor, counts, key from the code</td>
+</tr>
+</tbody>
+</table>
+<h3>4.1 Finance workbook and initial UAT proofs</h3>
+<p>For finance reporting branches, name row/key/value parity checks against the shared report query, totals at the declared grain, Excel types/date/rounding checks and refresh preservation of consumer observations. State consumer-review cases, dispositions and acceptance evidence for the exact workbook revision under K#12 I#27. Technical verification does not imply consumer acceptance. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h2>5. QA on production-shaped data</h2>
+<h3>5.1 Added and changed tests on QA data</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Expected result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Every test of section 3 in the Production run after the merge into main</td>
+<td>All pass; the warnings at 0</td>
+</tr>
+</tbody>
+</table>
+<h3>5.2 Regression against production</h3>
+<p>databp-dbt has no qa branch, so the change reaches Production from main. Before the merge, Development's marts are compared with Production's on every column the dims had before, and the answer-key test must pass; before the Production job, Production's silver and marts are cloned; after it, every mart is compared with the clone. A difference stops the cycle: the clones are swapped back, and the revert commit is the rollback.</p>
+<h3>5.3 Consumer probes and reconciliations on QA data</h3>
+<p>Customer 23 in Production's silver after the merge; the comparison against the clones; October's unbilled revenue through Morgan</p>
+<h3>5.4 Layer 7 in the QA collection</h3>
+<p>Morgan answers October's unbilled revenue with $1,410, read in its reply</p>
+<h2>6. Test artifact inventory</h2>
+<table>
+<thead>
+<tr>
+<th>Artifact classification</th>
+<th>Count</th>
+<th>Sections that make up the count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit tests, layer 3</td>
+<td>6: 4 added, 2 kept with new inputs</td>
+<td>2: LA-1 to LA-6, 20 paths</td>
+</tr>
+<tr>
+<td>Built-in tests, layer 1</td>
+<td>0 added; the keys and relationships kept</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Logic assertions, layer 4</td>
+<td>1</td>
+<td>3: the answer-key test</td>
+</tr>
+<tr>
+<td>Detectors, layer 5</td>
+<td>3</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Reconciliations, layer 6</td>
+<td>2: one changed, one added</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Semantic surface, layer 7</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Consumer probes</td>
+<td>2</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<h2>7. Origin</h2>
+<table>
+<thead>
+<tr>
+<th>Test or proof</th>
+<th>Design decision proved</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ut_subscriber_resolution, ut_product_resolution</td>
+<td>D-1, D-2</td>
+</tr>
+<tr>
+<td>ut_subscriber_resolution, ut_subscriber_name, ut_product_resolution, ut_product_name</td>
+<td>D-3, D-4</td>
+</tr>
+<tr>
+<td>The transaction tables' relationships to subscriber and product; ut_subscriber_resolution's created paths</td>
+<td>D-5</td>
+</tr>
+<tr>
+<td>The three warnings</td>
+<td>D-6</td>
+</tr>
+<tr>
+<td>The dims' columns, read in Development</td>
+<td>D-7</td>
+</tr>
+<tr>
+<td>The unit tests' own rows for the created, multiple and differing paths</td>
+<td>D-8</td>
+</tr>
+<tr>
+<td>The answer-key test; October's unbilled revenue; the clones and the comparison</td>
+<td>D-9</td>
+</tr>
+</tbody>
+</table>
+<p>This plan cites the design's decisions and adds none. A test requiring a missing decision returns to the design.</p>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-23 05:50 UTC on version 2. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Test Plan (knowledge 12 item 177): all present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the test plan's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The official header</td>
+<td>The field table, v1 DRAFT, written 2026-11-23 05:50Z</td>
+</tr>
+<tr>
+<td>Executive summary, one row per file with logic</td>
+<td>Section 1: two rows, 30 brute-force paths, 20 after collapse</td>
+</tr>
+<tr>
+<td>Logic areas with dimensions, brute force, collapse and reason, and a path table naming each test</td>
+<td>Section 2: LA-1 to LA-6 and 20 paths, each with its test</td>
+</tr>
+<tr>
+<td>Every changed file across the seven layers</td>
+<td>Section 2.1: six rows, planned before code against 3a04599; brought to the diff once code exists</td>
+</tr>
+<tr>
+<td>The seven layers walked, NA with reason</td>
+<td>Section 3: layers 1 and 3 to 7 apply; layer 2 NA with its reason</td>
+</tr>
+<tr>
+<td>One runnable probe per consumer question</td>
+<td>Section 4: probes for Q-1 and Q-2, and for Q-3</td>
+</tr>
+<tr>
+<td>QA: the QA certification copied from its template before the pull request</td>
+<td>Section 5: databp-dbt has no qa branch; Production is compared with Development before the merge and with the clones after</td>
+</tr>
+<tr>
+<td>Artifact inventory agreeing with sections 2 to 5</td>
+<td>Section 6: 6 unit tests, 1 assertion, 3 detectors, 2 reconciliations, 1 semantic read, 2 probes</td>
+</tr>
+<tr>
+<td>Origin: each test's design decision</td>
+<td>Section 7: D-1 to D-9</td>
+</tr>
+<tr>
+<td>Checks as a source against a target, never an expected count</td>
+<td>Both reconciliations compare silver with its staging sources</td>
+</tr>
+<tr>
+<td>Unit tests written and run before the behavior they prove</td>
+<td>Section 3, layer 3: written first and seen failing</td>
+</tr>
+<tr>
+<td>The structure comparison row of section 3.1</td>
+<td>NA: databp-dbt keeps no DDL file</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried: D-1 to D-9, each in section 7 with its proof.</p>
+<p>Verdict: compliant, with section 5 shaped by databp-dbt having no qa branch, and section 2.1 planned before code as the standard allows.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staging keys to reference: Implementation Guide · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Implementation guide</div><h1>Staging keys to reference: Implementation Guide</h1><p class="lead">The twelve staging models and silver&#x27;s keys, step by step.</p></div></section>
+<main class="doc">
+<p class="note">Staging keys to reference (WE-2290). Built from Pilot knowledge 111 item 855, version of 2026-11-22, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 855, version of 2026-11-22: Staging keys to reference: Implementation Guide --><h3>Implementation Guide</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Implementation Guide</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>Manager work effort 62, the DataBP demo — Staging keys to reference (work effort 2290) — branch <code>rayserrano2735-claude-ws/we-2290-staging-keys-to-reference</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Staging keys to reference: Design, knowledge 111 item 848 v2 approved — profiling: none: the change reads no new source data (design, section 4) — test plan: Staging keys to reference: Test Plan, knowledge 111 item 854 v1 approved</td>
+</tr>
+<tr>
+<td><strong>Prerequisites</strong></td>
+<td>Design 848 approved (Ray, 2026-11-22 15:32 ET); test plan 854 approved (16:49 ET); the branch cut from databp-dbt main 311ecf4; the dbt platform's Development environment, schemas DBT_CLAUDE_*; the reference architecture, Integrationals/data-platform-reference-architecture at d514d7c</td>
+</tr>
+<tr>
+<td><strong>Companions</strong></td>
+<td>None</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — APPROVED</strong> — written 2026-11-22 21:55Z; approved by Ray, 2026-11-22 17:01 ET, answer 1y</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that builds the change</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-22</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Purpose and grounding recap</h2>
+<p>This guide implements Staging keys to reference: Design, knowledge 111 item 848 v2 approved and does not relitigate its decisions.</p>
+<table>
+<thead>
+<tr>
+<th>Design decision</th>
+<th>Settled rule used by the implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td>Each staging model ends with a hashed step: its code, hkey and hdiff, record_source and load_ts_utc, after the reference architecture's stg_harbor__hubspot_contacts</td>
+</tr>
+<tr>
+<td>D-2</td>
+<td>get_business_key_source copied unchanged; a natural id of several parts passed as one expression joined by bars; business_key removed</td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>dbt_utils in packages.yml, 1.3.0 up to 2.0.0, the reference architecture's range</td>
+</tr>
+<tr>
+<td>D-4</td>
+<td>Silver keys made with generate_surrogate_key over codes; every value unchanged</td>
+</tr>
+<tr>
+<td>D-5</td>
+<td>Silver and gold keep the _hk names; staging's new columns end in _hkey, _hdiff and _code</td>
+</tr>
+<tr>
+<td>D-6</td>
+<td>Staging ephemeral; silver's unit tests mock it in SQL form</td>
+</tr>
+<tr>
+<td>D-7</td>
+<td>The staging hdiff replaces change_hash in silver</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>To Production by a reviewed pull request into main and the job run by hand; $1,410 and the answer-key test unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>Code in this guide is an illustrative pattern: more than pseudocode, less than shipping code. Do not copy it into the repo; implement it against the branch. Development is done when the output is shown correct against real data, per K#12 I#26.</p>
+<h3>Pattern declaration</h3>
+<ul>
+<li>Patterns instantiated: Source Staging (Pilot knowledge 14 item 37), as the reference architecture's staging models apply it; the History-fed Integrator's id from a code (item 39), for silver's keys only, without history</li>
+<li>Patterns introduced: None</li>
+</ul>
+<h2>2. Scope</h2>
+<h3>Deliverables</h3>
+<ol>
+<li>packages.yml with dbt_utils (D-3).</li>
+<li>macros/get_business_key_source.sql, the reference architecture's, unchanged; macros/business_key.sql removed (D-2).</li>
+<li>dbt_project.yml: staging materialized ephemeral (D-6).</li>
+<li>The hashed step in each of the 12 staging models, and not-null tests on each model's code and hkey (D-1, D-5).</li>
+<li>models/staging/_staging_unit_tests.yml, 12 unit tests (test plan LA-1, LA-2).</li>
+<li>The 7 silver models' keys made from codes, and their hdiff in place of change_hash (D-4, D-7).</li>
+<li>The 6 silver unit tests rewritten with staging mocked in SQL form, one renamed to ut_product_hdiff (test plan LA-3, LA-4).</li>
+<li>The key reconciliation run against Production, and October's unbilled revenue read (D-8).</li>
+</ol>
+<h3>Finance workbook delivery</h3>
+<p>For finance reporting branches, name the repository generation script, shared mart-level report query and parameters, reproducible generation/refresh steps, workbook metadata and sheets, and preservation of consumer observations under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h3>What stays the same</h3>
+<p>Every key value in silver and gold; gold's models and their composite month keys, which hash silver's keys; the Semantic Layer and its entities; the answer key; the site and Morgan.</p>
+<h3>Intentionally not done</h3>
+<p>History by save_history and the UDM integration layer (design DD-1, DD-2); merging the subscriber and product across systems (task 2289); a qa branch on databp-dbt.</p>
+<h3>Identity recipes</h3>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Natural code</th>
+<th>Surrogate-key composition</th>
+<th>Minting location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Client</td>
+<td>DATABP|CLIENT|client id (the tenant id where a row names its client)</td>
+<td>generate_surrogate_key over the code</td>
+<td>Code in staging; client_hk in silver</td>
+</tr>
+<tr>
+<td>Subscriber</td>
+<td>DATABP|CUSTOMER|tenant|customer</td>
+<td>The same</td>
+<td>Code in staging (customer, entitlement, invoice, usage, Salesforce's customer); subscriber_hk in silver</td>
+</tr>
+<tr>
+<td>Product</td>
+<td>DATABP|PRODUCT|tenant|product code</td>
+<td>The same</td>
+<td>Code in staging (product, usage, Product2); product_hk in silver</td>
+</tr>
+<tr>
+<td>Entitlement</td>
+<td>DATABP|ENTITLEMENT|tenant|entitlement</td>
+<td>The same</td>
+<td>entitlement_hk in silver</td>
+</tr>
+<tr>
+<td>Invoice and its item</td>
+<td>DATABP|INVOICE|tenant|invoice; DATABP|INVOICE_ITEM|tenant|invoice|item</td>
+<td>The same</td>
+<td>invoice_hk and invoice_item_hk in silver</td>
+</tr>
+<tr>
+<td>License line</td>
+<td>SFDC|OPPORTUNITYLINEITEM|line item id</td>
+<td>The same</td>
+<td>license_line_hk in silver</td>
+</tr>
+<tr>
+<td>Usage report</td>
+<td>USAGE|USAGE_DECLARATION|tenant|declaration</td>
+<td>The same</td>
+<td>usage_report_hk in silver</td>
+</tr>
+<tr>
+<td>Each staging row</td>
+<td>Its own code, as above, or SFDC with the Salesforce object's name and its id</td>
+<td>hkey: generate_surrogate_key over the natural id's parts</td>
+<td>Staging</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Grounded in code and complete consumer set</h2>
+<p>Every edit below names a file and object read from the stated branch.</p>
+<table>
+<thead>
+<tr>
+<th>Touched object</th>
+<th>Exact file</th>
+<th>Consumers found</th>
+<th>Verification command and clock</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The 12 staging models</td>
+<td>models/staging/stg_databp__*.sql</td>
+<td>Silver's 7 models, through 16 refs; silver's 6 unit tests</td>
+<td>grep for ref('stg_ in databp-dbt 311ecf4, 2026-11-22 21:51 UTC</td>
+</tr>
+<tr>
+<td>business_key</td>
+<td>macros/business_key.sql</td>
+<td>24 calls in the 7 silver models; no other file</td>
+<td>grep for business_key( in 311ecf4, the same clock</td>
+</tr>
+<tr>
+<td>change_hash</td>
+<td>The 7 silver models</td>
+<td>ut_product_change_hash only; no model or gold reads it</td>
+<td>grep for change_hash in 311ecf4, the same clock</td>
+</tr>
+<tr>
+<td>Staging's materialization</td>
+<td>dbt_project.yml, staging: +materialized: view</td>
+<td>Every staging ref</td>
+<td>Read in 311ecf4, the same clock</td>
+</tr>
+<tr>
+<td>get_business_key_source</td>
+<td>The reference architecture, macros/pipeline/get_business_key_source.sql</td>
+<td>Its staging models</td>
+<td>Read at d514d7c, 2026-11-22</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Baseline</h2>
+<table>
+<thead>
+<tr>
+<th>Baseline ID</th>
+<th>Behavior or value</th>
+<th>Capture command or query</th>
+<th>Captured result and clock</th>
+<th>Reconciliation condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B-1</td>
+<td>Silver's keys in Production</td>
+<td>hash_agg over each silver table's _hk columns, with its row count, in DATABP_LAB.DATABP_SILVER</td>
+<td>client 20 rows, -[id]; subscriber 5,000, -[id]; product 2, -[id]; entitlement 15, -[id]; invoice_item 198, [id]; license_line 17, -[id]; usage_report 201, -[id]; no null product, subscriber or client key; 2026-11-22 21:51 UTC</td>
+<td>Development's silver equal, table for table</td>
+</tr>
+<tr>
+<td>B-2</td>
+<td>Gold's keys in Production</td>
+<td>The same over DATABP_LAB.DATABP_MARTS</td>
+<td>client_dim 20, -[id]; entitlement_month_metric 180, [id]; invoice_item_metric 198, [id]; license_line_month_metric 204, [id]; product_dim 2, -[id]; subscriber_dim 5,000, -[id]; subscriber_product_month_metric 216, [id]; usage_report_metric 201, -[id]; the same clock</td>
+<td>Development's gold equal</td>
+</tr>
+<tr>
+<td>B-3</td>
+<td>October's unbilled revenue</td>
+<td>sum of unbilled_amount in subscriber_product_month_metric for 2026-10-01</td>
+<td>$1,410; the same clock</td>
+<td>Equal through the Semantic Layer and Morgan</td>
+</tr>
+<tr>
+<td>B-4</td>
+<td>Customer 23's subscriber key</td>
+<td>Read in silver subscriber</td>
+<td>6e7a1ee374a6187c721a8a2ea0017019, read 2026-11-22</td>
+<td>Equal in Development</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Ordered implementation steps</h2>
+<p>Step 1. The branch, from databp-dbt main at 311ecf4, named as Manager's task 2290 names it (Standard: Branching under squash merges, knowledge 12 item 47, 3.2a). No movement.</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>main
+git<span class="w"> </span>switch<span class="w"> </span>--no-track<span class="w"> </span>-c<span class="w"> </span>rayserrano2735-claude-ws/we-2290-staging-keys-to-reference<span class="w"> </span>origin/main
+</code></pre></div>
+<p>Step 2. packages.yml at the project's root, in the reference architecture's range (D-3), then <code>dbt deps</code>. No movement.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">packages</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dbt-labs/dbt_utils</span>
+<span class="w">    </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"&gt;=1.3.0"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"&lt;2.0.0"</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>Step 3. The reference architecture's macros/pipeline/get_business_key_source.sql copied to macros/get_business_key_source.sql unchanged, its SHA-256 compared with the reference's (D-2); staging made ephemeral in dbt_project.yml (D-6). Movement: dbt no longer builds the 12 staging views; the views already in DBT_CLAUDE_STAGING and, after the merge, DATABP_STAGING are left in place, and nothing reads them (Ray, 2026-11-22 17:01 ET, answer 2b).</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">staging</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">+schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">staging</span>
+<span class="w">      </span><span class="nt">+materialized</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ephemeral</span>
+</code></pre></div>
+<p>Step 4. The first staging unit test, ut_stg_usage_declaration_keys (section 6), written before the model changes, then build rows 1 and 2: it must fail for the missing columns. A failure saying dbt cannot unit test an ephemeral model stops the build (G-7).</p>
+<p>Step 5. The other 11 staging unit tests in models/staging/_staging_unit_tests.yml, each the same shape as the first, with the columns of the table in step 6. Their expected hkey and hdiff literals are computed first with the query in section 7 (G-6). Run: 12 failures.</p>
+<p>Step 6. The hashed step at the end of each staging model, after the reference architecture's stg_harbor__hubspot_contacts (D-1, D-5, G-1 to G-3). The usage report's, in full:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">landed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="c1">-- the model's current select, unchanged</span>
+<span class="p">),</span>
+
+<span class="n">hashed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"cast(tenant_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"cast(declaration_id as varchar)"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">declaration_hkey</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span>
+<span class="w">            </span><span class="ss">"tenant_id"</span><span class="p">,</span><span class="w"> </span><span class="ss">"declaration_id"</span><span class="p">,</span><span class="w"> </span><span class="ss">"customer_id"</span><span class="p">,</span><span class="w"> </span><span class="ss">"product_code"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"usage_month"</span><span class="p">,</span><span class="w"> </span><span class="ss">"declared_units"</span><span class="p">,</span><span class="w"> </span><span class="ss">"declared_at"</span><span class="p">,</span><span class="w"> </span><span class="ss">"is_deleted"</span>
+<span class="w">        </span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">declaration_hdiff</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar) || '|' || cast(declaration_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"USAGE"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"USAGE_DECLARATION"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">declaration_code</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"DATABP"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"CLIENT"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">client_code</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar) || '|' || cast(customer_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"DATABP"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"CUSTOMER"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar) || '|' || product_code"</span><span class="p">,</span><span class="w"> </span><span class="ss">"DATABP"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"PRODUCT"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">product_key_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">landed</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">'USAGE'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">record_source</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">'{{ run_started_at }}'</span><span class="p">::</span><span class="k">timestamp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">load_ts_utc</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="n">landed</span>
+<span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">hashed</span>
+</code></pre></div>
+<p>Each model's columns. The code's parts are issuer, table and natural id; record_source is DATABP for the DataBP models, SFDC for Salesforce's and USAGE for the usage report. Every hdiff covers the columns named and is_deleted, and leaves out landed_at, changed_at and updated_at (G-3).</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Its code</th>
+<th>Codes it carries</th>
+<th>hkey over</th>
+<th>hdiff over</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>stg_databp__client</td>
+<td>client_code: DATABP, CLIENT, client_id</td>
+<td>None</td>
+<td>client_id</td>
+<td>client_id, client_name</td>
+</tr>
+<tr>
+<td>stg_databp__customer</td>
+<td>subscriber_code: DATABP, CUSTOMER, tenant and customer</td>
+<td>client_code</td>
+<td>tenant_id, customer_id</td>
+<td>the hkey's columns, customer_name, email</td>
+</tr>
+<tr>
+<td>stg_databp__entitlement</td>
+<td>entitlement_code: DATABP, ENTITLEMENT, tenant and entitlement</td>
+<td>client_code, subscriber_code</td>
+<td>tenant_id, entitlement_id</td>
+<td>the hkey's columns, customer_id, product_id, units, start_date, end_date</td>
+</tr>
+<tr>
+<td>stg_databp__invoice</td>
+<td>invoice_code: DATABP, INVOICE, tenant and invoice</td>
+<td>client_code, subscriber_code</td>
+<td>tenant_id, invoice_id</td>
+<td>the hkey's columns, customer_id, amount, invoice_date, status</td>
+</tr>
+<tr>
+<td>stg_databp__invoice_item</td>
+<td>invoice_item_code: DATABP, INVOICE_ITEM, tenant, invoice and item</td>
+<td>client_code, invoice_code</td>
+<td>tenant_id, invoice_id, item_id</td>
+<td>the hkey's columns, product_id, units, unit_price, amount</td>
+</tr>
+<tr>
+<td>stg_databp__product</td>
+<td>product_key_code: DATABP, PRODUCT, tenant and product code</td>
+<td>client_code</td>
+<td>tenant_id, product_id</td>
+<td>the hkey's columns, product_code, product_name, unit_price</td>
+</tr>
+<tr>
+<td>stg_databp__sfdc_account</td>
+<td><code>account_code</code>: SFDC, the object's name, its id</td>
+<td>client_code, subscriber_code, from tenant_id and subscriber_id</td>
+<td><code>account_id</code></td>
+<td><code>account_id</code>, <code>account_name</code>, owner_id, tenant_id, subscriber_id</td>
+</tr>
+<tr>
+<td>stg_databp__sfdc_contract</td>
+<td>contract_code: SFDC, CONTRACT, contract_id</td>
+<td>None</td>
+<td>contract_id</td>
+<td>the hkey's column, <code>account_id</code>, start_date, end_date, contract_term, status, tenant_id</td>
+</tr>
+<tr>
+<td>stg_databp__sfdc_opportunity</td>
+<td>opportunity_code: SFDC, OPPORTUNITY, opportunity_id</td>
+<td>None</td>
+<td>opportunity_id</td>
+<td>the hkey's column, <code>account_id</code>, contract_id, stage_name, close_date, tenant_id</td>
+</tr>
+<tr>
+<td>stg_databp__sfdc_opportunitylineitem</td>
+<td>opportunity_line_item_code: SFDC, OPPORTUNITYLINEITEM, its id</td>
+<td>None</td>
+<td>opportunity_line_item_id</td>
+<td>the hkey's column, opportunity_id, product2_id, quantity, unit_price</td>
+</tr>
+<tr>
+<td>stg_databp__sfdc_product2</td>
+<td>product2_code: SFDC, PRODUCT2, product2_id</td>
+<td>client_code, product_key_code, from tenant_id and product_code</td>
+<td>product2_id</td>
+<td>the hkey's column, product_name, product_code, tenant_id</td>
+</tr>
+<tr>
+<td>stg_databp__usage_usage_declaration</td>
+<td>declaration_code: USAGE, USAGE_DECLARATION, tenant and declaration</td>
+<td>client_code, subscriber_code, product_key_code</td>
+<td>tenant_id, declaration_id</td>
+<td>as in the code above</td>
+</tr>
+</tbody>
+</table>
+<p>Run build row 3: 12 passes.</p>
+<p>Step 7. In each staging model's yml, not_null on its code and its hkey (test plan layer 1); run them in Development: a failure saying dbt cannot test an ephemeral model stops the build (G-7).</p>
+<p>Step 8. Silver's keys from codes (D-4, G-4), and the hdiff in place of change_hash (D-7, G-5), in the 7 silver models; then macros/business_key.sql removed and change_hash's column entries in models/silver/_silver.yml replaced by the hdiff's. Every key takes this form:</p>
+<div class="highlight"><pre><span></span><code><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="k">usage</span><span class="p">.</span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">     </span><span class="k">then</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"usage.subscriber_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Silver model</th>
+<th>Key, from the code of</th>
+<th>hdiff, from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>client</td>
+<td>client_hk: the client's client_code</td>
+<td>client_hdiff</td>
+</tr>
+<tr>
+<td>subscriber</td>
+<td>subscriber_hk: the customer's subscriber_code; client_hk: its client_code</td>
+<td>subscriber_hdiff</td>
+</tr>
+<tr>
+<td>product</td>
+<td>product_hk: product_key_code; client_hk: client_code</td>
+<td>product_hdiff</td>
+</tr>
+<tr>
+<td>entitlement</td>
+<td>entitlement_hk: entitlement_code; client_hk and subscriber_hk: the codes it carries; product_hk: the joined product's product_key_code</td>
+<td>entitlement_hdiff</td>
+</tr>
+<tr>
+<td>invoice_item</td>
+<td>invoice_item_hk: the item's invoice_item_code; invoice_hk, client_hk and subscriber_hk: the joined invoice's codes; product_hk: the joined product's product_key_code</td>
+<td>invoice_item_hdiff</td>
+</tr>
+<tr>
+<td>license_line</td>
+<td>license_line_hk: the line item's opportunity_line_item_code; client_hk and subscriber_hk: the joined Salesforce customer's codes; product_hk: the joined Product2's product_key_code</td>
+<td>the line item's hdiff, as license_line_hdiff</td>
+</tr>
+<tr>
+<td>usage_report</td>
+<td>usage_report_hk: declaration_code; client_hk, subscriber_hk and product_hk: the codes it carries</td>
+<td>the declaration's hdiff, as usage_report_hdiff</td>
+</tr>
+</tbody>
+</table>
+<p>Run build row 4 after step 9's tests are written: 6 failures, then this step makes them pass.</p>
+<p>Step 9. The 6 silver unit tests rewritten (section 6): each staging input given in SQL form, as the reference architecture's integrator tests mock their ephemeral inputs, carrying the codes and hdiff silver now reads; the expected keys keep their literal values; ut_product_change_hash becomes ut_product_hdiff.</p>
+<p>Step 10. Build rows 5 to 7: the whole project in Development, the key reconciliation, and October's unbilled revenue; then the pull request from Template: Pull Request (knowledge 12 item 334) for Ray's review, and rows 8 and 9 after he merges.</p>
+<p>Each step states the exact file, object, pattern citation, design or profiling citation, literal first-pass code, expected movement, and any required target rebuild.</p>
+<h2>6. Tests</h2>
+<h3>Existing-test dispositions</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Layer</th>
+<th>Disposition: keep, rewrite, or delete</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ut_usage_report_latest_wins</td>
+<td>3</td>
+<td>Rewrite</td>
+<td>Staging is mocked in SQL form, with the codes and hdiff silver now reads</td>
+</tr>
+<tr>
+<td>ut_license_line_conformed_keys</td>
+<td>3</td>
+<td>Rewrite</td>
+<td>The same; the expected keys keep their literal values</td>
+</tr>
+<tr>
+<td>ut_license_line_chain</td>
+<td>3</td>
+<td>Rewrite</td>
+<td>The same</td>
+</tr>
+<tr>
+<td>ut_invoice_item_updated_at</td>
+<td>3</td>
+<td>Rewrite</td>
+<td>The same</td>
+</tr>
+<tr>
+<td>ut_subscriber_deleted_excluded</td>
+<td>3</td>
+<td>Rewrite</td>
+<td>The same</td>
+</tr>
+<tr>
+<td>ut_product_change_hash</td>
+<td>3</td>
+<td>Rewrite, renamed ut_product_hdiff</td>
+<td>change_hash is gone; the test checks product_hdiff equals staging's</td>
+</tr>
+<tr>
+<td>The 9 gold unit tests</td>
+<td>3</td>
+<td>Keep</td>
+<td>They read silver, whose columns they use are unchanged</td>
+</tr>
+<tr>
+<td>Silver's not_null, unique and relationships tests</td>
+<td>1</td>
+<td>Keep</td>
+<td>The keys and their values are unchanged</td>
+</tr>
+<tr>
+<td>assert_checks_match_answer_key and the other five tests in tests/</td>
+<td>4 and 6</td>
+<td>Keep</td>
+<td>No figure moves</td>
+</tr>
+</tbody>
+</table>
+<h3>New and changed tests</h3>
+<p>The first staging unit test, in models/staging/_staging_unit_tests.yml. Four rows of one report: as landed; its units changed; deleted; and loaded again later with nothing else changed. The hkey and hdiff literals, written here as H1 and D1 to D3, are computed by the first query of section 7 before the test is run (G-6); rows 1 and 4 must share D1.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">unit_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ut_stg_usage_declaration_keys</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_databp__usage_usage_declaration</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">source('databp_usage', 'usage_declaration')</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">23</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">OPTIONS</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_inserted_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-19</span><span class="nv"> </span><span class="s">19:22:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_updated_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-19</span><span class="nv"> </span><span class="s">19:22:00'</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">23</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">OPTIONS</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">15</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_inserted_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-19</span><span class="nv"> </span><span class="s">19:22:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_updated_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-19</span><span class="nv"> </span><span class="s">19:22:00'</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">23</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">OPTIONS</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_inserted_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-19</span><span class="nv"> </span><span class="s">19:22:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_updated_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-19</span><span class="nv"> </span><span class="s">19:22:00'</span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tenant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="nt"> declaration_id</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nt"> customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">23</span><span class="p p-Indicator">,</span><span class="nt"> product_code</span><span class="p">:</span><span class="w"> </span><span class="nv">OPTIONS</span><span class="p p-Indicator">,</span><span class="nt"> usage_month</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-10-01'</span><span class="p p-Indicator">,</span><span class="nt"> declared_units</span><span class="p">:</span><span class="w"> </span><span class="nv">12</span><span class="p p-Indicator">,</span><span class="nt"> declared_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-05</span><span class="nv"> </span><span class="s">00:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_deleted</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_inserted_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-21</span><span class="nv"> </span><span class="s">08:00:00'</span><span class="p p-Indicator">,</span><span class="nt"> _snowflake_updated_at</span><span class="p">:</span><span class="w"> </span><span class="s">'2026-11-21</span><span class="nv"> </span><span class="s">08:00:00'</span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">declaration_code</span><span class="p">:</span><span class="w"> </span><span class="s">'USAGE|USAGE_DECLARATION|3|2'</span><span class="p p-Indicator">,</span><span class="nt"> client_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CLIENT|3'</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CUSTOMER|3|23'</span><span class="p p-Indicator">,</span><span class="nt"> product_key_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|PRODUCT|3|OPTIONS'</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hkey</span><span class="p">:</span><span class="w"> </span><span class="nv">H1</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hdiff</span><span class="p">:</span><span class="w"> </span><span class="nv">D1</span><span class="p p-Indicator">,</span><span class="nt"> record_source</span><span class="p">:</span><span class="w"> </span><span class="nv">USAGE</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">declaration_code</span><span class="p">:</span><span class="w"> </span><span class="s">'USAGE|USAGE_DECLARATION|3|2'</span><span class="p p-Indicator">,</span><span class="nt"> client_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CLIENT|3'</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CUSTOMER|3|23'</span><span class="p p-Indicator">,</span><span class="nt"> product_key_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|PRODUCT|3|OPTIONS'</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hkey</span><span class="p">:</span><span class="w"> </span><span class="nv">H1</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hdiff</span><span class="p">:</span><span class="w"> </span><span class="nv">D2</span><span class="p p-Indicator">,</span><span class="nt"> record_source</span><span class="p">:</span><span class="w"> </span><span class="nv">USAGE</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">declaration_code</span><span class="p">:</span><span class="w"> </span><span class="s">'USAGE|USAGE_DECLARATION|3|2'</span><span class="p p-Indicator">,</span><span class="nt"> client_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CLIENT|3'</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CUSTOMER|3|23'</span><span class="p p-Indicator">,</span><span class="nt"> product_key_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|PRODUCT|3|OPTIONS'</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hkey</span><span class="p">:</span><span class="w"> </span><span class="nv">H1</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hdiff</span><span class="p">:</span><span class="w"> </span><span class="nv">D3</span><span class="p p-Indicator">,</span><span class="nt"> record_source</span><span class="p">:</span><span class="w"> </span><span class="nv">USAGE</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">declaration_code</span><span class="p">:</span><span class="w"> </span><span class="s">'USAGE|USAGE_DECLARATION|3|2'</span><span class="p p-Indicator">,</span><span class="nt"> client_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CLIENT|3'</span><span class="p p-Indicator">,</span><span class="nt"> subscriber_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|CUSTOMER|3|23'</span><span class="p p-Indicator">,</span><span class="nt"> product_key_code</span><span class="p">:</span><span class="w"> </span><span class="s">'DATABP|PRODUCT|3|OPTIONS'</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hkey</span><span class="p">:</span><span class="w"> </span><span class="nv">H1</span><span class="p p-Indicator">,</span><span class="nt"> declaration_hdiff</span><span class="p">:</span><span class="w"> </span><span class="nv">D1</span><span class="p p-Indicator">,</span><span class="nt"> record_source</span><span class="p">:</span><span class="w"> </span><span class="nv">USAGE</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>The other 11 take the same four rows, each with its own landed columns and the codes of the table in step 6. Customer 23's codes, DATABP|CUSTOMER|3|23 and DATABP|CLIENT|3, are the strings business_key makes today.</p>
+<p>The rewritten product test, the form of all six: staging given in SQL form, the keys expected as literals, computed in Snowflake on 2026-11-22: md5 of DATABP|PRODUCT|3|OPTIONS is bf9dbc35f6ebdc9e687e4203245897a4, and generate_surrogate_key's form over it gives the same; md5 of DATABP|CLIENT|3 is d518e769cd877c3a625853282dae891d.</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ut_product_hdiff</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">product</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_databp__product')</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select 3 as tenant_id, 1 as product_id, 'OPTIONS' as product_code, 'Options' as product_name,</span>
+<span class="w">                 </span><span class="no">40 as unit_price, cast(null as timestamp) as updated_at, false as is_deleted,</span>
+<span class="w">                 </span><span class="no">cast(null as timestamp) as landed_at,</span>
+<span class="w">                 </span><span class="no">'DATABP|PRODUCT|3|OPTIONS' as product_key_code, 'DATABP|CLIENT|3' as client_code, 'd1' as product_hdiff</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">product_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">bf9dbc35f6ebdc9e687e4203245897a4</span><span class="p p-Indicator">,</span><span class="nt"> client_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">d518e769cd877c3a625853282dae891d</span><span class="p p-Indicator">,</span><span class="nt"> product_hdiff</span><span class="p">:</span><span class="w"> </span><span class="nv">d1</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>The other five keep their scenarios and expected keys and give each staging input the same way, with the codes and hdiff columns of step 6.</p>
+<h2>7. Build sequence and verification</h2>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Literal command</th>
+<th>Expected result</th>
+<th>Baseline reconciliation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>dbt deps, then dbt build --select stg_databp__usage_usage_declaration, in Development, after step 3</td>
+<td>The ephemeral model compiles; its unit test, once written, runs</td>
+<td>None</td>
+</tr>
+<tr>
+<td>2</td>
+<td>dbt test --select test_type:unit, staging only, before step 5</td>
+<td>12 failures, each for the missing columns, none for an unsupported model</td>
+<td>None</td>
+</tr>
+<tr>
+<td>3</td>
+<td>The same, after step 5</td>
+<td>12 passes</td>
+<td>None</td>
+</tr>
+<tr>
+<td>4</td>
+<td>dbt test --select test_type:unit, silver, before step 7</td>
+<td>6 failures: staging's mocks lack the codes</td>
+<td>None</td>
+</tr>
+<tr>
+<td>5</td>
+<td>dbt build in Development, the whole project, after step 8</td>
+<td>Every model and test passes</td>
+<td>B-1, B-2</td>
+</tr>
+<tr>
+<td>6</td>
+<td>The key reconciliation, Development against Production</td>
+<td>No difference</td>
+<td>B-1, B-2, B-4</td>
+</tr>
+<tr>
+<td>7</td>
+<td>dbt sl query --metrics unbilled_revenue --group-by metric_time__month, in Development</td>
+<td>October 2026: $1,410</td>
+<td>B-3</td>
+</tr>
+<tr>
+<td>8</td>
+<td>The pull request into main; after Ray merges, the Production job "DataBP build", run by hand</td>
+<td>Success</td>
+<td>B-1, B-2</td>
+</tr>
+<tr>
+<td>9</td>
+<td>In Production: the Semantic Layer and Morgan asked October's unbilled revenue</td>
+<td>$1,410 from both</td>
+<td>B-3</td>
+</tr>
+</tbody>
+</table>
+<h3>Verification queries</h3>
+<p>The unit tests' literals (G-6), written out from generate_surrogate_key's form rather than called through it: each part cast to text, a null replaced by dbt_utils' marker, the parts joined by a hyphen, then md5. For the usage report's four rows:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="s1">'3'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'-'</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">'2'</span><span class="p">)</span><span class="w">                                                                   </span><span class="k">as</span><span class="w"> </span><span class="n">h1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="s1">'3-2-23-OPTIONS-2026-10-01-12-2026-11-05 00:00:00.000-false'</span><span class="p">)</span><span class="w">                        </span><span class="k">as</span><span class="w"> </span><span class="n">d1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="s1">'3-2-23-OPTIONS-2026-10-01-15-2026-11-05 00:00:00.000-false'</span><span class="p">)</span><span class="w">                        </span><span class="k">as</span><span class="w"> </span><span class="n">d2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">md5</span><span class="p">(</span><span class="s1">'3-2-23-OPTIONS-2026-10-01-12-2026-11-05 00:00:00.000-true'</span><span class="p">)</span><span class="w">                         </span><span class="k">as</span><span class="w"> </span><span class="n">d3</span>
+</code></pre></div>
+<p>The text of a date, a timestamp and a boolean cast in Snowflake is read first, with a select of each cast, so that the strings above match what the compiled model produces; the compiled SQL of the model is read beside them, which also confirms generate_surrogate_key's form, as design section 4 requires.</p>
+<p>The key reconciliation (D-4, test plan layer 6), run for each silver and gold table, Development's schema against Production's, with the same key columns as B-1 and B-2:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'usage_report'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span><span class="p">,</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">USAGE_REPORT</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_rows</span><span class="p">,</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DATABP_SILVER</span><span class="p">.</span><span class="n">USAGE_REPORT</span><span class="p">)</span><span class="w">     </span><span class="k">as</span><span class="w"> </span><span class="n">prod_rows</span><span class="p">,</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">hash_agg</span><span class="p">(</span><span class="n">usage_report_hk</span><span class="p">,</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">product_hk</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_SILVER</span><span class="p">.</span><span class="n">USAGE_REPORT</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_hash</span><span class="p">,</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">hash_agg</span><span class="p">(</span><span class="n">usage_report_hk</span><span class="p">,</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">product_hk</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DATABP_SILVER</span><span class="p">.</span><span class="n">USAGE_REPORT</span><span class="p">)</span><span class="w">     </span><span class="k">as</span><span class="w"> </span><span class="n">prod_hash</span>
+</code></pre></div>
+<p>Equal rows and equal hashes in every table; a difference stops the cycle, and the rows that differ are found with a full outer join on the keys. Customer 23's key read in DBT_CLAUDE_SILVER.SUBSCRIBER must be 6e7a1ee374a6187c721a8a2ea0017019 (B-4).</p>
+<h2>8. Decisions recorded in this guide</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Weed-level choice</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G-1</td>
+<td>The product's code is named product_key_code, since product_code is DataBP's natural column</td>
+<td>D-5 asks for _code; the natural name stays</td>
+</tr>
+<tr>
+<td>G-2</td>
+<td>A row that names another entity carries that entity's code: client_code from the tenant id, subscriber_code, product_key_code, invoice_code on the invoice item</td>
+<td>Silver makes each key from a code staging created (design 6.5)</td>
+</tr>
+<tr>
+<td>G-3</td>
+<td>The hdiff covers every attribute and is_deleted, and leaves out landed_at, changed_at and the source's updated_at</td>
+<td>The reference architecture's hdiff leaves out last_modified_date; a reload is not a change</td>
+</tr>
+<tr>
+<td>G-4</td>
+<td>Each silver key is wrapped: when its code is null, the key is null</td>
+<td>md5 of a null is null today, but generate_surrogate_key of a null is not; values must not move (D-4)</td>
+</tr>
+<tr>
+<td>G-5</td>
+<td>A silver row joined from several staging rows carries its main row's hdiff</td>
+<td>change_hash is read by nothing; the main row is what the key names</td>
+</tr>
+<tr>
+<td>G-6</td>
+<td>The unit tests' expected hkey and hdiff are literals computed in Snowflake with md5 over the columns written out, not with the macro</td>
+<td>A wrong column list fails the test</td>
+</tr>
+<tr>
+<td>G-7</td>
+<td>If this project's dbt cannot unit test or data test an ephemeral model, the build stops and C-2 returns to Ray</td>
+<td>D-6 requires it proven in Development; no fallback is chosen here</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Rollback</h2>
+<p>Revert the merge commit on databp-dbt main and run the Production job by hand. Staging returns to views, silver to md5 of business_key; every key value is the same either way, so gold, the metrics and the site are untouched throughout.</p>
+<h2>10. What this guide does not cover</h2>
+<table>
+<thead>
+<tr>
+<th>Exclusion</th>
+<th>Canonical home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Merging the subscriber and product across systems</td>
+<td>Task 2289</td>
+</tr>
+<tr>
+<td>The storage layer and the UDM integration layer</td>
+<td>Design 848, DD-1 and DD-2</td>
+</tr>
+<tr>
+<td>A qa branch on databp-dbt</td>
+<td>Ray, 2026-11-21 03:56 ET: separately</td>
+</tr>
+<tr>
+<td>Bin's page</td>
+<td>Task 798</td>
+</tr>
+</tbody>
+</table>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-22 21:59 UTC on version 5. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Implementation Guide (knowledge 12 item 176): all present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the guide's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The official header, with prerequisites</td>
+<td>The field table: v1 DRAFT, written 2026-11-22 21:55Z; design 848 and test plan 854 approved</td>
+</tr>
+<tr>
+<td>Grounding recap, one row per design decision, adding none</td>
+<td>Section 1: D-1 to D-8</td>
+</tr>
+<tr>
+<td>Patterns instantiated and introduced</td>
+<td>Section 1: Source Staging and the History-fed Integrator's id; none introduced</td>
+</tr>
+<tr>
+<td>Scope: deliverables, what stays, what is not done, identity recipes</td>
+<td>Section 2: 8 deliverables; the unchanged keys; DD-1, DD-2 and 2289 left out; 8 recipes</td>
+</tr>
+<tr>
+<td>Grounded in code, the complete set of consumers</td>
+<td>Section 3: five objects read in 311ecf4 at 21:51 UTC and in the reference architecture at d514d7c</td>
+</tr>
+<tr>
+<td>Baseline before change</td>
+<td>Section 4: B-1 to B-4, read in Production at 21:51 UTC</td>
+</tr>
+<tr>
+<td>Ordered steps, each with file, pattern, citation, code and movement</td>
+<td>Section 5: steps 1 to 10, with the usage report's full staging code and every model's columns</td>
+</tr>
+<tr>
+<td>Existing tests disposed; new tests written before the code</td>
+<td>Section 6: 9 rows; the first staging test and the rewritten product test in full</td>
+</tr>
+<tr>
+<td>Build sequence with literal commands and baseline reconciliation</td>
+<td>Section 7: 9 rows; the literal query and the key reconciliation</td>
+</tr>
+<tr>
+<td>Decisions of the guide's own level</td>
+<td>Section 8: G-1 to G-7</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td>Section 9: the revert commit and the Production job</td>
+</tr>
+<tr>
+<td>Exclusions with their homes</td>
+<td>Section 10: four rows</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried: D-1 to D-8 from the design, each in section 1 and in a step; G-1 to G-7, this guide's.</p>
+<p>Verdict: compliant.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

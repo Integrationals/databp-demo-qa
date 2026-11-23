@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silver merged entities: Implementation Guide · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Implementation guide</div><h1>Silver merged entities: Implementation Guide</h1><p class="lead">The resolution inside silver&#x27;s subscriber and product, step by step.</p></div></section>
+<main class="doc">
+<p class="note">Silver merged entities (WE-2289). Built from Pilot knowledge 111 item 858, version of 2026-11-23, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 858, version of 2026-11-23: Silver merged entities: Implementation Guide --><h3>Implementation Guide</h3>
+<p><em>Branch Delivery Document</em> — <strong>Level 4 — Implementation Guide</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Effort</strong></td>
+<td>Manager work effort 62, the DataBP demo — Silver merged entities (work effort 2289) — branch <code>rayserrano2735-claude-ws/we-2289-silver-merged-entities</code></td>
+</tr>
+<tr>
+<td><strong>Governed by</strong></td>
+<td><em>Standard: Branch Delivery Documents</em> (K#12 I#27)</td>
+</tr>
+<tr>
+<td><strong>References</strong></td>
+<td>Design: Silver merged entities: Design, knowledge 111 item 856 v1 approved — profiling: the source profile, item 813, and the reads of design 856's section 4 — test plan: Silver merged entities: Test Plan, knowledge 111 item 857 v1 approved</td>
+</tr>
+<tr>
+<td><strong>Prerequisites</strong></td>
+<td>Design 856 approved (Ray, 2026-11-23 00:47 ET); test plan 857 approved (00:52 ET); task 2290 in Production, so every staging row carries its codes; the branch cut from databp-dbt main 3a04599; Development schemas DBT_CLAUDE_*; the reference's skool_person_resolution at d514d7c</td>
+</tr>
+<tr>
+<td><strong>Companions</strong></td>
+<td>None</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><strong>v1 — APPROVED</strong> — written 2026-11-23 05:55Z; approved by Ray, 2026-11-23 00:59 ET, answer 1y</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Ray Serrano, who decides; the session that builds the change</td>
+</tr>
+<tr>
+<td><strong>Author</strong></td>
+<td>Ray Serrano; edited by Claude — 2026-11-23</td>
+</tr>
+<tr>
+<td><strong>Classification</strong></td>
+<td>Internal — Data Management</td>
+</tr>
+<tr>
+<td><strong>Official copy method</strong></td>
+<td>Copied from this governed template by <code>AGENTIC.DATASKILLS.KNOWLEDGE_ITEM_FROM_TEMPLATE</code>; template SHA-256 recorded in the created item</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Purpose and grounding recap</h2>
+<p>This guide implements Silver merged entities: Design, knowledge 111 item 856 v1 approved and does not relitigate its decisions.</p>
+<table>
+<thead>
+<tr>
+<th>Design decision</th>
+<th>Settled rule used by the implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-1</td>
+<td>The subscriber's resolution as CTEs inside silver subscriber: source rows from DataBP, Salesforce and the usage system, matched on the carried subscriber_code, counted per system; every key generate_surrogate_key of that code; a source row with no DataBP customer created and flagged</td>
+</tr>
+<tr>
+<td>D-2</td>
+<td>The same inside silver product, on the carried product_key_code</td>
+</tr>
+<tr>
+<td>D-3</td>
+<td>The merged subscriber: one row per key, DataBP's values, Salesforce's id and name, months reported, source-row counts, created and name flags</td>
+</tr>
+<tr>
+<td>D-4</td>
+<td>The merged product the same way, with Product2's id and name</td>
+</tr>
+<tr>
+<td>D-5</td>
+<td>The transaction tables unchanged: their keys from their own carried codes, the same values</td>
+</tr>
+<tr>
+<td>D-6</td>
+<td>Three warnings: created rows, a system naming one key twice, names that differ</td>
+</tr>
+<tr>
+<td>D-7</td>
+<td>subscriber_dim and product_dim add the Salesforce name and the system flags; no existing column changes</td>
+</tr>
+<tr>
+<td>D-8</td>
+<td>The source data as it is; the unit tests carry the created, double and differing rows</td>
+</tr>
+<tr>
+<td>D-9</td>
+<td>Promotion by a reviewed pull request, clones before the Production job, the job by hand; $1,410 unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>Code in this guide is an illustrative pattern: more than pseudocode, less than shipping code. Do not copy it into the repo; implement it against the branch. Development is done when the output is shown correct against real data, per K#12 I#26.</p>
+<h3>Pattern declaration</h3>
+<ul>
+<li>Patterns instantiated: The steps of the reference architecture's resolution view (models/integration/skool/skool_person_resolution.sql at d514d7c, DAMA-33 D-7): source rows, match to the anchor, counts, a multiple-match detector; written as CTEs inside the merged models</li>
+<li>Patterns introduced: None</li>
+</ul>
+<h2>2. Scope</h2>
+<h3>Deliverables</h3>
+<ol>
+<li>models/silver/subscriber.sql: the resolution CTEs and the merged subscriber (D-1, D-3).</li>
+<li>models/silver/product.sql: the same for the product (D-2, D-4).</li>
+<li>models/marts/subscriber_dim.sql and product_dim.sql: the Salesforce name and the system flags (D-7).</li>
+<li>models/silver/_silver_unit_tests.yml: four unit tests added, two kept with the new inputs (test plan LA-1 to LA-6).</li>
+<li>tests/warn_resolution_created.sql, warn_resolution_multiple_source_rows.sql, warn_resolution_names_differ.sql (D-6).</li>
+<li>tests/assert_silver_counts_match_staging.sql changed and tests/assert_resolution_source_rows_reconcile.sql added (test plan layer 6).</li>
+<li>The column descriptions in models/silver/_silver.yml, models/marts/subscriber_dim.yml and product_dim.yml for the new columns.</li>
+</ol>
+<h3>Finance workbook delivery</h3>
+<p>For finance reporting branches, name the repository generation script, shared mart-level report query and parameters, reproducible generation/refresh steps, workbook metadata and sheets, and preservation of consumer observations under K#12 I#27. Otherwise state NA with a reason.</p>
+<p>NA: not a finance reporting branch.</p>
+<h3>What stays the same</h3>
+<p>Every key value in silver and gold; every column the dims had; the transaction tables, which keep their keys from 2290; the Semantic Layer, its entities and its dimensions; the answer key; the site and Morgan.</p>
+<h3>Intentionally not done</h3>
+<p>History, in the reference architecture's storage layer (design DD-3); the UDM's integration of the transaction tables (DD-2); fuzzy matching (DD-1); a qa branch on databp-dbt.</p>
+<h3>Identity recipes</h3>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Natural code</th>
+<th>Surrogate-key composition</th>
+<th>Minting location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Subscriber</td>
+<td>DATABP|CUSTOMER|tenant|customer, the code every source row carries</td>
+<td>generate_surrogate_key over the code, matched or created</td>
+<td>silver subscriber, in its last CTE</td>
+</tr>
+<tr>
+<td>Product</td>
+<td>DATABP|PRODUCT|tenant|product code</td>
+<td>The same</td>
+<td>silver product, in its last CTE</td>
+</tr>
+<tr>
+<td>Client, on both</td>
+<td>DATABP|CLIENT|tenant</td>
+<td>The same</td>
+<td>Both, unchanged</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Grounded in code and complete consumer set</h2>
+<p>Every edit below names a file and object read from the stated branch.</p>
+<table>
+<thead>
+<tr>
+<th>Touched object</th>
+<th>Exact file</th>
+<th>Consumers found</th>
+<th>Verification command and clock</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>silver subscriber</td>
+<td>models/silver/subscriber.sql</td>
+<td>subscriber_dim; the relationships tests of license_line, entitlement, usage_report and invoice_item</td>
+<td>grep for ref('subscriber') on 3a04599, 2026-11-23 05:54 UTC</td>
+</tr>
+<tr>
+<td>silver product</td>
+<td>models/silver/product.sql</td>
+<td>product_dim; the same four relationships tests</td>
+<td>grep for ref('product'), the same clock</td>
+</tr>
+<tr>
+<td>The staging inputs</td>
+<td>stg_databp__customer, stg_databp__sfdc_account, stg_databp__usage_usage_declaration, stg_databp__product, stg_databp__sfdc_product2</td>
+<td>Their codes from 2290: subscriber_code, product_key_code, client_code</td>
+<td>Read in 3a04599, the same clock</td>
+</tr>
+<tr>
+<td>The count test</td>
+<td>tests/assert_silver_counts_match_staging.sql</td>
+<td>dbt build</td>
+<td>Read in 3a04599, the same clock</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Baseline</h2>
+<table>
+<thead>
+<tr>
+<th>Baseline ID</th>
+<th>Behavior or value</th>
+<th>Capture command or query</th>
+<th>Captured result and clock</th>
+<th>Reconciliation condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B-1</td>
+<td>silver subscriber and product, the columns they have today</td>
+<td>hash_agg over subscriber_hk, client_hk, subscriber_id, subscriber_name, updated_at; and over product's seven columns, in DATABP_LAB.DATABP_SILVER</td>
+<td>5,000 rows, -[id]; 2 rows, -[id]; 2026-11-23 05:54 UTC</td>
+<td>Development's merged tables equal on those columns</td>
+</tr>
+<tr>
+<td>B-2</td>
+<td>subscriber_dim and product_dim, their columns today</td>
+<td>The same hashes over DATABP_LAB.DATABP_MARTS</td>
+<td>5,000 rows, -[id]; 2 rows, -[id]; the same clock</td>
+<td>Development's dims equal on those columns</td>
+</tr>
+<tr>
+<td>B-3</td>
+<td>The other 6 mart tables, whole rows</td>
+<td>hash_agg(*)</td>
+<td>Equal to the clones of 2290, read 2026-11-23 01:44 UTC: client_dim [id], entitlement_month_metric [id], invoice_item_metric -[id], license_line_month_metric [id], subscriber_product_month_metric -[id], usage_report_metric [id]</td>
+<td>Equal in Development and after the Production run</td>
+</tr>
+<tr>
+<td>B-4</td>
+<td>October's unbilled revenue</td>
+<td>The Semantic Layer and the production Morgan</td>
+<td>$1,410, 2026-11-23 01:46 UTC</td>
+<td>Equal</td>
+</tr>
+</tbody>
+</table>
+<h2>5. Ordered implementation steps</h2>
+<p>Step 1. The branch, from databp-dbt main at 3a04599, named as Manager's task 2289 names it (Standard: Branching under squash merges, knowledge 12 item 47, 3.2a). Then the unit tests of section 6, written before the models change, and build row 1: four fail for the missing columns.</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>main
+git<span class="w"> </span>switch<span class="w"> </span>--no-track<span class="w"> </span>-c<span class="w"> </span>rayserrano2735-claude-ws/we-2289-silver-merged-entities<span class="w"> </span>origin/main
+</code></pre></div>
+<p>Step 2. models/silver/subscriber.sql rewritten as the resolution's CTEs and the merge (D-1, D-3, G-1 to G-4), the steps of the reference's skool_person_resolution: source rows, match on the code, counts per system, one row per code.</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Silver subscriber: DataBP's customer merged with Salesforce's and the usage system's (design 856, D-1, D-3).</span>
+<span class="c1">-- The resolution's steps, after the reference architecture's resolution view: source rows, match, counts, one row per code.</span>
+<span class="k">with</span><span class="w"> </span><span class="n">databp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__customer'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+<span class="p">),</span>
+
+<span class="n">salesforce</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__sfdc_account'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+<span class="p">),</span>
+
+<span class="n">usage_reported</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">client_code</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">client_code</span><span class="p">,</span>
+<span class="w">           </span><span class="k">min</span><span class="p">(</span><span class="n">usage_month</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">first_month_reported</span><span class="p">,</span><span class="w"> </span><span class="k">max</span><span class="p">(</span><span class="n">usage_month</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_month_reported</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__usage_usage_declaration'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">subscriber_code</span>
+<span class="p">),</span>
+
+<span class="n">source_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">'DATABP'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">source_system</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span><span class="w"> </span><span class="n">client_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">databp</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">'SALESFORCE'</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span><span class="w"> </span><span class="n">client_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">salesforce</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">'USAGE'</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span><span class="w"> </span><span class="n">client_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">usage_reported</span>
+<span class="p">),</span>
+
+<span class="n">matched</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">subscriber_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">any_value</span><span class="p">(</span><span class="n">client_code</span><span class="p">)</span><span class="w">                           </span><span class="k">as</span><span class="w"> </span><span class="n">client_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">count_if</span><span class="p">(</span><span class="n">source_system</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DATABP'</span><span class="p">)</span><span class="w">             </span><span class="k">as</span><span class="w"> </span><span class="n">databp_source_rows</span><span class="p">,</span>
+<span class="w">        </span><span class="n">count_if</span><span class="p">(</span><span class="n">source_system</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'SALESFORCE'</span><span class="p">)</span><span class="w">         </span><span class="k">as</span><span class="w"> </span><span class="n">salesforce_source_rows</span><span class="p">,</span>
+<span class="w">        </span><span class="n">count_if</span><span class="p">(</span><span class="n">source_system</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'USAGE'</span><span class="p">)</span><span class="w">              </span><span class="k">as</span><span class="w"> </span><span class="n">usage_source_rows</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="n">source_rows</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">subscriber_code</span>
+<span class="p">),</span>
+
+<span class="n">salesforce_first</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">salesforce</span>
+<span class="w">    </span><span class="n">qualify</span><span class="w"> </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">account_id</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"matched.subscriber_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w">                       </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">matched</span><span class="p">.</span><span class="n">client_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">         </span><span class="k">then</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"matched.client_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">end</span><span class="w">             </span><span class="k">as</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">databp</span><span class="p">.</span><span class="n">customer_id</span><span class="w">                                                                         </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">databp</span><span class="p">.</span><span class="n">customer_name</span><span class="w">                                                                       </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">databp</span><span class="p">.</span><span class="n">email</span><span class="p">,</span>
+<span class="w">    </span><span class="n">salesforce_first</span><span class="p">.</span><span class="n">account_id</span><span class="w">                                                                </span><span class="k">as</span><span class="w"> </span><span class="n">salesforce_customer_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">salesforce_first</span><span class="p">.</span><span class="n">account_name</span><span class="w">                                                              </span><span class="k">as</span><span class="w"> </span><span class="n">salesforce_customer_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">usage_reported</span><span class="p">.</span><span class="n">first_month_reported</span><span class="p">,</span>
+<span class="w">    </span><span class="n">usage_reported</span><span class="p">.</span><span class="n">last_month_reported</span><span class="p">,</span>
+<span class="w">    </span><span class="n">matched</span><span class="p">.</span><span class="n">databp_source_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">matched</span><span class="p">.</span><span class="n">salesforce_source_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">matched</span><span class="p">.</span><span class="n">usage_source_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">matched</span><span class="p">.</span><span class="n">databp_source_rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w">                                                                  </span><span class="k">as</span><span class="w"> </span><span class="n">is_created</span><span class="p">,</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">salesforce_first</span><span class="p">.</span><span class="n">account_name</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">databp</span><span class="p">.</span><span class="n">customer_name</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w">                     </span><span class="k">as</span><span class="w"> </span><span class="n">name_differs</span><span class="p">,</span>
+<span class="w">    </span><span class="n">databp</span><span class="p">.</span><span class="n">updated_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">databp</span><span class="p">.</span><span class="n">subscriber_hdiff</span><span class="p">,</span>
+<span class="w">    </span><span class="n">databp</span><span class="p">.</span><span class="n">landed_at</span>
+<span class="k">from</span><span class="w"> </span><span class="n">matched</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">databp</span><span class="w">           </span><span class="k">on</span><span class="w"> </span><span class="n">databp</span><span class="p">.</span><span class="n">subscriber_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matched</span><span class="p">.</span><span class="n">subscriber_code</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">salesforce_first</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">salesforce_first</span><span class="p">.</span><span class="n">subscriber_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matched</span><span class="p">.</span><span class="n">subscriber_code</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">usage_reported</span><span class="w">   </span><span class="k">on</span><span class="w"> </span><span class="n">usage_reported</span><span class="p">.</span><span class="n">subscriber_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matched</span><span class="p">.</span><span class="n">subscriber_code</span>
+</code></pre></div>
+<p>Build row 2 after step 3: the subscriber's unit tests pass. Customer 23's key is unchanged: generate_surrogate_key of DATABP|CUSTOMER|3|23, as in 2290.</p>
+<p>Step 3. models/silver/product.sql the same way (D-2, D-4): DataBP's product, Product2 and the usage report's distinct product_key_code as the source rows; Product2's lowest id and its name on the row; DataBP's product_id, product_code, product_name, unit_price, updated_at, product_hdiff and landed_at; databp_source_rows, salesforce_source_rows, usage_source_rows, is_created and name_differs.</p>
+<p>Step 4. The dims (D-7, G-5), each keeping its columns and adding three:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Gold subscriber_dim (D-21): the subscribers, read from silver subscriber (D-18); design 856 D-7 adds where each appears</span>
+<span class="k">select</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_id</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_name</span><span class="p">,</span><span class="w"> </span><span class="n">updated_at</span><span class="p">,</span>
+<span class="w">       </span><span class="n">salesforce_customer_name</span><span class="p">,</span>
+<span class="w">       </span><span class="n">salesforce_source_rows</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">in_salesforce</span><span class="p">,</span>
+<span class="w">       </span><span class="n">usage_source_rows</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">in_usage</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'subscriber'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<p>product_dim adds salesforce_product_name, in_salesforce and in_usage the same way.</p>
+<p>Step 5. The three warnings (D-6), each over both entities, severity warn:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- tests/warn_resolution_created.sql — design 856 D-6: source rows that matched no DataBP row</span>
+<span class="err">{{</span><span class="w"> </span><span class="n">config</span><span class="p">(</span><span class="n">severity</span><span class="o">=</span><span class="s1">'warn'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'subscriber'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entity</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">merged_key</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'subscriber'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">is_created</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'product'</span><span class="p">,</span><span class="w"> </span><span class="n">product_hk</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'product'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">is_created</span>
+</code></pre></div>
+<p>warn_resolution_multiple_source_rows returns the keys where salesforce_source_rows or usage_source_rows is above 1; warn_resolution_names_differ the keys where name_differs.</p>
+<p>Step 6. The reconciliations (test plan layer 6, G-6). In assert_silver_counts_match_staging, the subscriber and product rows change to compare with the distinct codes across their sources:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">'subscriber'</span><span class="p">,</span>
+<span class="w">        </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'subscriber'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">),</span>
+<span class="w">        </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="k">select</span><span class="w"> </span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__customer'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+<span class="w">            </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__sfdc_account'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+<span class="w">            </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__usage_usage_declaration'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span><span class="p">))</span>
+</code></pre></div>
+<p>tests/assert_resolution_source_rows_reconcile.sql returns each system whose distinct identifiers in staging differ from the sum of its source-row counts in silver, for both entities. Then build row 3: the whole project.</p>
+<p>Step 7. The pull request from Template: Pull Request (knowledge 12 item 334) for Ray's review; after he merges, the clones, the Production job and build rows 5 and 6.</p>
+<p>Each step states the exact file, object, pattern citation, design or profiling citation, literal first-pass code, expected movement, and any required target rebuild.</p>
+<h2>6. Tests</h2>
+<h3>Existing-test dispositions</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Layer</th>
+<th>Disposition: keep, rewrite, or delete</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ut_subscriber_deleted_excluded</td>
+<td>3</td>
+<td>Rewrite</td>
+<td>The model now reads Salesforce's customer and the usage report: both given, empty</td>
+</tr>
+<tr>
+<td>ut_product_hdiff</td>
+<td>3</td>
+<td>Rewrite</td>
+<td>The model now reads Product2 and the usage report: both given, empty</td>
+</tr>
+<tr>
+<td>The other four silver unit tests and the 9 gold ones</td>
+<td>3</td>
+<td>Keep</td>
+<td>Their models are unchanged</td>
+</tr>
+<tr>
+<td>assert_silver_counts_match_staging</td>
+<td>6</td>
+<td>Rewrite</td>
+<td>subscriber and product now hold created rows: compared with the distinct codes across their staging sources</td>
+</tr>
+<tr>
+<td>The relationships tests to subscriber and product</td>
+<td>1</td>
+<td>Keep</td>
+<td>Every transaction table's key still names a merged row</td>
+</tr>
+</tbody>
+</table>
+<h3>New and changed tests</h3>
+<p>ut_subscriber_resolution, the form of all four: staging given in SQL form, as in 2290, with every column the model reads; the expected keys are md5 of each code, computed 2026-11-23: DATABP|CUSTOMER|3|1 fd6cc58339f9e34f21b16aa3b55ca9ae, |2 27155790475fbda818d901d76ef743e4, |3 a9ec6887c9f37302befcbd15c91ee673, |8 665b7c91ad167a74a5a2a8da3be19d70, |9 7571b89b08952527e6bf8b3f4c6ad1af.</p>
+<table>
+<thead>
+<tr>
+<th>Given</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DataBP customers 1, 2 and 3 of tenant 3</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Salesforce A1 naming customer 1; A3 and A4 both naming customer 2; A2 naming customer 9, which DataBP lacks</td>
+<td>2, 3, 6, 7</td>
+</tr>
+<tr>
+<td>Usage reports for customer 1, October and November; one for customer 8, which DataBP lacks</td>
+<td>4, 5</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>DataBP, Salesforce, usage source rows</th>
+<th>Created</th>
+<th>Salesforce id</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fd6cc58339f9e34f21b16aa3b55ca9ae</td>
+<td>1, 1, 1</td>
+<td>No</td>
+<td>A1</td>
+</tr>
+<tr>
+<td>27155790475fbda818d901d76ef743e4</td>
+<td>1, 2, 0</td>
+<td>No</td>
+<td>A3, the lowest</td>
+</tr>
+<tr>
+<td>a9ec6887c9f37302befcbd15c91ee673</td>
+<td>1, 0, 0</td>
+<td>No</td>
+<td>None</td>
+</tr>
+<tr>
+<td>7571b89b08952527e6bf8b3f4c6ad1af</td>
+<td>0, 1, 0</td>
+<td>Yes</td>
+<td>A2</td>
+</tr>
+<tr>
+<td>665b7c91ad167a74a5a2a8da3be19d70</td>
+<td>0, 0, 1</td>
+<td>Yes</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ut_subscriber_resolution</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subscriber</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_databp__customer')</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select ... 'DATABP|CUSTOMER|3|1' as subscriber_code, 'DATABP|CLIENT|3' as client_code ...   -- customers 1, 2, 3</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_databp__sfdc_account')</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select ... 'A1' as account_id, 'DATABP|CUSTOMER|3|1' as subscriber_code ...                 -- A1 to A4</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_databp__usage_usage_declaration')</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select ... 'DATABP|CUSTOMER|3|1' as subscriber_code, cast('2026-10-01' as date) as usage_month ...</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">fd6cc58339f9e34f21b16aa3b55ca9ae</span><span class="p p-Indicator">,</span><span class="nt"> databp_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> usage_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> is_created</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">A1</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">27155790475fbda818d901d76ef743e4</span><span class="p p-Indicator">,</span><span class="nt"> databp_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="nt"> usage_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> is_created</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">A3</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">a9ec6887c9f37302befcbd15c91ee673</span><span class="p p-Indicator">,</span><span class="nt"> databp_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> usage_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> is_created</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">7571b89b08952527e6bf8b3f4c6ad1af</span><span class="p p-Indicator">,</span><span class="nt"> databp_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> usage_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> is_created</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">A2</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">subscriber_hk</span><span class="p">:</span><span class="w"> </span><span class="nv">665b7c91ad167a74a5a2a8da3be19d70</span><span class="p p-Indicator">,</span><span class="nt"> databp_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> usage_source_rows</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="nt"> is_created</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">,</span><span class="nt"> salesforce_customer_id</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>ut_subscriber_name gives DataBP's Alpha, Beta and Gamma, and Salesforce's Alpha and Beta Inc for the first two: name_differs false, true and false, Salesforce's name kept. ut_product_resolution and ut_product_name do the same for products: DataBP's OPTIONS and EQUITIES; Product2 P1 naming OPTIONS, P3 and P4 naming EQUITIES, P2 naming FX, which DataBP lacks; usage for OPTIONS and for BONDS, which DataBP lacks; keys md5 of DATABP|PRODUCT|3|OPTIONS bf9dbc35f6ebdc9e687e4203245897a4, |EQUITIES 14651d4a676343a5864e8cf8daed8b47, |FX 9f4d7da0e8f55bc5105681838d7c3d59, |BONDS 33b7b7d5e77e41c6307517c8130ca4f2. The two kept tests give the Salesforce and usage inputs as SQL returning no row.</p>
+<h2>7. Build sequence and verification</h2>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Literal command</th>
+<th>Expected result</th>
+<th>Baseline reconciliation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>dbt test --select test_type:unit, silver, after step 4</td>
+<td>4 failures, for the missing columns; the 2 kept pass</td>
+<td>None</td>
+</tr>
+<tr>
+<td>2</td>
+<td>The same, after steps 1 and 2</td>
+<td>6 passes</td>
+<td>None</td>
+</tr>
+<tr>
+<td>3</td>
+<td>dbt build in Development, the whole project, after step 6</td>
+<td>Every model and test passes; the three warnings at 0</td>
+<td>B-1 to B-3</td>
+</tr>
+<tr>
+<td>4</td>
+<td>The comparison queries of section 7, Development against Production</td>
+<td>No difference</td>
+<td>B-1 to B-3</td>
+</tr>
+<tr>
+<td>5</td>
+<td>The pull request into main; after Ray merges: the clones, the Production job by hand</td>
+<td>Success</td>
+<td>B-1 to B-3</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Production against the clones; the Semantic Layer and the production Morgan</td>
+<td>No difference; $1,410</td>
+<td>B-3, B-4</td>
+</tr>
+</tbody>
+</table>
+<h3>Verification queries</h3>
+<p>The comparison before the merge, Development against Production, on the columns each table had before (B-1, B-2), and whole rows for the other six marts (B-3):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="s1">'subscriber_dim'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span><span class="p">,</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">hash_agg</span><span class="p">(</span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_id</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_name</span><span class="p">,</span><span class="w"> </span><span class="n">updated_at</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_MARTS</span><span class="p">.</span><span class="n">SUBSCRIBER_DIM</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_hash</span><span class="p">,</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">hash_agg</span><span class="p">(</span><span class="n">subscriber_hk</span><span class="p">,</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_id</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_name</span><span class="p">,</span><span class="w"> </span><span class="n">updated_at</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DATABP_MARTS</span><span class="p">.</span><span class="n">SUBSCRIBER_DIM</span><span class="p">)</span><span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">prod_hash</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">'usage_report_metric'</span><span class="p">,</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">hash_agg</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DBT_CLAUDE_MARTS</span><span class="p">.</span><span class="n">USAGE_REPORT_METRIC</span><span class="p">),</span>
+<span class="w">       </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">hash_agg</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">DATABP_LAB</span><span class="p">.</span><span class="n">DATABP_MARTS</span><span class="p">.</span><span class="n">USAGE_REPORT_METRIC</span><span class="p">)</span>
+</code></pre></div>
+<p>with one row for each of the 8 marts and for silver subscriber and product; every pair equal. After the Production run the same query reads the clones, DATABP_MARTS_BEFORE_2289 and DATABP_SILVER_BEFORE_2289, in place of Development. Customer 23 in DBT_CLAUDE_SILVER.SUBSCRIBER: key 6e7a1ee374a6187c721a8a2ea0017019, Salesforce id ACC6B81D61FB95A66D, one source row from each system, not created.</p>
+<h2>8. Decisions recorded in this guide</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Weed-level choice</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G-1</td>
+<td>A source row with a null code names nothing</td>
+<td>A row naming no DataBP identifier has nothing to match on</td>
+</tr>
+<tr>
+<td>G-2</td>
+<td>When Salesforce names one key twice, the row carries the lowest id and name; the count shows the second</td>
+<td>One row per key; the warning surfaces it</td>
+</tr>
+<tr>
+<td>G-3</td>
+<td>A created row's DataBP columns, id, name, email, hdiff and update time, are null</td>
+<td>DataBP has no row for it</td>
+</tr>
+<tr>
+<td>G-4</td>
+<td>client_hk comes from the source rows' client_code</td>
+<td>Every source row carries the tenant, so a created row has its client too</td>
+</tr>
+<tr>
+<td>G-5</td>
+<td>The dims' flags are derived: in Salesforce when Salesforce's count is above 0, in usage likewise</td>
+<td>The counts stay in silver; gold shows yes or no</td>
+</tr>
+<tr>
+<td>G-6</td>
+<td>The count test compares each merged table with the distinct non-null codes across its staging sources</td>
+<td>A source against a target, never an expected count</td>
+</tr>
+</tbody>
+</table>
+<h2>9. Rollback</h2>
+<p>Revert the merge commit on databp-dbt main and run the Production job by hand, or swap the clones back; the transaction tables and gold's metrics read the same keys either way.</p>
+<h2>10. What this guide does not cover</h2>
+<table>
+<thead>
+<tr>
+<th>Exclusion</th>
+<th>Canonical home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>History of the merged values</td>
+<td>Design 856, DD-3: the storage layer</td>
+</tr>
+<tr>
+<td>Bin's page</td>
+<td>Task 798</td>
+</tr>
+<tr>
+<td>A qa branch on databp-dbt</td>
+<td>Ray, 2026-11-21 03:56 ET: separately</td>
+</tr>
+</tbody>
+</table>
+<h2>Compliance record</h2>
+<p>Built by the author last, before the document is presented for agreement (<em>Standard: Branch Delivery Documents</em>, K#12 I#27, "Compliance record before agreement"): every section and field of this template shown present and filled, by <code>infra/workstation/pilot/compliance_sections.py</code>; every rule of that standard and of the standards it cites, each with the passage that meets it or marked NOT MET; and the decisions the document carries. While this section reads NOT BUILT, the document is not presented for agreement.</p>
+<p>Built 2026-11-23 05:57 UTC on version 5. Template sections, by infra/workstation/pilot/compliance_sections.py against Template: Branch Delivery — Implementation Guide (knowledge 12 item 176): all present and filled; 0 placeholders left; 0 sections missing.</p>
+<table>
+<thead>
+<tr>
+<th>Requirement (Standard: Branch Delivery Documents, knowledge 12 item 27, the guide's required sections)</th>
+<th>Passage that meets it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The official header, with prerequisites</td>
+<td>The field table: v1 DRAFT, written 2026-11-23 05:55Z; design 856 and test plan 857 approved</td>
+</tr>
+<tr>
+<td>Grounding recap, one row per design decision, adding none</td>
+<td>Section 1: D-1 to D-9</td>
+</tr>
+<tr>
+<td>Patterns instantiated and introduced</td>
+<td>Section 1: the reference's resolution steps, as CTEs; none introduced</td>
+</tr>
+<tr>
+<td>Scope: deliverables, what stays, what is not done, identity recipes</td>
+<td>Section 2: 7 deliverables; every key and every existing column unchanged; DD-1 to DD-3 left out; 3 recipes</td>
+</tr>
+<tr>
+<td>Grounded in code, the complete set of consumers</td>
+<td>Section 3: four objects read in 3a04599 at 05:54 UTC</td>
+</tr>
+<tr>
+<td>Baseline before change</td>
+<td>Section 4: B-1 to B-4, read in Production</td>
+</tr>
+<tr>
+<td>Ordered steps, each with file, pattern, citation, code and movement</td>
+<td>Section 5: steps 1 to 7, with the subscriber model in full</td>
+</tr>
+<tr>
+<td>Existing tests disposed; new tests written before the code</td>
+<td>Section 6: 5 rows; ut_subscriber_resolution in full with its expected keys</td>
+</tr>
+<tr>
+<td>Build sequence with literal commands and baseline reconciliation</td>
+<td>Section 7: 6 rows; the comparison query</td>
+</tr>
+<tr>
+<td>Decisions of the guide's own level</td>
+<td>Section 8: G-1 to G-6</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td>Section 9: the revert commit, or the clones swapped back</td>
+</tr>
+<tr>
+<td>Exclusions with their homes</td>
+<td>Section 10: three rows</td>
+</tr>
+</tbody>
+</table>
+<p>Decisions carried: D-1 to D-9 from the design, each in section 1 and in a step; G-1 to G-6, this guide's.</p>
+<p>Verdict: compliant.</p>
+</main>
+
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>

@@ -101,7 +101,7 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 <!-- brand-header:end -->
 <section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / Implementation guide, 1 of 4</div><h1>DIG-655 Implementation Guide, Increment 1 of 4: staging and silver</h1><p class="lead">Staging and silver, step by step.</p></div></section>
 <main class="doc">
-<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 815, version 7, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 815, version 7: DIG-655 Implementation Guide, Increment 1 of 4: staging and silver --><h3>Implementation Guide (Increment 1 of 4)</h3>
+<p class="note">The reconciliation (DIG-655). Built from Pilot knowledge 111 item 815, version 7, amended 2026-11-23, as kept while building; private details such as addresses, identifiers and paths are masked here.</p><!-- Pilot knowledge 111 item 815, version 7, amended 2026-11-23: DIG-655 Implementation Guide, Increment 1 of 4: staging and silver --><h3>Implementation Guide (Increment 1 of 4)</h3>
 <p><em>Branch Delivery Document</em> — <strong>Level 4 — Implementation Guide</strong></p>
 <table>
 <thead>
@@ -153,6 +153,9 @@ svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p><strong>Amended 2026-11-23.</strong> Steps 1, 3 and 4 were later changed. Staging keys to reference (items 848, 854 and 855) moved the keys into staging, after the reference architecture's Source Staging; replaced the business_key macro with that architecture's get_business_key_source; made staging ephemeral; and made silver's keys with generate_surrogate_key over each code, to the same values. Silver merged entities (items 856, 857 and 858) merged the subscriber and the product across the three systems. This guide is kept as it was agreed and built.</p>
+</blockquote>
 <hr />
 <h2>1. Purpose and grounding recap</h2>
 <p>This guide implements Entitlement and billing reconciliation: design document, knowledge 111 item 806 v38 and does not relitigate its decisions.</p>

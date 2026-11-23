@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the reconciliation was implemented in dbt · DataBP POC</title>
+<style>
+body{margin:0}
+.doc{max-width:960px;margin:0 auto;padding:32px 24px 56px;line-height:1.7;font-size:16px;overflow-wrap:break-word}
+.doc h2{margin-top:36px} .doc h3{margin-top:26px}
+.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 20px;display:block;overflow-x:auto}
+.doc th,.doc td{border-bottom:1px solid var(--brand-line);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:normal;min-width:9ch}
+.doc td code,.doc th code{overflow-wrap:anywhere}
+.doc code{font-size:13px;background:#f3f6fa;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.doc pre{background:#f3f6fa;border:1px solid var(--brand-line);border-radius:8px;padding:12px;overflow-x:auto} .doc pre code{background:none;padding:0}
+.note{background:var(--brand-sky);border-radius:12px;padding:12px 16px;font-size:14px;margin:0 0 24px}
+</style>
+<!-- brand-style:start -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+<style>
+/* DataBP's colors and type, read 2026-11-19 from databp.com's own stylesheet (its :root variables), and its design moves (Pilot knowledge 111 item 811); no DataBP logo or wordmark. */
+:root{--brand-navy:#071139;--brand-ink:#0f3952;--brand-teal:#033953;--brand-blue:#486a99;--brand-sky:#eaf6ff;--brand-yellow:#ffbe0c;--brand-text:#3d4a57;--brand-muted:#6b7785;--brand-line:#dbe4ee;--brand-gray:#f4f6f8;--brand-shadow:0 6px 24px rgba(15,57,82,.08)}
+body{font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif !important;color:var(--brand-text);background:#fff !important}
+h1,h2,h3{color:var(--brand-ink);font-weight:600}
+a{color:var(--brand-blue)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--brand-yellow);outline-offset:2px}
+.brand-bar{background:var(--brand-navy);color:#fff;font-size:14px;position:sticky;top:0;z-index:10}
+.brand-bar .in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand-bar a{color:#fff;text-decoration:none;font-weight:600}
+.brand-home{font-size:17px;letter-spacing:.2px}
+.brand-home span{color:var(--brand-yellow)}
+.brand-nav{display:flex;gap:4px;flex-wrap:wrap}
+.brand-nav a{padding:6px 14px;border-radius:999px;font-weight:400;color:#d6deea}
+.brand-nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.brand-nav a[aria-current="page"]{background:#fff;color:var(--brand-teal);font-weight:600}
+.brand-foot{background:var(--brand-navy);color:#b7c3d6;font-size:13px;margin-top:0}
+.brand-foot .in{max-width:1100px;margin:0 auto;padding:22px 24px;line-height:1.6}
+.brand-foot p{margin:0}
+.brand-btn{display:inline-block;background:var(--brand-yellow);color:var(--brand-teal) !important;font-weight:600;text-decoration:none;border-radius:10px;padding:12px 22px}
+.brand-btn:hover{background:#ffcb3d}
+.brand-btn.ghost{background:transparent;color:#fff !important;border:1px solid rgba(255,255,255,.4)}
+.brand-btn.ghost:hover{border-color:#fff}
+.brand-label{color:var(--brand-yellow);text-transform:uppercase;font-size:13px;letter-spacing:1.5px;font-weight:600;margin:0 0 10px}
+.brand-card{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+svg text{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@media (max-width:640px){.brand-nav a{padding:5px 10px;font-size:13px}}
+.page-band{background:var(--brand-navy);color:#d6deea;padding:44px 24px 40px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.page-band .in{max-width:960px;margin:0 auto}
+.page-band .crumbs{font-size:13px;color:#aebbd0;margin:0 0 12px} .page-band .crumbs a{color:#aebbd0}
+.page-band h1{color:#fff;font-size:clamp(28px,3.6vw,40px);line-height:1.15;margin:0 0 10px}
+.page-band .lead{color:var(--brand-yellow);font-weight:600;font-size:clamp(15px,1.8vw,18px);line-height:1.5;margin:0;max-width:62ch}
+.page-band .band-title{display:flex;align-items:center;gap:18px;margin:0 0 10px}
+.page-band .band-title h1{margin:0}
+.page-band .band-face{flex:none;border-radius:50%;background:var(--brand-sky);box-shadow:0 0 0 3px var(--brand-yellow)}
+.morgan .mg-eyes,.face .mg-eyes{animation:mg-blink 4.2s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes mg-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.08)}}
+.morgan .mg-grin,.face .mg-grin{opacity:0;transition:opacity .3s}
+.morgan.smile .mg-grin,.face.smile .mg-grin{opacity:1}
+.morgan.smile .mg-mouth,.face.smile .mg-mouth{opacity:0}
+.morgan.bob,.face.bob{animation:mg-bob 1.4s ease-in-out infinite}
+@keyframes mg-bob{50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.morgan .mg-eyes,.face .mg-eyes,.morgan.bob,.face.bob{animation:none}}
+.card-face{display:block;margin:0 0 10px;border-radius:50%;box-shadow:0 0 0 2px var(--brand-yellow)}
+.close-face{display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 0 3px var(--brand-yellow)}
+/* Interior pages wear the home page's design moves (Ray, 2026-11-20 14:45 ET): alternating full-width bands, pill tabs, cards, yellow buttons, a label over the closing navy band. The branch documents keep their working-file look. */
+.sect{padding:48px 24px}.sect .in{max-width:960px;margin:0 auto}
+.sect.sky{background:var(--brand-sky)}
+.sect.dots,.sect.hand{background-color:var(--brand-gray);background-image:radial-gradient(rgba(15,57,82,.12) 1px,transparent 1px);background-size:18px 18px}
+.sect h2{font-size:clamp(22px,2.6vw,28px);margin:0 0 12px}
+.sect table{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.sect.pillrow{padding:18px 24px;background:#fff;border-bottom:1px solid var(--brand-line)}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.pills a{display:inline-block;border-radius:999px;padding:6px 14px;background:#fff;border:1px solid var(--brand-line);color:var(--brand-ink);text-decoration:none;font-size:14px}
+.pills a:hover,.pills a:focus-visible{background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.doc.dressed{max-width:none;padding:0}
+.sect.hand{padding:16px 0 32px}
+.hand .diagram,.hand table,.hand .az{background:#fff;border:1px solid var(--brand-line);border-radius:14px;box-shadow:var(--brand-shadow)}
+.hand table{display:table}
+.hand .bar button,.dd button{border-radius:999px;padding:6px 16px}
+.hand .bar button:hover:not(:disabled),.dd button:hover:not(:disabled){background:var(--brand-teal);border-color:var(--brand-teal);color:#fff}
+.endband{background:var(--brand-navy);color:#d6deea;text-align:center;padding:56px 24px;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px}
+.endband .in{max-width:720px;margin:0 auto}
+.endband h2{color:#fff;font-size:clamp(22px,2.6vw,30px);margin:0 0 8px}
+.endband p{margin:0 auto 22px;line-height:1.7}
+.endband .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media (max-width:520px){.sect{padding:36px 18px}}
+.sect table{display:table;width:100%}
+@media (max-width:700px){.sect table{display:block}}
+</style>
+<!-- brand-style:end -->
+</head>
+<body>
+<!-- brand-header:start -->
+<header class="brand-bar"><div class="in">
+  <a class="brand-home" href="./">DataBP <span>POC</span></a>
+  <nav class="brand-nav" aria-label="Sections">
+    <a href="business.html">The Business</a><a href="openflow.html">The Platform</a><a href="ask.html">Ask Morgan</a><a href="build-log.html">Build Log</a><a href="documents.html">Documents</a><a href="next-steps.html">Next Steps</a>
+  </nav>
+</div></header>
+<script>(function(){var p=location.pathname.split('/').pop()||'index.html';if(p.indexOf('doc-')===0)p='documents.html';document.querySelectorAll('.brand-nav a').forEach(function(a){var h=a.getAttribute('href');if((h==='./'&&p==='index.html')||h===p)a.setAttribute('aria-current','page');});})();</script>
+<!-- brand-header:end -->
+<section class="page-band"><div class="in"><div class="crumbs"><a href="./">DataBP POC</a> / <a href="documents.html">Documents</a> / How the reconciliation was implemented in dbt</div><h1>How the reconciliation was implemented in dbt</h1><p class="lead">One source table, the usage report, followed from landing to the figure the app shows.</p></div></section>
+<main class="doc dressed">
+<nav class="sect pillrow" aria-label="On this page"><div class="in"><ul class="pills"><li><a href="#1-landing-the-report-as-it-arrives">1. Landing: the report as it arrives</a></li><li><a href="#2-staging-the-same-rows-with-their-keys">2. Staging: the same rows, with their keys</a></li><li><a href="#3-silver-one-view-of-each-subscriber-then-the-report">3. Silver: one view of each subscriber, then the report</a></li><li><a href="#4-gold-the-report-beside-the-license-priced">4. Gold: the report beside the license, priced</a></li><li><a href="#5-the-semantic-layer-the-figure-the-app-shows">5. The Semantic Layer: the figure the app shows</a></li><li><a href="#how-the-whole-is-proven">How the whole is proven</a></li><li><a href="#what-the-tests-do-not-prove">What the tests do not prove</a></li><li><a href="#what-the-poc-leaves-out">What the POC leaves out</a></li></ul></div></nav><section class="sect"><div class="in"><!-- Pilot knowledge 111 item 859, version of 2026-11-23: How the reconciliation was implemented in dbt --><p>The reconciliation answers one question for a data provider: for each subscriber, product and month, do the license, the entitlement, the usage report and the invoice agree, and what does each disagreement cost? This page shows how it was built by following one source table, the usage report, from the moment it lands in Snowflake to the figure the app shows, with one subscriber's October report traced the whole way: Customer 23, product Options.</p>
+<p>The data comes from three source systems: DataBP, which issues every subscriber and product its identifier; Salesforce, which holds the licenses; and the usage-reporting system, where subscribers report the units they used. The project is a dbt project, Integrationals/databp-dbt, built on the medallion architecture and on our reference architecture's patterns for keys and data integration. dbt builds the warehouse in layers, each a folder of models, a model being one SQL file that dbt turns into a view or a table: staging, silver, gold, and on top of gold the Semantic Layer, where the metrics are defined. Each layer reads only the one below it.</p>
+<p>The code below is quoted from the project at commit 553f290; every row and figure was read from Production on 2026-11-23, after the Production job's run [id].</p>
+</div></section><section class="sect sky"><div class="in"><h2 id="1-landing-the-report-as-it-arrives">1. Landing: the report as it arrives</h2>
+<p>The usage-reporting system keeps a subscriber's monthly count of units used in a SQL Server table, USAGE_DECLARATION. Snowflake Openflow, the connector, copies it into Snowflake as DATABP_LAB.DATABP_USAGE_DBO.USAGE_DECLARATION and adds three columns of its own: when it inserted the row, when it last updated it, and whether the source deleted it.</p>
+<p>dbt does not change landed tables; it declares them as sources, so models can read them by name and dbt can test them. A not-null test on the report's id runs on every build (descriptions left out):</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">databp_usage</span>
+<span class="w">    </span><span class="nt">database</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DATABP_LAB</span>
+<span class="w">    </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DATABP_USAGE_DBO</span>
+<span class="w">    </span><span class="nt">tables</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">usage_declaration</span>
+<span class="w">        </span><span class="nt">identifier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">USAGE_DECLARATION</span>
+<span class="w">        </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">declaration_id</span>
+<span class="w">            </span><span class="nt">data_tests</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">not_null</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>Customer 23's October report, as landed:</p>
+<table>
+<thead>
+<tr>
+<th>tenant_id</th>
+<th>declaration_id</th>
+<th>customer_id</th>
+<th>product_code</th>
+<th>usage_month</th>
+<th>declared_units</th>
+<th>declared_at</th>
+<th>_SNOWFLAKE_DELETED</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>2</td>
+<td>23</td>
+<td>OPTIONS</td>
+<td>2026-10-01</td>
+<td>12</td>
+<td>2026-11-05</td>
+<td>false</td>
+</tr>
+</tbody>
+</table>
+</div></section><section class="sect "><div class="in"><h2 id="2-staging-the-same-rows-with-their-keys">2. Staging: the same rows, with their keys</h2>
+<p>A staging model reads one landed table, renames the connector's columns into the project's terms and turns its delete marker into a flag, is_deleted. Nothing is filtered or joined here, so staging always shows exactly what landed. It then creates the row's keys, so that every layer above uses the same ones:</p>
+<ul>
+<li>the <strong>code</strong>, the row's business key in its issuer's namespace: issuer, table and natural id joined by bars, such as USAGE|USAGE_DECLARATION|3|2;</li>
+<li>the <strong>hkey</strong>, the row's identity, a hash of its natural id;</li>
+<li>the <strong>hdiff</strong>, the row's change key, a hash of every attribute whose change matters, so a changed row can be found by comparing one value;</li>
+<li><strong>record_source</strong>, the issuer, and <strong>load_ts_utc</strong>, the run's start.</li>
+</ul>
+<p>A row that names another entity also carries that entity's code, in DataBP's namespace, because DataBP issues the identifiers: the usage report carries its data provider's code, DATABP|CLIENT|3, its subscriber's, DATABP|CUSTOMER|3|23, and its product's, DATABP|PRODUCT|3|OPTIONS.</p>
+<p>The hashes come from dbt_utils.generate_surrogate_key, the standard dbt package's macro; the codes from one macro of the project, get_business_key_source, so every code is built the same way. Staging models are ephemeral, set once for the whole folder in the project's configuration: dbt compiles each into the models that read it rather than building a view, so staging adds no objects to the warehouse.</p>
+<p><code>models/staging/stg_databp__usage_usage_declaration.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">landed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">tenant_id</span><span class="p">,</span>
+<span class="w">        </span><span class="n">declaration_id</span><span class="p">,</span>
+<span class="w">        </span><span class="n">customer_id</span><span class="p">,</span>
+<span class="w">        </span><span class="n">product_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">usage_month</span><span class="p">,</span>
+<span class="w">        </span><span class="n">declared_units</span><span class="p">,</span>
+<span class="w">        </span><span class="n">declared_at</span><span class="p">,</span>
+<span class="w">        </span><span class="k">coalesce</span><span class="p">(</span><span class="n">_snowflake_deleted</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">is_deleted</span><span class="p">,</span>
+<span class="w">        </span><span class="n">_snowflake_inserted_at</span><span class="w">                   </span><span class="k">as</span><span class="w"> </span><span class="n">landed_at</span><span class="p">,</span>
+<span class="w">        </span><span class="n">_snowflake_updated_at</span><span class="w">                    </span><span class="k">as</span><span class="w"> </span><span class="n">changed_at</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="s1">'databp_usage'</span><span class="p">,</span><span class="w"> </span><span class="s1">'usage_declaration'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="p">),</span>
+
+<span class="n">hashed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"cast(tenant_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"cast(declaration_id as varchar)"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">declaration_hkey</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span>
+<span class="w">            </span><span class="ss">"tenant_id"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"declaration_id"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"customer_id"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"product_code"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"usage_month"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"declared_units"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"declared_at"</span><span class="p">,</span>
+<span class="w">            </span><span class="ss">"is_deleted"</span>
+<span class="w">        </span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">declaration_hdiff</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar) || '|' || cast(declaration_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"USAGE"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"USAGE_DECLARATION"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">declaration_code</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"DATABP"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"CLIENT"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">client_code</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar) || '|' || cast(customer_id as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"DATABP"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"CUSTOMER"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">get_business_key_source</span><span class="p">(</span><span class="ss">"cast(tenant_id as varchar) || '|' || cast(product_code as varchar)"</span><span class="p">,</span><span class="w"> </span><span class="ss">"DATABP"</span><span class="p">,</span><span class="w"> </span><span class="ss">"|"</span><span class="p">,</span><span class="w"> </span><span class="ss">"PRODUCT"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">product_key_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">landed</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">'USAGE'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">record_source</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">'{{ run_started_at }}'</span><span class="p">::</span><span class="k">timestamp</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">load_ts_utc</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="n">landed</span>
+<span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">hashed</span>
+</code></pre></div>
+<p><code>{{ source(...) }}</code> is how dbt names the landed table declared in step 1; <code>with landed as (...)</code> names a query, a common table expression, that the next one selects from. The hdiff leaves out the load times, so reloading an unchanged row does not count as a change.</p>
+<p>The unit test gives Customer 23's October report four times and checks the keys of each:</p>
+<table>
+<thead>
+<tr>
+<th>Report given</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>As landed: 12 units</td>
+<td>Code USAGE|USAGE_DECLARATION|3|2; subscriber code DATABP|CUSTOMER|3|23; hkey b772d43b49bb57b596d0343c33bcffec; hdiff 75bc566a4b643a89c416b491c0945c25</td>
+</tr>
+<tr>
+<td>The same, 15 units</td>
+<td>The same hkey; a different hdiff, d84c046c6beac182d9d855cd310c3b25</td>
+</tr>
+<tr>
+<td>The same, deleted at the source</td>
+<td>The same hkey; a different hdiff, 43e0138b08e2af36dc5834c318498f9b</td>
+</tr>
+<tr>
+<td>The same, landed again two days later</td>
+<td>The same hkey and the same hdiff, 75bc566a4b643a89c416b491c0945c25</td>
+</tr>
+</tbody>
+</table>
+<p>Customer 23's row in staging: the same 12 units, is_deleted false, hkey b772d43b49bb57b596d0343c33bcffec, hdiff 75bc566a4b643a89c416b491c0945c25, and its subscriber's code DATABP|CUSTOMER|3|23.</p>
+</div></section><section class="sect dots"><div class="in"><h2 id="3-silver-one-view-of-each-subscriber-then-the-report">3. Silver: one view of each subscriber, then the report</h2>
+<p>Silver is where data is matched, merged, conformed and cleansed into one view of the business's key entities. It holds two sets of tables. The entities, the subscriber and the product, are merged across the three systems, because all three name them. The transaction tables, the license, the entitlement, the usage report and the invoice item, each stay one table per source, keyed to the merged entities; they meet only in gold.</p>
+<h3>Resolving the subscriber</h3>
+<p>Each system knows Customer 23 its own way. DataBP holds the customer, with its name and email. Salesforce holds the same customer under its own id, and carries DataBP's tenant and customer id on it, in the fields Tenant__c and Subscriber_Id__c, so its staging model creates DataBP's subscriber code beside its own. The usage system names the customer by DataBP's tenant and customer id on every report.</p>
+<p>So every system's row carries DataBP's subscriber code, and silver's subscriber model resolves on it, following the reference architecture's resolution pattern in steps, each a common table expression inside the model: the source rows, every system's subscriber rows stacked into one set; the match, one row per DataBP code with a count of each system's rows; then the merged subscriber. A code that DataBP itself does not hold is not dropped: it keeps its row and is counted as created. The key is generate_surrogate_key over the DataBP code, so any table that carries the code computes the same key without a join.</p>
+<p><code>models/silver/subscriber.sql</code>, its steps (the attributes taken from each system left out):</p>
+<div class="highlight"><pre><span></span><code><span class="n">source_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">'DATABP'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">source_system</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span><span class="w"> </span><span class="n">client_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">databp</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">'SALESFORCE'</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span><span class="w"> </span><span class="n">client_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">salesforce</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">'USAGE'</span><span class="p">,</span><span class="w"> </span><span class="n">subscriber_code</span><span class="p">,</span><span class="w"> </span><span class="n">client_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">usage_reported</span>
+<span class="p">),</span>
+
+<span class="n">matched</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">subscriber_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">any_value</span><span class="p">(</span><span class="n">client_code</span><span class="p">)</span><span class="w">                           </span><span class="k">as</span><span class="w"> </span><span class="n">client_code</span><span class="p">,</span>
+<span class="w">        </span><span class="n">count_if</span><span class="p">(</span><span class="n">source_system</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'DATABP'</span><span class="p">)</span><span class="w">             </span><span class="k">as</span><span class="w"> </span><span class="n">databp_source_rows</span><span class="p">,</span>
+<span class="w">        </span><span class="n">count_if</span><span class="p">(</span><span class="n">source_system</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'SALESFORCE'</span><span class="p">)</span><span class="w">         </span><span class="k">as</span><span class="w"> </span><span class="n">salesforce_source_rows</span><span class="p">,</span>
+<span class="w">        </span><span class="n">count_if</span><span class="p">(</span><span class="n">source_system</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'USAGE'</span><span class="p">)</span><span class="w">              </span><span class="k">as</span><span class="w"> </span><span class="n">usage_source_rows</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="n">source_rows</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">subscriber_code</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"matched.subscriber_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w">  </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="n">matched</span><span class="p">.</span><span class="n">databp_source_rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w">                                        </span><span class="k">as</span><span class="w"> </span><span class="n">is_created</span><span class="p">,</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">salesforce_first</span><span class="p">.</span><span class="n">account_name</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">databp</span><span class="p">.</span><span class="n">customer_name</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">name_differs</span><span class="p">,</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="k">from</span><span class="w"> </span><span class="n">matched</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">databp</span><span class="w">           </span><span class="k">on</span><span class="w"> </span><span class="n">databp</span><span class="p">.</span><span class="n">subscriber_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matched</span><span class="p">.</span><span class="n">subscriber_code</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">salesforce_first</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">salesforce_first</span><span class="p">.</span><span class="n">subscriber_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matched</span><span class="p">.</span><span class="n">subscriber_code</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">usage_reported</span><span class="w">   </span><span class="k">on</span><span class="w"> </span><span class="n">usage_reported</span><span class="p">.</span><span class="n">subscriber_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matched</span><span class="p">.</span><span class="n">subscriber_code</span>
+</code></pre></div>
+<p>A union all stacks the three systems' rows into one set; count_if counts the rows that meet its condition; a left join keeps every code, whether or not that system has a row for it. databp, salesforce and usage_reported are the model's first steps: each system's staging rows that are not deleted, the usage reports reduced to one row per subscriber with the first and last month reported; salesforce_first keeps one Salesforce row per code.</p>
+<p>Customer 23's source rows, each carrying the same DataBP code, DATABP|CUSTOMER|3|23:</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Its row</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DataBP</td>
+<td>Customer 23</td>
+</tr>
+<tr>
+<td>Salesforce</td>
+<td>Its own id, ACC6B81D61FB95A66D</td>
+</tr>
+<tr>
+<td>Usage</td>
+<td>Its reports, October 2026 to September 2027</td>
+</tr>
+</tbody>
+</table>
+<p>The merged subscriber, one row for the code, with DataBP's attributes, Salesforce's name kept beside DataBP's, and a count of each system's rows:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Name</th>
+<th>Email</th>
+<th>Salesforce id</th>
+<th>Usage reported</th>
+<th>DataBP, Salesforce, usage rows</th>
+<th>Created</th>
+<th>Name differs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6e7a1ee374a6187c721a8a2ea0017019</td>
+<td>Customer 23</td>
+<td>c23@example.com</td>
+<td>ACC6B81D61FB95A66D</td>
+<td>October 2026 to September 2027</td>
+<td>1, 1, 1</td>
+<td>no</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The unit test gives three DataBP customers, four Salesforce customers and three usage reports, and expects five subscribers:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Given</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Customer 1</td>
+<td>In all three systems; reports for October and November 2026</td>
+<td>One row from each system; reported October to November 2026</td>
+</tr>
+<tr>
+<td>Customer 2</td>
+<td>In DataBP, and twice in Salesforce</td>
+<td>Two Salesforce rows counted; the first Salesforce id kept</td>
+</tr>
+<tr>
+<td>Customer 3</td>
+<td>In DataBP alone</td>
+<td>Its own key; no other system's rows</td>
+</tr>
+<tr>
+<td>Customer 9</td>
+<td>In Salesforce alone</td>
+<td>Kept, with its own key; created</td>
+</tr>
+<tr>
+<td>Customer 8</td>
+<td>In the usage reports alone</td>
+<td>Kept, with its own key; created</td>
+</tr>
+</tbody>
+</table>
+<p>Today every source row matches: each of the 18 Salesforce customers and each of the 18 subscribers in the usage reports names a DataBP customer, none twice, and no name differs. Three warnings watch for the day they do not: one counts the created subscribers, one the codes with more than one row from a system, one the names that differ.</p>
+<p>The product is resolved the same way, on DataBP's product code, which Salesforce's products and the usage reports also carry.</p>
+<h3>The usage report</h3>
+<p>The usage report is a transaction table, so silver keeps it as one table, cleaned. A subscriber may restate a month by sending a second report for the same product and month. Counting both would double the units, so silver keeps one: the latest declared, and when two share a time, the one filed last. Deleted rows are dropped. Each report hashes the codes staging gave it into its keys, so its subscriber key is the merged subscriber's without a join.</p>
+<p><code>models/silver/usage_report.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">report</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">'stg_databp__usage_usage_declaration'</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_deleted</span>
+<span class="w">    </span><span class="n">qualify</span><span class="w"> </span><span class="n">row_number</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">tenant_id</span><span class="p">,</span><span class="w"> </span><span class="n">customer_id</span><span class="p">,</span><span class="w"> </span><span class="n">product_code</span><span class="p">,</span><span class="w"> </span><span class="n">usage_month</span>
+<span class="w">        </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">declared_at</span><span class="w"> </span><span class="k">desc</span><span class="p">,</span><span class="w"> </span><span class="n">declaration_id</span><span class="w"> </span><span class="k">desc</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">declaration_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"declaration_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">usage_report_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">client_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"client_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">client_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">subscriber_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"subscriber_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subscriber_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">product_key_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">"product_key_code"</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">product_hk</span><span class="p">,</span>
+<span class="w">    </span><span class="n">declaration_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">usage_month</span><span class="p">,</span>
+<span class="w">    </span><span class="n">declared_units</span><span class="w">                                                                          </span><span class="k">as</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span>
+<span class="w">    </span><span class="n">declared_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">declaration_hdiff</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">usage_report_hdiff</span><span class="p">,</span>
+<span class="w">    </span><span class="n">landed_at</span>
+<span class="k">from</span><span class="w"> </span><span class="n">report</span>
+</code></pre></div>
+<p><code>{{ ref(...) }}</code> reads another model and tells dbt to build that one first; <code>qualify</code> keeps only the row the window function ranks first; each key is made only when its code is present, so a missing code leaves the key empty rather than hashing nothing.</p>
+<p>The unit test feeds the model five reports and expects three:</p>
+<table>
+<thead>
+<tr>
+<th>Subscriber, product</th>
+<th>Reports given</th>
+<th>Kept</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3, Equities</td>
+<td>One: 10 units</td>
+<td>10: the only one</td>
+</tr>
+<tr>
+<td>23, Options</td>
+<td>12 on November 5, 15 on November 20</td>
+<td>15: declared last</td>
+</tr>
+<tr>
+<td>43, Equities</td>
+<td>12 and 13, both on November 5</td>
+<td>13: same time, filed last</td>
+</tr>
+</tbody>
+</table>
+<p>Customer 23's October report in silver: 12 units; subscriber key 6e7a1ee374a6187c721a8a2ea0017019, the merged subscriber's; product key bf9dbc35f6ebdc9e687e4203245897a4, the merged Options product's; hdiff 75bc566a4b643a89c416b491c0945c25, the one staging gave it. Salesforce's license for Customer 23 carries the same DataBP code, so it takes the same key, and in gold the two meet on it.</p>
+</div></section><section class="sect sky"><div class="in"><h2 id="4-gold-the-report-beside-the-license-priced">4. Gold: the report beside the license, priced</h2>
+<p>Gold is what the metrics read. Its central table, subscriber_product_month_metric, holds one row per subscriber, product and month that has a row in any of the four transaction tables. Each is summed to that grain; the grain is the union of their keys; each joins to it, and one with no row counts as zero units, so a subscriber who reported usage with no license shows every reported unit as beyond the license.</p>
+<p>Each row carries its own results, so one subscriber's excess is never netted against another's shortfall. Unbilled usage is the units reported beyond the license, priced at the product's unit price:</p>
+<div class="highlight"><pre><span></span><code><span class="k">coalesce</span><span class="p">(</span><span class="n">license</span><span class="p">.</span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">     </span><span class="k">as</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span>
+<span class="k">coalesce</span><span class="p">(</span><span class="n">report</span><span class="p">.</span><span class="n">reported_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">reported_units</span><span class="p">,</span>
+<span class="p">...</span>
+<span class="n">greatest</span><span class="p">(</span><span class="n">reported_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">                    </span><span class="k">as</span><span class="w"> </span><span class="n">units_reported_beyond_licensed</span><span class="p">,</span>
+<span class="n">greatest</span><span class="p">(</span><span class="n">reported_units</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">licensed_units</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">unit_price</span><span class="w">       </span><span class="k">as</span><span class="w"> </span><span class="n">unbilled_amount</span>
+</code></pre></div>
+<p>The unit test gives three subscribers a license of 10 at $50 a unit and reports of 12, 10 and 8, and expects $100 unbilled for the first and nothing for the other two: a shortfall never becomes a negative amount.</p>
+<p>Customer 23's October row:</p>
+<table>
+<thead>
+<tr>
+<th>Licensed</th>
+<th>Entitled</th>
+<th>Reported</th>
+<th>Unit price</th>
+<th>Unbilled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>10</td>
+<td>12</td>
+<td>$40</td>
+<td>$80</td>
+</tr>
+</tbody>
+</table>
+</div></section><section class="sect "><div class="in"><h2 id="5-the-semantic-layer-the-figure-the-app-shows">5. The Semantic Layer: the figure the app shows</h2>
+<p>Totals are not stored. The metric is defined once, in YAML beside the gold table, as a sum of each row's unbilled amount; the Semantic Layer computes it for any month, subscriber or product asked, so the Hex app and Morgan, the site's agent, read the same number:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unbilled_revenue</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Units</span><span class="nv"> </span><span class="s">reported</span><span class="nv"> </span><span class="s">beyond</span><span class="nv"> </span><span class="s">licensed</span><span class="nv"> </span><span class="s">times</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">product's</span><span class="nv"> </span><span class="s">unit</span><span class="nv"> </span><span class="s">price:</span><span class="nv"> </span><span class="s">usage</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">provider</span><span class="nv"> </span><span class="s">did</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">bill"</span>
+<span class="w">  </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Unbilled revenue</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">simple</span>
+<span class="w">  </span><span class="nt">agg</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="w">  </span><span class="nt">expr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unbilled_amount</span>
+<span class="w">  </span><span class="nt">fill_nulls_with</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+</code></pre></div>
+<p>Asked of the Semantic Layer by month, unbilled revenue for October 2026 is $1,410, and Morgan gives the same figure. Customer 23's $80 is one of its eight rows: $850 for Customer 43, $100 each for Customers 83 and 123, $80 each for Customers 23, 63, 103 and 143, and $40 for Customer 303. The merged subscriber also gives the metrics two new ways to slice: whether the subscriber is in Salesforce, and whether it reports usage.</p>
+</div></section><section class="sect dots"><div class="in"><h2 id="how-the-whole-is-proven">How the whole is proven</h2>
+<p>The source data was generated with every disagreement planted on purpose and written to an answer key, loaded into dbt as a seed, a CSV file dbt turns into a table. One test compares every row of gold with the answer key and returns any row that differs; it passes only when the reconciliation finds exactly the planted rows, no more and no fewer. dbt runs it, with every unit and data test, on each build. When the merged subscriber and product went into Production, every table in silver and gold was compared with a copy taken just before: the same rows, on every column they had before.</p>
+</div></section><section class="sect sky"><div class="in"><h2 id="what-the-tests-do-not-prove">What the tests do not prove</h2>
+<p>That the answer key covers every case real data will bring; that a provider's real usage reports are complete. The first is bounded by the cases planted; the second is what the reconciliation is for.</p>
+</div></section><section class="sect "><div class="in"><h2 id="what-the-poc-leaves-out">What the POC leaves out</h2>
+<p>The reference architecture adds two layers this POC does not include: a storage layer that keeps every version of every source row, so any past state can be rebuilt, and an integration layer on the Universal Data Model, where parties, products and agreements from every source are integrated into one enterprise model. Both are premium features, not included in the POC.</p></div></section>
+</main>
+<section class="endband"><div class="in"><p class="brand-label">Entitlement and billing reconciliation</p><h2>See it running</h2><p>The live app and Morgan answer from the same governed metrics, on the platform this site describes.</p><div class="ctas"><a class="brand-btn" href="./#app">Try the live app</a><a class="brand-btn ghost" href="ask.html">Ask Morgan</a></div></div></section>
+<!-- brand-footer:start -->
+<footer class="brand-foot"><div class="in">
+  <p>Built by Ray Serrano, Integrationals, as a POC for DataBP. This is not a DataBP site: it wears DataBP's colors and type and no DataBP logo. The data is synthetic, generated to cover every case the reconciliation checks.</p>
+</div></footer>
+<!-- brand-footer:end -->
+</body>
+</html>
